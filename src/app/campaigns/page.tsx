@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { Plus } from 'lucide-react'
 
 export default async function CampaignsPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: campaigns } = await supabase
     .from('campaigns')
     .select('*, brand:brands(name, primary_color)')

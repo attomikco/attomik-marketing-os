@@ -6,7 +6,7 @@ export default async function AdsPage({
 }: {
   searchParams: { brand?: string }
 }) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: brands } = await supabase
     .from('brands')
     .select('id, name, primary_color, tone_keywords, brand_voice, target_audience, website, industry')

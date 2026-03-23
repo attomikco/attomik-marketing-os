@@ -12,7 +12,7 @@ const supabaseAdmin = createSupabaseClient(
 )
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { brandId, emailType, subject, previewText, brief, sections, tone } = await req.json()
 
   const { data: brand } = await supabase.from('brands').select('*').eq('id', brandId).single()

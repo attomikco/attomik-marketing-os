@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { ArrowRight, Users, Mail, Sparkles } from 'lucide-react'
 
 export default async function HomePage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const [{ count: brandCount }, { count: campaignCount }, { count: contentCount }] = await Promise.all([
     supabase.from('brands').select('*', { count: 'exact', head: true }).eq('status', 'active'),
     supabase.from('campaigns').select('*', { count: 'exact', head: true }),

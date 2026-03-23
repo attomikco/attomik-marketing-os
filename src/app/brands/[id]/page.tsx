@@ -6,7 +6,7 @@ import BrandVoiceEditor from '@/components/brands/BrandVoiceEditor'
 import BrandUploadAsset from '@/components/brands/BrandUploadAsset'
 
 export default async function BrandPage({ params }: { params: { id: string } }) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const [{ data: brand }, { data: assets }, { data: campaigns }] = await Promise.all([
     supabase.from('brands').select('*').eq('id', params.id).single(),
     supabase.from('brand_assets').select('*').eq('brand_id', params.id).order('created_at'),

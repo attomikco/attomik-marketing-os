@@ -6,11 +6,10 @@ import Anthropic from '@anthropic-ai/sdk'
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { brandId, objective, placement, offer, audience, cta, notes } = await req.json()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: brand } = await supabase.from('brands').select('*').eq('id', brandId).single() as { data: any }
+  const { data: brand } = await supabase.from('brands').select('*').eq('id', brandId).single()
   if (!brand) return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
 
   const { data: assets } = await supabase

@@ -6,7 +6,7 @@ export default async function NewsletterPage({
 }: {
   searchParams: { brand?: string }
 }) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: brands } = await supabase
     .from('brands')

@@ -64,13 +64,14 @@ export async function streamGeneration({
     if (base64) {
       messages.push({
         role: 'user',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         content: [
           {
             type: 'document',
             source: { type: 'base64', media_type: 'application/pdf', data: base64 },
           },
           { type: 'text', text: `These are the brand guidelines for ${brand.name}. Keep them in mind for everything you generate.` },
-        ],
+        ] as any,
       })
       messages.push({ role: 'assistant', content: `Understood. I've reviewed the brand guidelines for ${brand.name} and will apply them to all content.` })
     }

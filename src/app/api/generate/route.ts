@@ -3,11 +3,10 @@ import { createClient } from '@/lib/supabase/server'
 import { streamGeneration } from '@/lib/anthropic'
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { brandId, tool, tone, platform, subtype, brief } = await req.json()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: brand } = await supabase.from('brands').select('*').eq('id', brandId).single() as { data: any }
+  const { data: brand } = await supabase.from('brands').select('*').eq('id', brandId).single()
   if (!brand) return new Response('Brand not found', { status: 404 })
 
   const { data: assets } = await supabase.from('brand_assets')

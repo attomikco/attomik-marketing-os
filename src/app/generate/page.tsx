@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import GenerateClient from '@/components/ui/GenerateClient'
 
 export default async function GeneratePage({ searchParams }: { searchParams: { brand?: string } }) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: brands } = await supabase
     .from('brands').select('id, name, primary_color, tone_keywords, brand_voice, target_audience')
     .eq('status', 'active').order('name')

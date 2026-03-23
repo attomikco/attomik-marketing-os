@@ -88,14 +88,18 @@ export interface EmailSend {
   metadata: Record<string, unknown> | null
 }
 
+type Rel = { foreignKeyName: string; columns: string[]; isOneToOne?: boolean; referencedRelation: string; referencedColumns: string[] }
+
 export type Database = {
   public: {
     Tables: {
-      brands: { Row: Brand; Insert: Omit<Brand, 'id' | 'created_at' | 'updated_at'>; Update: Partial<Brand> }
-      brand_assets: { Row: BrandAsset; Insert: Omit<BrandAsset, 'id' | 'created_at'>; Update: Partial<BrandAsset> }
-      campaigns: { Row: Campaign; Insert: Omit<Campaign, 'id' | 'created_at' | 'updated_at'>; Update: Partial<Campaign> }
-      generated_content: { Row: GeneratedContent; Insert: Omit<GeneratedContent, 'id' | 'created_at'>; Update: Partial<GeneratedContent> }
-      email_sends: { Row: EmailSend; Insert: Omit<EmailSend, 'id' | 'created_at'>; Update: Partial<EmailSend> }
+      brands: { Row: Brand; Insert: Omit<Brand, 'id' | 'created_at' | 'updated_at'>; Update: Partial<Brand>; Relationships: Rel[] }
+      brand_assets: { Row: BrandAsset; Insert: Omit<BrandAsset, 'id' | 'created_at'>; Update: Partial<BrandAsset>; Relationships: Rel[] }
+      campaigns: { Row: Campaign; Insert: Omit<Campaign, 'id' | 'created_at' | 'updated_at'>; Update: Partial<Campaign>; Relationships: Rel[] }
+      generated_content: { Row: GeneratedContent; Insert: Omit<GeneratedContent, 'id' | 'created_at'>; Update: Partial<GeneratedContent>; Relationships: Rel[] }
+      email_sends: { Row: EmailSend; Insert: Omit<EmailSend, 'id' | 'created_at'>; Update: Partial<EmailSend>; Relationships: Rel[] }
     }
+    Views: Record<string, never>
+    Functions: Record<string, never>
   }
 }

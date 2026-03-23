@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { Plus, Globe, ArrowRight } from 'lucide-react'
 
 export default async function BrandsPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: brands } = await supabase.from('brands').select('*').order('name')
 
   return (
