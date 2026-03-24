@@ -25,12 +25,15 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  // Use getSession() for fast local cookie check instead of getUser()
+  // which makes a network round-trip to Supabase on every navigation.
+  // Pages that need verified auth should call getUser() themselves.
   const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    data: { session },
+  } = await supabase.auth.getSession()
 
   if (
-    !user &&
+    !session &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/auth')
   ) {
