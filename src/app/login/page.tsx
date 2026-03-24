@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -11,46 +10,58 @@ export default function LoginPage() {
   const [authenticating, setAuthenticating] = useState(false)
   const [error, setError] = useState('')
   const [debug, setDebug] = useState('')
-  const supabase = createClient()
-  const router = useRouter()
 
-  // Handle implicit flow — token arrives as URL fragment (#access_token=...)
   useEffect(() => {
-    const fullUrl = window.location.href
-    const hash = window.location.hash
+    const supabase = createClient()
     const search = window.location.search
+    const hash = window.location.hash
 
-    // Capture debug info
-    setDebug(`URL: ${fullUrl}\nHash: ${hash || '(none)'}\nSearch: ${search || '(none)'}`)
+    setDebug(`Search: ${search || '(none)'} | Hash: ${hash || '(none)'}`)
 
-    if (!hash.includes('access_token')) {
-      // Check for error in hash
-      if (hash) {
-        const params = new URLSearchParams(hash.replace('#', ''))
-        const errorDesc = params.get('error_description')
-        const errorCode = params.get('error_code')
-        if (errorDesc) {
-          setError(`${errorCode || 'error'}: ${errorDesc.replace(/\+/g, ' ')}`)
-        }
+    // If there's a code param, Supabase client with detectSessionInUrl
+    // will auto-exchange it. Show loading state.
+    if (search.includes('code=')) {
+      setAuthenticating(true)
+    }
+
+    // Check for error in hash
+    if (hash) {
+      const params = new URLSearchParams(hash.replace('#', ''))
+      const errorDesc = params.get('error_description')
+      const errorCode = params.get('error_code')
+      if (errorDesc) {
+        setError(`${errorCode || 'error'}: ${errorDesc.replace(/\+/g, ' ')}`)
       }
-      return
     }
 
-    setAuthenticating(true)
-    const params = new URLSearchParams(hash.replace('#', ''))
-    const access_token = params.get('access_token')
-    const refresh_token = params.get('refresh_token')
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        window.location.href = '/'
+      }
+      if (event === 'TOKEN_REFRESHED' && session) {
+        window.location.href = '/'
+      }
+    })
 
-    if (access_token && refresh_token) {
-      supabase.auth.setSession({ access_token, refresh_token }).then(({ data, error }) => {
-        if (!error && data.user) {
-          window.location.href = '/'
-        } else {
+    // Also check current session (might already be set by detectSessionInUrl)
+    supabase.auth.getSession().then(({ data: { session }, error: sessionError }) => {
+      if (session) {
+        window.location.href = '/'
+      } else if (search.includes('code=') && sessionError) {
+        setAuthenticating(false)
+        setError(sessionError.message)
+      } else if (search.includes('code=')) {
+        // Code is present but no session yet — wait for onAuthStateChange
+        // If it takes too long, show error
+        setTimeout(() => {
           setAuthenticating(false)
-          setError(error?.message || 'Authentication failed')
-        }
-      })
-    }
+          setError('Login failed — the link may have expired. Please request a new one.')
+        }, 5000)
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -58,6 +69,7 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
+    const supabase = createClient()
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
