@@ -5,12 +5,13 @@ import { ArrowLeft, Sparkles, Mail } from 'lucide-react'
 import BrandVoiceEditor from '@/components/brands/BrandVoiceEditor'
 import BrandUploadAsset from '@/components/brands/BrandUploadAsset'
 
-export default async function BrandPage({ params }: { params: { id: string } }) {
+export default async function BrandPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const supabase = await createClient()
   const [{ data: brand }, { data: assets }, { data: campaigns }] = await Promise.all([
-    supabase.from('brands').select('*').eq('id', params.id).single(),
-    supabase.from('brand_assets').select('*').eq('brand_id', params.id).order('created_at'),
-    supabase.from('campaigns').select('*').eq('brand_id', params.id).order('created_at', { ascending: false }).limit(10),
+    supabase.from('brands').select('*').eq('id', id).single(),
+    supabase.from('brand_assets').select('*').eq('brand_id', id).order('created_at'),
+    supabase.from('campaigns').select('*').eq('brand_id', id).order('created_at', { ascending: false }).limit(10),
   ])
   if (!brand) notFound()
 
