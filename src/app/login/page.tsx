@@ -1,17 +1,33 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
+    // Show error from query params (from callback route)
+    const queryError = searchParams.get('error')
+    if (queryError) {
+      setError(queryError)
+      window.history.replaceState(null, '', '/login')
+    }
+
     // Show error from hash fragments (Supabase error redirects)
     const hash = window.location.hash
     if (hash) {
@@ -20,8 +36,7 @@ export default function LoginPage() {
       if (errorDesc) {
         setError(errorDesc.replace(/\+/g, ' '))
       }
-      // Clear the hash
-      window.history.replaceState(null, '', window.location.pathname)
+      window.history.replaceState(null, '', '/login')
     }
 
     // If already logged in, redirect
@@ -29,7 +44,7 @@ export default function LoginPage() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) router.push('/')
     })
-  }, [router])
+  }, [router, searchParams])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
