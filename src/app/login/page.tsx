@@ -1,71 +1,69 @@
 'use client'
 
-import { Suspense, useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
-  return (
-    <Suspense>
-      <LoginForm />
-    </Suspense>
-  )
-}
-
-function LoginForm() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [authenticating, setAuthenticating] = useState(false)
   const [error, setError] = useState('')
+  const supabase = createClient()
   const router = useRouter()
-  const searchParams = useSearchParams()
 
+  // Handle implicit flow — token arrives as URL fragment (#access_token=...)
   useEffect(() => {
-    // Show error from query params (from callback route)
-    const queryError = searchParams.get('error')
-    if (queryError) {
-      setError(queryError)
-      window.history.replaceState(null, '', '/login')
-    }
-
-    // Show error from hash fragments (Supabase error redirects)
     const hash = window.location.hash
-    if (hash) {
-      const params = new URLSearchParams(hash.substring(1))
-      const errorDesc = params.get('error_description')
-      if (errorDesc) {
-        setError(errorDesc.replace(/\+/g, ' '))
+    if (!hash.includes('access_token')) {
+      // Check for error in hash
+      if (hash) {
+        const params = new URLSearchParams(hash.replace('#', ''))
+        const errorDesc = params.get('error_description')
+        if (errorDesc) {
+          setError(errorDesc.replace(/\+/g, ' '))
+          window.history.replaceState(null, '', '/login')
+        }
       }
-      window.history.replaceState(null, '', '/login')
+      return
     }
 
-    // If already logged in, redirect
-    const supabase = createClient()
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.push('/')
-    })
-  }, [router, searchParams])
+    setAuthenticating(true)
+    const params = new URLSearchParams(hash.replace('#', ''))
+    const access_token = params.get('access_token')
+    const refresh_token = params.get('refresh_token')
+
+    if (access_token && refresh_token) {
+      supabase.auth.setSession({ access_token, refresh_token }).then(({ data, error }) => {
+        if (!error && data.user) {
+          window.location.href = '/'
+        } else {
+          setAuthenticating(false)
+          setError(error?.message || 'Authentication failed')
+        }
+      })
+    }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
 
-    const supabase = createClient()
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/confirm`,
+        emailRedirectTo: `${location.origin}/login`,
       },
     })
 
     if (error) {
       setError(error.message)
-      setLoading(false)
     } else {
       setSent(true)
-      setLoading(false)
     }
+    setLoading(false)
   }
 
   return (
@@ -77,7 +75,11 @@ function LoginForm() {
         </div>
 
         <div className="bg-paper border border-border rounded-card p-8">
-          {sent ? (
+          {authenticating ? (
+            <div className="text-center py-4">
+              <p className="text-muted text-sm">Signing you in...</p>
+            </div>
+          ) : sent ? (
             <div className="text-center">
               <h2 className="text-lg font-bold mb-2">Check your email</h2>
               <p className="text-muted text-sm">
