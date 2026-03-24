@@ -1,45 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+// Redirect all callback requests to the client-side handler
+// PKCE code verifier is stored in browser cookies and needs
+// the browser client to exchange the code
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get('code')
-  const token_hash = searchParams.get('token_hash')
-  const type = searchParams.get('type')
-  const error_description = searchParams.get('error_description')
-  const next = searchParams.get('next') ?? '/'
-
-  // If Supabase sent an error, pass it to the login page
-  if (error_description) {
-    return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(error_description)}`
-    )
-  }
-
-  const supabase = await createClient()
-
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`)
-    }
-    return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(error.message)}`
-    )
-  }
-
-  if (token_hash && type) {
-    const { error } = await supabase.auth.verifyOtp({
-      token_hash,
-      type: type as 'magiclink' | 'email',
-    })
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`)
-    }
-    return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(error.message)}`
-    )
-  }
-
-  return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent('Invalid login link')}`)
+  const { search, hash, origin } = new URL(request.url)
+  return NextResponse.redirect(`${origin}/auth/confirm${search}${hash}`)
 }

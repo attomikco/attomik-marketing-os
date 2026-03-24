@@ -1,29 +1,52 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function AuthConfirmPage() {
   const router = useRouter()
+  const [error, setError] = useState('')
 
   useEffect(() => {
     const supabase = createClient()
 
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        router.push('/')
-      } else if (event === 'SIGNED_OUT') {
-        router.push('/login')
+    // Get the code from the URL query params
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) {
+          router.push(`/login?error=${encodeURIComponent(error.message)}`)
+        } else {
+          router.push('/')
+        }
+      })
+    } else {
+      // Check hash fragments (implicit flow fallback)
+      const hash = window.location.hash
+      if (hash) {
+        const hashParams = new URLSearchParams(hash.substring(1))
+        const errorDesc = hashParams.get('error_description')
+        if (errorDesc) {
+          router.push(`/login?error=${encodeURIComponent(errorDesc)}`)
+          return
+        }
       }
-    })
 
-    // If no session after 5 seconds, redirect to login
-    const timeout = setTimeout(() => {
-      router.push('/login')
-    }, 5000)
+      // Listen for auth state change (handles token in hash)
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (session) {
+          router.push('/')
+        }
+      })
 
-    return () => clearTimeout(timeout)
+      // Timeout fallback
+      setTimeout(() => {
+        router.push('/login?error=' + encodeURIComponent('Login failed. Please try again.'))
+      }, 5000)
+    }
   }, [router])
 
   return (
