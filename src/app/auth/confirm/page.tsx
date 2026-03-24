@@ -11,41 +11,40 @@ export default function AuthConfirmPage() {
   useEffect(() => {
     const supabase = createClient()
 
-    // Get the code from the URL query params
-    const params = new URLSearchParams(window.location.search)
-    const code = params.get('code')
-
-    if (code) {
-      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-        if (error) {
-          router.push(`/login?error=${encodeURIComponent(error.message)}`)
-        } else {
-          router.push('/')
-        }
-      })
-    } else {
-      // Check hash fragments (implicit flow fallback)
-      const hash = window.location.hash
-      if (hash) {
-        const hashParams = new URLSearchParams(hash.substring(1))
-        const errorDesc = hashParams.get('error_description')
-        if (errorDesc) {
-          router.push(`/login?error=${encodeURIComponent(errorDesc)}`)
-          return
-        }
+    // Check for errors in hash
+    const hash = window.location.hash
+    if (hash) {
+      const params = new URLSearchParams(hash.substring(1))
+      const errorDesc = params.get('error_description')
+      if (errorDesc) {
+        router.push(`/login?error=${encodeURIComponent(errorDesc.replace(/\+/g, ' '))}`)
+        return
       }
+    }
 
-      // Listen for auth state change (handles token in hash)
-      supabase.auth.onAuthStateChange((event, session) => {
-        if (session) {
-          router.push('/')
-        }
-      })
+    // With implicit flow, Supabase client auto-detects tokens in the URL hash
+    // and sets the session. We just listen for it.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        router.push('/')
+      }
+    })
 
-      // Timeout fallback
-      setTimeout(() => {
-        router.push('/login?error=' + encodeURIComponent('Login failed. Please try again.'))
-      }, 5000)
+    // Also check if session is already set
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        router.push('/')
+      }
+    })
+
+    // Timeout fallback
+    const timeout = setTimeout(() => {
+      router.push('/login?error=' + encodeURIComponent('Login failed. Please try again.'))
+    }, 8000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
     }
   }, [router])
 
