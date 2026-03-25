@@ -1,8 +1,7 @@
 import { TemplateProps, positionStyles } from './types'
 
-export default function OverlayTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont, headlineSizeMul, bodySizeMul }: TemplateProps) {
+export default function OverlayTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity }: TemplateProps) {
   const pos = positionStyles(textPosition)
-  const isTop = textPosition.startsWith('top')
 
   return (
     <div className="relative overflow-hidden" style={{ width, height, fontFamily: bodyFont || 'Barlow, sans-serif' }}>
@@ -11,14 +10,12 @@ export default function OverlayTemplate({ imageUrl, headline, bodyText, ctaText,
       ) : (
         <div className="absolute inset-0 bg-[#e0e0e0]" />
       )}
+      {showOverlay && (
+        <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${overlayOpacity})` }} />
+      )}
       <div
         className="absolute inset-0 flex flex-col"
-        style={{
-          justifyContent: pos.justifyContent,
-          background: isTop
-            ? 'linear-gradient(rgba(0,0,0,0.75), transparent)'
-            : 'linear-gradient(transparent, rgba(0,0,0,0.75))',
-        }}
+        style={{ justifyContent: pos.justifyContent }}
       >
         <div style={{ padding: '6%', textAlign: pos.textAlign }}>
           {headline && (

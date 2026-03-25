@@ -1,6 +1,6 @@
 import { TemplateProps, positionStyles } from './types'
 
-export default function UGCTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont, headlineSizeMul, bodySizeMul }: TemplateProps) {
+export default function UGCTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity }: TemplateProps) {
   const pos = positionStyles(textPosition)
   const isBottom = textPosition.startsWith('bottom')
 
@@ -11,6 +11,9 @@ export default function UGCTemplate({ imageUrl, headline, bodyText, ctaText, bra
       ) : (
         <div className="absolute inset-0 bg-[#e0e0e0]" />
       )}
+      {showOverlay && (
+        <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${overlayOpacity})` }} />
+      )}
       <div
         className="absolute inset-0 flex flex-col"
         style={{ justifyContent: pos.justifyContent, padding: '5%' }}
@@ -19,7 +22,7 @@ export default function UGCTemplate({ imageUrl, headline, bodyText, ctaText, bra
           {headline && (
             <div
               className="inline-block font-bold leading-tight rounded-[4px]"
-              style={{ fontSize: width * 0.035 * headlineSizeMul, color: headlineColor, background: 'rgba(0,0,0,0.5)', padding: `${width * 0.01}px ${width * 0.02}px`, fontFamily: headlineFont || undefined }}
+              style={{ fontSize: width * 0.035 * headlineSizeMul, color: headlineColor, fontFamily: headlineFont || undefined }}
             >
               {headline}
             </div>
@@ -27,7 +30,7 @@ export default function UGCTemplate({ imageUrl, headline, bodyText, ctaText, bra
           {bodyText && (
             <div
               className="inline-block leading-snug rounded-[4px] mt-[1.5%]"
-              style={{ fontSize: width * 0.026 * bodySizeMul, color: bodyColor, background: 'rgba(0,0,0,0.4)', padding: `${width * 0.008}px ${width * 0.016}px` }}
+              style={{ fontSize: width * 0.026 * bodySizeMul, color: bodyColor }}
             >
               {bodyText}
             </div>

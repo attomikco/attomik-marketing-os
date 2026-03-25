@@ -70,6 +70,8 @@ export default function CreativeBuilder({
   const [bgColor, setBgColor] = useState<string>('#ffffff')
   const [headlineSizeMul, setHeadlineSizeMul] = useState(1)
   const [bodySizeMul, setBodySizeMul] = useState(1)
+  const [showOverlay, setShowOverlay] = useState(false)
+  const [overlayOpacity, setOverlayOpacity] = useState(50)
   const [copySource, setCopySource] = useState<'manual' | 'generated'>('manual')
 
   const previewRef = useRef<HTMLDivElement>(null)
@@ -337,6 +339,34 @@ export default function CreativeBuilder({
           </div>
         </div>
 
+        {/* Image overlay */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="label">Image overlay</label>
+            <button
+              onClick={() => setShowOverlay(!showOverlay)}
+              className="flex items-center gap-1 text-xs text-muted hover:text-ink transition-colors"
+            >
+              {showOverlay ? <Eye size={12} /> : <EyeOff size={12} />}
+              {showOverlay ? 'On' : 'Off'}
+            </button>
+          </div>
+          {showOverlay && (
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={overlayOpacity}
+                onChange={e => setOverlayOpacity(parseInt(e.target.value))}
+                className="flex-1 accent-[#00ff97]"
+              />
+              <span className="text-xs font-mono text-muted w-10 text-right">{overlayOpacity}%</span>
+            </div>
+          )}
+        </div>
+
         {/* Font sizes */}
         <div>
           <label className="label block mb-1.5">Font sizes</label>
@@ -440,6 +470,8 @@ export default function CreativeBuilder({
                   bgColor={bgColor}
                   headlineSizeMul={headlineSizeMul}
                   bodySizeMul={bodySizeMul}
+                  showOverlay={showOverlay}
+                  overlayOpacity={overlayOpacity / 100}
                 />
               </div>
             </div>

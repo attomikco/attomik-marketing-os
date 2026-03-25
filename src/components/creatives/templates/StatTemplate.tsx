@@ -1,6 +1,6 @@
 import { TemplateProps, positionStyles } from './types'
 
-export default function StatTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont, headlineSizeMul, bodySizeMul }: TemplateProps) {
+export default function StatTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity }: TemplateProps) {
   const pos = positionStyles(textPosition)
 
   return (
@@ -10,7 +10,9 @@ export default function StatTemplate({ imageUrl, headline, bodyText, ctaText, br
       ) : (
         <div className="absolute inset-0 bg-[#e0e0e0]" />
       )}
-      <div className="absolute inset-0 bg-black/40" />
+      {showOverlay && (
+        <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${overlayOpacity})` }} />
+      )}
       <div className="relative z-10" style={{ padding: '8%', textAlign: pos.textAlign }}>
         {headline && (
           <div className="font-bold leading-none" style={{ fontSize: width * 0.12 * headlineSizeMul, color: headlineColor === '#ffffff' ? brandColor : headlineColor, fontFamily: headlineFont || undefined }}>

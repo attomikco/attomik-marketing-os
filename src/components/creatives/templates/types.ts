@@ -18,6 +18,8 @@ export interface TemplateProps {
   /** Multiplier relative to the template default, e.g. 1 = 100%, 1.5 = 150% */
   headlineSizeMul: number
   bodySizeMul: number
+  showOverlay: boolean
+  overlayOpacity: number
 }
 
 /** CSS alignment helpers derived from TextPosition */
