@@ -7,6 +7,7 @@ import BrandProfileEditor from '@/components/brands/BrandProfileEditor'
 import BrandVoiceExamples from '@/components/brands/BrandVoiceExamples'
 import BrandUploadAsset from '@/components/brands/BrandUploadAsset'
 import BrandImageLibrary from '@/components/brands/BrandImageLibrary'
+import BrandDeleteButton from '@/components/brands/BrandDeleteButton'
 
 export default async function BrandPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -59,6 +60,7 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
           >
             <Mail size={14} /> New campaign
           </Link>
+          <BrandDeleteButton brandId={brand.id} brandName={brand.name} />
         </div>
       </div>
 
