@@ -7,6 +7,14 @@ import { useRouter } from 'next/navigation'
 
 const TAGS: ImageTag[] = ['product', 'lifestyle', 'ugc', 'background', 'seasonal', 'other']
 
+function getOrientation(w: number | null, h: number | null): string | null {
+  if (!w || !h) return null
+  const ratio = w / h
+  if (ratio > 1.1) return 'landscape'
+  if (ratio < 0.9) return 'portrait'
+  return 'square'
+}
+
 interface Props {
   brandId: string
   images: BrandImage[]
@@ -110,7 +118,17 @@ export default function BrandImageLibrary({ brandId, images }: Props) {
                 </button>
               </div>
               <div className="px-2.5 py-2">
-                <div className="text-xs truncate mb-1.5" title={image.file_name}>{image.file_name}</div>
+                <div className="text-xs truncate mb-1" title={image.file_name}>{image.file_name}</div>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  {getOrientation(image.width, image.height) && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-cream text-muted">
+                      {getOrientation(image.width, image.height)}
+                    </span>
+                  )}
+                  {image.width && image.height && (
+                    <span className="text-[10px] text-muted">{image.width}&times;{image.height}</span>
+                  )}
+                </div>
                 <select
                   value={image.tag}
                   onChange={e => handleTagChange(image, e.target.value as ImageTag)}
