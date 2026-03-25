@@ -17,6 +17,7 @@ interface Brand {
   primary_color: string | null
   secondary_color: string | null
   accent_color: string | null
+  accent_font_color: string | null
   font_primary: string | null
   font_secondary: string | null
   font_heading: FontStyle | null
@@ -101,6 +102,8 @@ export default function CreativeBuilder({
 
   const brand = brands.find(b => b.id === brandId)
   const brandColor = brand?.primary_color || '#00ff97'
+  const ctaColor = brand?.accent_color || brandColor
+  const ctaFontColor = brand?.accent_font_color || '#000000'
   const brandColors = [
     { label: 'White', value: '#ffffff' },
     { label: 'Black', value: '#000000' },
@@ -618,6 +621,8 @@ Nothing else.`,
                     overlayOpacity={overlayOpacity / 100}
                     textBanner={textBanner}
                     textBannerColor={textBannerColor}
+                    ctaColor={ctaColor}
+                    ctaFontColor={ctaFontColor}
                   />
                 </div>
               </div>
@@ -645,7 +650,7 @@ Nothing else.`,
                             headlineColor={headlineColor} bodyColor={bodyColor} headlineFont={headlineFont} headlineWeight={headlineWeight}
                             headlineTransform={headlineTransform} bodyFont={bodyFont} bodyWeight={bodyWeight} bodyTransform={bodyTransform}
                             bgColor={bgColor} headlineSizeMul={headlineSizeMul} bodySizeMul={bodySizeMul}
-                            showOverlay={showOverlay} overlayOpacity={overlayOpacity / 100} textBanner={textBanner} textBannerColor={textBannerColor} />
+                            showOverlay={showOverlay} overlayOpacity={overlayOpacity / 100} textBanner={textBanner} textBannerColor={textBannerColor} ctaColor={ctaColor} ctaFontColor={ctaFontColor} />
                         </div>
                       </button>
                       <button onClick={() => removeDraft(i)}
@@ -681,7 +686,7 @@ Nothing else.`,
                             headlineColor={headlineColor} bodyColor={bodyColor} headlineFont={headlineFont} headlineWeight={headlineWeight}
                             headlineTransform={headlineTransform} bodyFont={bodyFont} bodyWeight={bodyWeight} bodyTransform={bodyTransform}
                             bgColor={bgColor} headlineSizeMul={headlineSizeMul} bodySizeMul={bodySizeMul}
-                            showOverlay={showOverlay} overlayOpacity={overlayOpacity / 100} textBanner={textBanner} textBannerColor={textBannerColor} />
+                            showOverlay={showOverlay} overlayOpacity={overlayOpacity / 100} textBanner={textBanner} textBannerColor={textBannerColor} ctaColor={ctaColor} ctaFontColor={ctaFontColor} />
                         </div>
                       </button>
                       <button onClick={() => saveVariationAsDraft(i)}

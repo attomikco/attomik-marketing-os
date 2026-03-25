@@ -18,6 +18,7 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
     primary_color:   brand.primary_color || '',
     secondary_color: brand.secondary_color || '',
     accent_color:    brand.accent_color || '',
+    accent_font_color: brand.accent_font_color || '',
     logo_url:        brand.logo_url || '',
     font_primary:    brand.font_primary || '',
     font_secondary:  brand.font_secondary || '',
@@ -63,6 +64,7 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
       primary_color:   form.primary_color || null,
       secondary_color: form.secondary_color || null,
       accent_color:    form.accent_color || null,
+      accent_font_color: form.accent_font_color || null,
       font_primary:    fontHeading.family ? `${fontHeading.family}|${fontHeading.weight}|${fontHeading.transform}` : null,
       font_secondary:  fontBody.family ? `${fontBody.family}|${fontBody.weight}|${fontBody.transform}` : null,
     }).eq('id', brand.id)
@@ -148,6 +150,19 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
               </div>
             </div>
           ))}
+        </div>
+        <div>
+          <label className="label block mb-1.5">Accent font color</label>
+          <p className="text-[10px] text-muted mb-1.5">Text color on accent-colored buttons (CTA)</p>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-btn border border-border flex-shrink-0 flex items-center justify-center"
+              style={{ background: form.accent_color || '#f2f2f2' }}>
+              <span className="text-xs font-bold" style={{ color: form.accent_font_color || '#000' }}>Aa</span>
+            </div>
+            <input className={inputCls + ' font-mono'} value={form.accent_font_color}
+              onChange={e => setForm(f => ({ ...f, accent_font_color: e.target.value }))}
+              placeholder="#000000" />
+          </div>
         </div>
         {[
           { label: 'Heading font', font: fontHeading, setFont: setFontHeading },

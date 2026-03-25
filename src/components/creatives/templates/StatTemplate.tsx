@@ -1,6 +1,6 @@
 import { TemplateProps, positionStyles, bannerStyle } from './types'
 
-export default function StatTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight, bodyTransform, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity, textBanner, textBannerColor }: TemplateProps) {
+export default function StatTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight, bodyTransform, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity, textBanner, textBannerColor, ctaColor, ctaFontColor }: TemplateProps) {
   const pos = positionStyles(textPosition)
   const banner = bannerStyle(textBanner, textBannerColor, height)
 
@@ -29,7 +29,7 @@ export default function StatTemplate({ imageUrl, headline, bodyText, ctaText, br
           )}
           {showCta && (
             <div className="inline-block font-bold rounded-[6px] mt-[5%]"
-              style={{ background: brandColor, color: '#000', fontSize: width * 0.028 * bodySizeMul, padding: `${width * 0.012}px ${width * 0.03}px` }}>
+              style={{ background: ctaColor, color: ctaFontColor, fontSize: width * 0.028 * bodySizeMul, padding: `${width * 0.012}px ${width * 0.03}px` }}>
               {ctaText || 'CTA'}
             </div>
           )}

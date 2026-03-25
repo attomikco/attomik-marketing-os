@@ -27,6 +27,8 @@ export interface TemplateProps {
   /** Text banner: 'none' | 'top' | 'bottom' */
   textBanner: 'none' | 'top' | 'bottom'
   textBannerColor: string
+  ctaColor: string
+  ctaFontColor: string
 }
 
 /** Banner style for text bar at top or bottom */

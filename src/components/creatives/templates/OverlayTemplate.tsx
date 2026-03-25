@@ -1,6 +1,6 @@
 import { TemplateProps, positionStyles, bannerStyle } from './types'
 
-export default function OverlayTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight, bodyTransform, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity, textBanner, textBannerColor }: TemplateProps) {
+export default function OverlayTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight, bodyTransform, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity, textBanner, textBannerColor, ctaColor, ctaFontColor }: TemplateProps) {
   const pos = positionStyles(textPosition)
   const banner = bannerStyle(textBanner, textBannerColor, height)
 
@@ -30,7 +30,7 @@ export default function OverlayTemplate({ imageUrl, headline, bodyText, ctaText,
             )}
             {showCta && (
               <div className="inline-block font-bold rounded-[6px]"
-                style={{ background: brandColor, color: '#000', fontSize: width * 0.03 * bodySizeMul, padding: `${width * 0.015}px ${width * 0.035}px` }}>
+                style={{ background: ctaColor, color: ctaFontColor, fontSize: width * 0.03 * bodySizeMul, padding: `${width * 0.015}px ${width * 0.035}px` }}>
                 {ctaText || 'CTA'}
               </div>
             )}

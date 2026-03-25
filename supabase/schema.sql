@@ -20,6 +20,7 @@ create table brands (
   primary_color text,
   secondary_color text,
   accent_color text,
+  accent_font_color text,
   font_primary text,
   font_secondary text,
   font_heading jsonb,

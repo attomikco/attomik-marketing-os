@@ -1,6 +1,6 @@
 import { TemplateProps, positionStyles } from './types'
 
-export default function TestimonialTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight, bodyTransform, bgColor, headlineSizeMul, bodySizeMul }: TemplateProps) {
+export default function TestimonialTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight, bodyTransform, bgColor, headlineSizeMul, bodySizeMul, ctaColor, ctaFontColor }: TemplateProps) {
   const pos = positionStyles(textPosition)
   const imgHeight = height * 0.5
 
@@ -25,7 +25,8 @@ export default function TestimonialTemplate({ imageUrl, headline, bodyText, ctaT
           </div>
         )}
         {showCta && (
-          <div style={{ fontSize: width * 0.024 * bodySizeMul, color: '#999' }}>
+          <div className="inline-block font-bold rounded-[6px]"
+            style={{ fontSize: width * 0.024 * bodySizeMul, background: ctaColor, color: ctaFontColor, padding: `${width * 0.01}px ${width * 0.025}px` }}>
             {ctaText || 'CTA'}
           </div>
         )}

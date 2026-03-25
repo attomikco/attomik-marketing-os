@@ -1,6 +1,6 @@
 import { TemplateProps, positionStyles } from './types'
 
-export default function SplitTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight, bodyTransform, bgColor, headlineSizeMul, bodySizeMul }: TemplateProps) {
+export default function SplitTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight, bodyTransform, bgColor, headlineSizeMul, bodySizeMul, ctaColor, ctaFontColor }: TemplateProps) {
   const pos = positionStyles(textPosition)
 
   return (
@@ -25,7 +25,7 @@ export default function SplitTemplate({ imageUrl, headline, bodyText, ctaText, b
         )}
         {showCta && (
           <div className="inline-block font-bold rounded-[6px]"
-            style={{ background: brandColor, color: '#000', fontSize: width * 0.026 * bodySizeMul, padding: `${width * 0.012}px ${width * 0.03}px`, alignSelf: pos.alignItems }}>
+            style={{ background: ctaColor, color: ctaFontColor, fontSize: width * 0.026 * bodySizeMul, padding: `${width * 0.012}px ${width * 0.03}px`, alignSelf: pos.alignItems }}>
             {ctaText || 'CTA'}
           </div>
         )}

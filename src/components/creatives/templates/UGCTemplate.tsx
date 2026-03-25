@@ -1,6 +1,6 @@
 import { TemplateProps, positionStyles, bannerStyle } from './types'
 
-export default function UGCTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight, bodyTransform, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity, textBanner, textBannerColor }: TemplateProps) {
+export default function UGCTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight, bodyTransform, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity, textBanner, textBannerColor, ctaColor, ctaFontColor }: TemplateProps) {
   const pos = positionStyles(textPosition)
   const isBottom = textPosition.startsWith('bottom')
   const banner = bannerStyle(textBanner, textBannerColor, height)
@@ -37,7 +37,7 @@ export default function UGCTemplate({ imageUrl, headline, bodyText, ctaText, bra
       {showCta && (
         <div className="absolute" style={{ [isBottom ? 'top' : 'bottom']: '5%', right: '5%' }}>
           <div className="font-bold rounded-[6px]"
-            style={{ background: brandColor, color: '#000', fontSize: width * 0.026 * bodySizeMul, padding: `${width * 0.01}px ${width * 0.025}px` }}>
+            style={{ background: ctaColor, color: ctaFontColor, fontSize: width * 0.026 * bodySizeMul, padding: `${width * 0.01}px ${width * 0.025}px` }}>
             {ctaText || 'CTA'}
           </div>
         </div>
