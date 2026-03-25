@@ -23,10 +23,10 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
     font_secondary:  brand.font_secondary || '',
   })
   const [fontHeading, setFontHeading] = useState<FontStyle>(
-    brand.font_heading || { family: '', weight: '700', transform: 'none' }
+    brand.font_heading || { family: brand.font_primary || '', weight: '700', transform: 'none' }
   )
   const [fontBody, setFontBody] = useState<FontStyle>(
-    brand.font_body || { family: '', weight: '400', transform: 'none' }
+    brand.font_body || { family: brand.font_secondary || '', weight: '400', transform: 'none' }
   )
 
   // Load Google Fonts for preview
