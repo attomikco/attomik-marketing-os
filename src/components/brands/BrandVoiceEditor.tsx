@@ -48,6 +48,8 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
   async function save() {
     setSaving(true)
     setError(null)
+
+    // Core fields that always exist
     const { error: err } = await supabase.from('brands').update({
       brand_voice:     form.brand_voice || null,
       target_audience: form.target_audience || null,
@@ -57,17 +59,24 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
       primary_color:   form.primary_color || null,
       secondary_color: form.secondary_color || null,
       accent_color:    form.accent_color || null,
-      logo_url:        form.logo_url || null,
       font_primary:    fontHeading.family || null,
       font_secondary:  fontBody.family || null,
-      font_heading:    fontHeading.family ? fontHeading : null,
-      font_body:       fontBody.family ? fontBody : null,
     }).eq('id', brand.id)
-    setSaving(false)
+
     if (err) {
       setError(err.message)
+      setSaving(false)
       return
     }
+
+    // Newer columns — save separately so core save isn't blocked
+    await supabase.from('brands').update({
+      logo_url:     form.logo_url || null,
+      font_heading: fontHeading.family ? fontHeading : null,
+      font_body:    fontBody.family ? fontBody : null,
+    }).eq('id', brand.id)
+
+    setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
