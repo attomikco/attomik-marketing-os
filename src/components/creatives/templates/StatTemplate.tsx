@@ -1,6 +1,6 @@
 import { TemplateProps, positionStyles } from './types'
 
-export default function StatTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont }: TemplateProps) {
+export default function StatTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont, headlineSizeMul, bodySizeMul }: TemplateProps) {
   const pos = positionStyles(textPosition)
 
   return (
@@ -13,19 +13,19 @@ export default function StatTemplate({ imageUrl, headline, bodyText, ctaText, br
       <div className="absolute inset-0 bg-black/40" />
       <div className="relative z-10" style={{ padding: '8%', textAlign: pos.textAlign }}>
         {headline && (
-          <div className="font-bold leading-none" style={{ fontSize: width * 0.12, color: headlineColor === '#ffffff' ? brandColor : headlineColor, fontFamily: headlineFont || undefined }}>
+          <div className="font-bold leading-none" style={{ fontSize: width * 0.12 * headlineSizeMul, color: headlineColor === '#ffffff' ? brandColor : headlineColor, fontFamily: headlineFont || undefined }}>
             {headline}
           </div>
         )}
         {bodyText && (
-          <div className="leading-snug mt-[3%]" style={{ fontSize: width * 0.035, color: bodyColor, opacity: 0.9 }}>
+          <div className="leading-snug mt-[3%]" style={{ fontSize: width * 0.035 * bodySizeMul, color: bodyColor, opacity: 0.9 }}>
             {bodyText}
           </div>
         )}
         {showCta && (
           <div
             className="inline-block font-bold rounded-[6px] mt-[5%]"
-            style={{ background: brandColor, color: '#000', fontSize: width * 0.028, padding: `${width * 0.012}px ${width * 0.03}px` }}
+            style={{ background: brandColor, color: '#000', fontSize: width * 0.028 * bodySizeMul, padding: `${width * 0.012}px ${width * 0.03}px` }}
           >
             {ctaText || 'CTA'}
           </div>

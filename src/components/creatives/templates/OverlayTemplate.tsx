@@ -1,6 +1,6 @@
 import { TemplateProps, positionStyles } from './types'
 
-export default function OverlayTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont }: TemplateProps) {
+export default function OverlayTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont, headlineSizeMul, bodySizeMul }: TemplateProps) {
   const pos = positionStyles(textPosition)
   const isTop = textPosition.startsWith('top')
 
@@ -22,19 +22,19 @@ export default function OverlayTemplate({ imageUrl, headline, bodyText, ctaText,
       >
         <div style={{ padding: '6%', textAlign: pos.textAlign }}>
           {headline && (
-            <div className="font-bold leading-tight mb-[2%]" style={{ fontSize: width * 0.05, color: headlineColor, fontFamily: headlineFont || undefined }}>
+            <div className="font-bold leading-tight mb-[2%]" style={{ fontSize: width * 0.05 * headlineSizeMul, color: headlineColor, fontFamily: headlineFont || undefined }}>
               {headline}
             </div>
           )}
           {bodyText && (
-            <div className="leading-snug mb-[3%]" style={{ fontSize: width * 0.032, color: bodyColor, opacity: 0.85 }}>
+            <div className="leading-snug mb-[3%]" style={{ fontSize: width * 0.032 * bodySizeMul, color: bodyColor, opacity: 0.85 }}>
               {bodyText}
             </div>
           )}
           {showCta && (
             <div
               className="inline-block font-bold rounded-[6px]"
-              style={{ background: brandColor, color: '#000', fontSize: width * 0.03, padding: `${width * 0.015}px ${width * 0.035}px` }}
+              style={{ background: brandColor, color: '#000', fontSize: width * 0.03 * bodySizeMul, padding: `${width * 0.015}px ${width * 0.035}px` }}
             >
               {ctaText || 'CTA'}
             </div>

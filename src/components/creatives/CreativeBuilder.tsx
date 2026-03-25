@@ -67,6 +67,9 @@ export default function CreativeBuilder({
   const [bodyColor, setBodyColor] = useState<string>('#ffffff')
   const [headlineFont, setHeadlineFont] = useState<string>('')
   const [bodyFont, setBodyFont] = useState<string>('')
+  const [bgColor, setBgColor] = useState<string>('#ffffff')
+  const [headlineSizeMul, setHeadlineSizeMul] = useState(1)
+  const [bodySizeMul, setBodySizeMul] = useState(1)
   const [copySource, setCopySource] = useState<'manual' | 'generated'>('manual')
 
   const previewRef = useRef<HTMLDivElement>(null)
@@ -317,6 +320,56 @@ export default function CreativeBuilder({
           </div>
         </div>
 
+        {/* Background color */}
+        <div>
+          <label className="label block mb-1.5">Background color</label>
+          <p className="text-[10px] text-muted mb-2">For text panels in Split, Testimonial, etc.</p>
+          <div className="flex gap-1.5">
+            {brandColors.map(c => (
+              <button
+                key={'bg-' + c.value}
+                onClick={() => setBgColor(c.value)}
+                className="w-7 h-7 rounded-[4px] border-2 transition-all flex-shrink-0"
+                style={{ background: c.value, borderColor: bgColor === c.value ? '#000' : '#e0e0e0' }}
+                title={c.label}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Font sizes */}
+        <div>
+          <label className="label block mb-1.5">Font sizes</label>
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] text-muted uppercase tracking-wide w-16 flex-shrink-0">Headline</span>
+              <input
+                type="range"
+                min={0.5}
+                max={2}
+                step={0.1}
+                value={headlineSizeMul}
+                onChange={e => setHeadlineSizeMul(parseFloat(e.target.value))}
+                className="flex-1 accent-[#00ff97]"
+              />
+              <span className="text-xs font-mono text-muted w-10 text-right">{Math.round(headlineSizeMul * 100)}%</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] text-muted uppercase tracking-wide w-16 flex-shrink-0">Body</span>
+              <input
+                type="range"
+                min={0.5}
+                max={2}
+                step={0.1}
+                value={bodySizeMul}
+                onChange={e => setBodySizeMul(parseFloat(e.target.value))}
+                className="flex-1 accent-[#00ff97]"
+              />
+              <span className="text-xs font-mono text-muted w-10 text-right">{Math.round(bodySizeMul * 100)}%</span>
+            </div>
+          </div>
+        </div>
+
         {/* Template selector */}
         <div>
           <label className="label block mb-1.5">Template</label>
@@ -384,6 +437,9 @@ export default function CreativeBuilder({
                   bodyColor={bodyColor}
                   headlineFont={headlineFont}
                   bodyFont={bodyFont}
+                  bgColor={bgColor}
+                  headlineSizeMul={headlineSizeMul}
+                  bodySizeMul={bodySizeMul}
                 />
               </div>
             </div>

@@ -1,6 +1,6 @@
 import { TemplateProps, positionStyles } from './types'
 
-export default function UGCTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont }: TemplateProps) {
+export default function UGCTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont, headlineSizeMul, bodySizeMul }: TemplateProps) {
   const pos = positionStyles(textPosition)
   const isBottom = textPosition.startsWith('bottom')
 
@@ -19,7 +19,7 @@ export default function UGCTemplate({ imageUrl, headline, bodyText, ctaText, bra
           {headline && (
             <div
               className="inline-block font-bold leading-tight rounded-[4px]"
-              style={{ fontSize: width * 0.035, color: headlineColor, background: 'rgba(0,0,0,0.5)', padding: `${width * 0.01}px ${width * 0.02}px`, fontFamily: headlineFont || undefined }}
+              style={{ fontSize: width * 0.035 * headlineSizeMul, color: headlineColor, background: 'rgba(0,0,0,0.5)', padding: `${width * 0.01}px ${width * 0.02}px`, fontFamily: headlineFont || undefined }}
             >
               {headline}
             </div>
@@ -27,7 +27,7 @@ export default function UGCTemplate({ imageUrl, headline, bodyText, ctaText, bra
           {bodyText && (
             <div
               className="inline-block leading-snug rounded-[4px] mt-[1.5%]"
-              style={{ fontSize: width * 0.026, color: bodyColor, background: 'rgba(0,0,0,0.4)', padding: `${width * 0.008}px ${width * 0.016}px` }}
+              style={{ fontSize: width * 0.026 * bodySizeMul, color: bodyColor, background: 'rgba(0,0,0,0.4)', padding: `${width * 0.008}px ${width * 0.016}px` }}
             >
               {bodyText}
             </div>
@@ -38,7 +38,7 @@ export default function UGCTemplate({ imageUrl, headline, bodyText, ctaText, bra
         <div className="absolute" style={{ [isBottom ? 'top' : 'bottom']: '5%', right: '5%' }}>
           <div
             className="font-bold rounded-[6px]"
-            style={{ background: brandColor, color: '#000', fontSize: width * 0.026, padding: `${width * 0.01}px ${width * 0.025}px` }}
+            style={{ background: brandColor, color: '#000', fontSize: width * 0.026 * bodySizeMul, padding: `${width * 0.01}px ${width * 0.025}px` }}
           >
             {ctaText || 'CTA'}
           </div>

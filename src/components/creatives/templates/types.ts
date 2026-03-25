@@ -14,6 +14,10 @@ export interface TemplateProps {
   bodyColor: string
   headlineFont: string
   bodyFont: string
+  bgColor: string
+  /** Multiplier relative to the template default, e.g. 1 = 100%, 1.5 = 150% */
+  headlineSizeMul: number
+  bodySizeMul: number
 }
 
 /** CSS alignment helpers derived from TextPosition */
