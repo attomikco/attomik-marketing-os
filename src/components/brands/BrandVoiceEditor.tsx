@@ -19,6 +19,8 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
     secondary_color: brand.secondary_color || '',
     accent_color:    brand.accent_color || '',
     accent_font_color: brand.accent_font_color || '',
+    heading_color:   brand.heading_color || '',
+    body_color:      brand.body_color || '',
     logo_url:        brand.logo_url || '',
     font_primary:    brand.font_primary || '',
     font_secondary:  brand.font_secondary || '',
@@ -64,7 +66,6 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
       primary_color:   form.primary_color || null,
       secondary_color: form.secondary_color || null,
       accent_color:    form.accent_color || null,
-      accent_font_color: form.accent_font_color || null,
       font_primary:    fontHeading.family ? `${fontHeading.family}|${fontHeading.weight}|${fontHeading.transform}` : null,
       font_secondary:  fontBody.family ? `${fontBody.family}|${fontBody.weight}|${fontBody.transform}` : null,
     }).eq('id', brand.id)
@@ -75,11 +76,14 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
       return
     }
 
-    // Newer columns — save separately so core save isn't blocked
+    // Newer columns — save separately so core save isn't blocked by schema cache
     await supabase.from('brands').update({
-      logo_url:     form.logo_url || null,
-      font_heading: fontHeading.family ? fontHeading : null,
-      font_body:    fontBody.family ? fontBody : null,
+      logo_url:          form.logo_url || null,
+      accent_font_color: form.accent_font_color || null,
+      heading_color:     form.heading_color || null,
+      body_color:        form.body_color || null,
+      font_heading:      fontHeading.family ? fontHeading : null,
+      font_body:         fontBody.family ? fontBody : null,
     }).eq('id', brand.id)
 
     setSaving(false)
@@ -135,33 +139,31 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
               placeholder="cheap, discount, basic" />
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {(['primary_color','secondary_color','accent_color'] as const).map((key) => (
-            <div key={key}>
-              <label className="label block mb-1.5">
-                {key === 'primary_color' ? 'Primary color' : key === 'secondary_color' ? 'Secondary' : 'Accent'}
-              </label>
-              <div className="flex items-center gap-2">
+        <div>
+          <label className="label block mb-2">Brand colors</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {([
+              { key: 'primary_color' as const, label: 'Primary', hint: 'Main brand color' },
+              { key: 'secondary_color' as const, label: 'Secondary', hint: 'Supporting color' },
+              { key: 'accent_color' as const, label: 'Accent / CTA bg', hint: 'Buttons & highlights' },
+              { key: 'accent_font_color' as const, label: 'CTA text color', hint: 'Text on CTA buttons' },
+              { key: 'heading_color' as const, label: 'Heading text', hint: 'Title / headline color' },
+              { key: 'body_color' as const, label: 'Body text', hint: 'Paragraph / body color' },
+            ]).map(({ key, label, hint }) => (
+              <div key={key} className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-btn border border-border flex-shrink-0"
                   style={{ background: form[key] || '#f2f2f2' }} />
-                <input className={inputCls + ' font-mono'} value={form[key]}
-                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                  placeholder="#000000" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xs font-semibold">{label}</span>
+                    <span className="text-[10px] text-muted">{hint}</span>
+                  </div>
+                  <input className={inputCls + ' font-mono !py-1.5 mt-0.5'} value={form[key]}
+                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                    placeholder="#000000" />
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-        <div>
-          <label className="label block mb-1.5">Accent font color</label>
-          <p className="text-[10px] text-muted mb-1.5">Text color on accent-colored buttons (CTA)</p>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-btn border border-border flex-shrink-0 flex items-center justify-center"
-              style={{ background: form.accent_color || '#f2f2f2' }}>
-              <span className="text-xs font-bold" style={{ color: form.accent_font_color || '#000' }}>Aa</span>
-            </div>
-            <input className={inputCls + ' font-mono'} value={form.accent_font_color}
-              onChange={e => setForm(f => ({ ...f, accent_font_color: e.target.value }))}
-              placeholder="#000000" />
+            ))}
           </div>
         </div>
         {[

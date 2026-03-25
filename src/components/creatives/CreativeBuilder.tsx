@@ -18,6 +18,8 @@ interface Brand {
   secondary_color: string | null
   accent_color: string | null
   accent_font_color: string | null
+  heading_color: string | null
+  body_color: string | null
   font_primary: string | null
   font_secondary: string | null
   font_heading: FontStyle | null
@@ -72,8 +74,8 @@ export default function CreativeBuilder({
   const [ctaText, setCtaText] = useState('Shop Now')
   const [textPosition, setTextPosition] = useState<TextPosition>('bottom-left')
   const [showCta, setShowCta] = useState(true)
-  const [headlineColor, setHeadlineColor] = useState<string>(brands[0]?.primary_color || '#ffffff')
-  const [bodyColor, setBodyColor] = useState<string>('#ffffff')
+  const [headlineColor, setHeadlineColor] = useState<string>(brands[0]?.heading_color || brands[0]?.primary_color || '#ffffff')
+  const [bodyColor, setBodyColor] = useState<string>(brands[0]?.body_color || '#ffffff')
   const [headlineFont, setHeadlineFont] = useState<string>('')
   const [bodyFont, setBodyFont] = useState<string>('')
   const [headlineWeight, setHeadlineWeight] = useState<string>('700')
@@ -146,7 +148,8 @@ export default function CreativeBuilder({
     setBodyWeight(b?.weight || bParts[1] || '400')
     setBodyTransform(b?.transform || bParts[2] || 'none')
 
-    setHeadlineColor(brand?.primary_color || '#ffffff')
+    setHeadlineColor(brand?.heading_color || brand?.primary_color || '#ffffff')
+    setBodyColor(brand?.body_color || '#ffffff')
     setBgColor(brand?.primary_color || '#000000')
     setTextBannerColor(brand?.primary_color || '#000000')
   }, [brandId])

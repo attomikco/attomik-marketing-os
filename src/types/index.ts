@@ -54,6 +54,8 @@ export interface Brand {
   secondary_color: string | null
   accent_color: string | null
   accent_font_color: string | null
+  heading_color: string | null
+  body_color: string | null
   font_primary: string | null
   font_secondary: string | null
   font_heading: FontStyle | null
