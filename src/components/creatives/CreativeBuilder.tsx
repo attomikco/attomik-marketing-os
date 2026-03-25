@@ -2,7 +2,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { BrandImage } from '@/types'
-import { ChevronDown, ImageIcon, Check } from 'lucide-react'
+import { ChevronDown, ImageIcon, Check, Eye, EyeOff } from 'lucide-react'
+import { TextPosition } from './templates/types'
 import OverlayTemplate from './templates/OverlayTemplate'
 import SplitTemplate from './templates/SplitTemplate'
 import TestimonialTemplate from './templates/TestimonialTemplate'
@@ -14,6 +15,10 @@ interface Brand {
   name: string
   slug: string
   primary_color: string | null
+  secondary_color: string | null
+  accent_color: string | null
+  font_primary: string | null
+  font_secondary: string | null
 }
 
 interface GeneratedCopy {
@@ -56,12 +61,25 @@ export default function CreativeBuilder({
   const [headline, setHeadline] = useState('Your headline here')
   const [bodyText, setBodyText] = useState('Body text goes here')
   const [ctaText, setCtaText] = useState('Shop Now')
+  const [textPosition, setTextPosition] = useState<TextPosition>('bottom-left')
+  const [showCta, setShowCta] = useState(true)
+  const [headlineColor, setHeadlineColor] = useState<string>('#ffffff')
+  const [bodyColor, setBodyColor] = useState<string>('#ffffff')
+  const [headlineFont, setHeadlineFont] = useState<string>('')
+  const [bodyFont, setBodyFont] = useState<string>('')
   const [copySource, setCopySource] = useState<'manual' | 'generated'>('manual')
 
   const previewRef = useRef<HTMLDivElement>(null)
 
   const brand = brands.find(b => b.id === brandId)
   const brandColor = brand?.primary_color || '#00ff97'
+  const brandColors = [
+    { label: 'White', value: '#ffffff' },
+    { label: 'Black', value: '#000000' },
+    ...(brand?.primary_color ? [{ label: 'Primary', value: brand.primary_color }] : []),
+    ...(brand?.secondary_color ? [{ label: 'Secondary', value: brand.secondary_color }] : []),
+    ...(brand?.accent_color ? [{ label: 'Accent', value: brand.accent_color }] : []),
+  ]
   const size = SIZES.find(s => s.id === sizeId)!
   const template = TEMPLATES.find(t => t.id === templateId)!
   const TemplateComponent = template.component
@@ -206,9 +224,97 @@ export default function CreativeBuilder({
           <label className="label block mb-1.5">Body text</label>
           <textarea className={inputCls + ' resize-none'} rows={2} value={bodyText} onChange={e => setBodyText(e.target.value)} placeholder="Supporting copy" />
         </div>
+
+        {/* CTA with toggle */}
         <div>
-          <label className="label block mb-1.5">CTA</label>
-          <input className={inputCls} value={ctaText} onChange={e => setCtaText(e.target.value)} placeholder="Shop Now" />
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="label">CTA button</label>
+            <button
+              onClick={() => setShowCta(!showCta)}
+              className="flex items-center gap-1 text-xs text-muted hover:text-ink transition-colors"
+            >
+              {showCta ? <Eye size={12} /> : <EyeOff size={12} />}
+              {showCta ? 'Visible' : 'Hidden'}
+            </button>
+          </div>
+          {showCta && (
+            <input className={inputCls} value={ctaText} onChange={e => setCtaText(e.target.value)} placeholder="Shop Now" />
+          )}
+        </div>
+
+        {/* Text position */}
+        <div>
+          <label className="label block mb-1.5">Text position</label>
+          <div className="grid grid-cols-3 gap-1 w-[140px]">
+            {(['top-left', 'top-center', 'top-right', 'center', 'center', 'center', 'bottom-left', 'bottom-center', 'bottom-right'] as TextPosition[]).map((pos, i) => {
+              // center row: only the middle cell is "center"
+              if ((i === 3 || i === 5)) return <div key={i} />
+              return (
+                <button
+                  key={pos + i}
+                  onClick={() => setTextPosition(pos)}
+                  className="w-full aspect-square rounded-[4px] border transition-all"
+                  style={textPosition === pos
+                    ? { background: '#000', borderColor: '#000' }
+                    : { background: '#f2f2f2', borderColor: '#e0e0e0' }}
+                  title={pos}
+                />
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Font & color controls */}
+        <div>
+          <label className="label block mb-1.5">Fonts & colors</label>
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted uppercase tracking-wide w-16 flex-shrink-0">Headline</span>
+              <select
+                value={headlineFont}
+                onChange={e => setHeadlineFont(e.target.value)}
+                className={inputCls + ' !py-1.5 pr-6 appearance-none text-xs'}
+              >
+                <option value="">Default (Barlow)</option>
+                {brand?.font_primary && <option value={brand.font_primary}>{brand.font_primary}</option>}
+                {brand?.font_secondary && <option value={brand.font_secondary}>{brand.font_secondary}</option>}
+              </select>
+              <div className="flex gap-1 flex-shrink-0">
+                {brandColors.map(c => (
+                  <button
+                    key={'h-' + c.value}
+                    onClick={() => setHeadlineColor(c.value)}
+                    className="w-6 h-6 rounded-[4px] border-2 transition-all flex-shrink-0"
+                    style={{ background: c.value, borderColor: headlineColor === c.value ? '#000' : '#e0e0e0' }}
+                    title={c.label}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted uppercase tracking-wide w-16 flex-shrink-0">Body</span>
+              <select
+                value={bodyFont}
+                onChange={e => setBodyFont(e.target.value)}
+                className={inputCls + ' !py-1.5 pr-6 appearance-none text-xs'}
+              >
+                <option value="">Default (Barlow)</option>
+                {brand?.font_primary && <option value={brand.font_primary}>{brand.font_primary}</option>}
+                {brand?.font_secondary && <option value={brand.font_secondary}>{brand.font_secondary}</option>}
+              </select>
+              <div className="flex gap-1 flex-shrink-0">
+                {brandColors.map(c => (
+                  <button
+                    key={'b-' + c.value}
+                    onClick={() => setBodyColor(c.value)}
+                    className="w-6 h-6 rounded-[4px] border-2 transition-all flex-shrink-0"
+                    style={{ background: c.value, borderColor: bodyColor === c.value ? '#000' : '#e0e0e0' }}
+                    title={c.label}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Template selector */}
@@ -272,6 +378,12 @@ export default function CreativeBuilder({
                   brandColor={brandColor}
                   width={size.w}
                   height={size.h}
+                  textPosition={textPosition}
+                  showCta={showCta}
+                  headlineColor={headlineColor}
+                  bodyColor={bodyColor}
+                  headlineFont={headlineFont}
+                  bodyFont={bodyFont}
                 />
               </div>
             </div>

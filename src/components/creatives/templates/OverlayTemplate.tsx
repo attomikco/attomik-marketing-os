@@ -1,32 +1,45 @@
-import { TemplateProps } from './types'
+import { TemplateProps, positionStyles } from './types'
 
-export default function OverlayTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height }: TemplateProps) {
+export default function OverlayTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont }: TemplateProps) {
+  const pos = positionStyles(textPosition)
+  const isTop = textPosition.startsWith('top')
+
   return (
-    <div className="relative overflow-hidden" style={{ width, height, fontFamily: 'Barlow, sans-serif' }}>
+    <div className="relative overflow-hidden" style={{ width, height, fontFamily: bodyFont || 'Barlow, sans-serif' }}>
       {imageUrl ? (
         <img src={imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
       ) : (
         <div className="absolute inset-0 bg-[#e0e0e0]" />
       )}
-      <div className="absolute inset-x-0 bottom-0 p-[6%]" style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.75))' }}>
-        {headline && (
-          <div className="font-bold text-white leading-tight mb-[2%]" style={{ fontSize: width * 0.05 }}>
-            {headline}
-          </div>
-        )}
-        {bodyText && (
-          <div className="text-white/80 leading-snug mb-[3%]" style={{ fontSize: width * 0.032 }}>
-            {bodyText}
-          </div>
-        )}
-        {ctaText && (
-          <div
-            className="inline-block font-bold rounded-[6px]"
-            style={{ background: brandColor, color: '#000', fontSize: width * 0.03, padding: `${width * 0.015}px ${width * 0.035}px` }}
-          >
-            {ctaText}
-          </div>
-        )}
+      <div
+        className="absolute inset-0 flex flex-col"
+        style={{
+          justifyContent: pos.justifyContent,
+          background: isTop
+            ? 'linear-gradient(rgba(0,0,0,0.75), transparent)'
+            : 'linear-gradient(transparent, rgba(0,0,0,0.75))',
+        }}
+      >
+        <div style={{ padding: '6%', textAlign: pos.textAlign }}>
+          {headline && (
+            <div className="font-bold leading-tight mb-[2%]" style={{ fontSize: width * 0.05, color: headlineColor, fontFamily: headlineFont || undefined }}>
+              {headline}
+            </div>
+          )}
+          {bodyText && (
+            <div className="leading-snug mb-[3%]" style={{ fontSize: width * 0.032, color: bodyColor, opacity: 0.85 }}>
+              {bodyText}
+            </div>
+          )}
+          {showCta && (
+            <div
+              className="inline-block font-bold rounded-[6px]"
+              style={{ background: brandColor, color: '#000', fontSize: width * 0.03, padding: `${width * 0.015}px ${width * 0.035}px` }}
+            >
+              {ctaText || 'CTA'}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

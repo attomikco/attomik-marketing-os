@@ -1,38 +1,46 @@
-import { TemplateProps } from './types'
+import { TemplateProps, positionStyles } from './types'
 
-export default function UGCTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height }: TemplateProps) {
+export default function UGCTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont }: TemplateProps) {
+  const pos = positionStyles(textPosition)
+  const isBottom = textPosition.startsWith('bottom')
+
   return (
-    <div className="relative overflow-hidden" style={{ width, height, fontFamily: 'Barlow, sans-serif' }}>
+    <div className="relative overflow-hidden" style={{ width, height, fontFamily: bodyFont || 'Barlow, sans-serif' }}>
       {imageUrl ? (
         <img src={imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
       ) : (
         <div className="absolute inset-0 bg-[#e0e0e0]" />
       )}
-      <div className="absolute top-0 left-0 right-0" style={{ padding: '5%' }}>
-        {headline && (
-          <div
-            className="inline-block font-bold leading-tight rounded-[4px]"
-            style={{ fontSize: width * 0.035, color: '#fff', background: 'rgba(0,0,0,0.5)', padding: `${width * 0.01}px ${width * 0.02}px` }}
-          >
-            {headline}
-          </div>
-        )}
-        {bodyText && (
-          <div
-            className="inline-block leading-snug rounded-[4px] mt-[1.5%]"
-            style={{ fontSize: width * 0.026, color: '#fff', background: 'rgba(0,0,0,0.4)', padding: `${width * 0.008}px ${width * 0.016}px` }}
-          >
-            {bodyText}
-          </div>
-        )}
+      <div
+        className="absolute inset-0 flex flex-col"
+        style={{ justifyContent: pos.justifyContent, padding: '5%' }}
+      >
+        <div style={{ textAlign: pos.textAlign }}>
+          {headline && (
+            <div
+              className="inline-block font-bold leading-tight rounded-[4px]"
+              style={{ fontSize: width * 0.035, color: headlineColor, background: 'rgba(0,0,0,0.5)', padding: `${width * 0.01}px ${width * 0.02}px`, fontFamily: headlineFont || undefined }}
+            >
+              {headline}
+            </div>
+          )}
+          {bodyText && (
+            <div
+              className="inline-block leading-snug rounded-[4px] mt-[1.5%]"
+              style={{ fontSize: width * 0.026, color: bodyColor, background: 'rgba(0,0,0,0.4)', padding: `${width * 0.008}px ${width * 0.016}px` }}
+            >
+              {bodyText}
+            </div>
+          )}
+        </div>
       </div>
-      {ctaText && (
-        <div className="absolute bottom-0 right-0" style={{ padding: '5%' }}>
+      {showCta && (
+        <div className="absolute" style={{ [isBottom ? 'top' : 'bottom']: '5%', right: '5%' }}>
           <div
             className="font-bold rounded-[6px]"
             style={{ background: brandColor, color: '#000', fontSize: width * 0.026, padding: `${width * 0.01}px ${width * 0.025}px` }}
           >
-            {ctaText}
+            {ctaText || 'CTA'}
           </div>
         </div>
       )}

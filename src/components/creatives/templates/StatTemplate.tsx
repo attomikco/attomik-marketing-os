@@ -1,31 +1,33 @@
-import { TemplateProps } from './types'
+import { TemplateProps, positionStyles } from './types'
 
-export default function StatTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height }: TemplateProps) {
+export default function StatTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont }: TemplateProps) {
+  const pos = positionStyles(textPosition)
+
   return (
-    <div className="relative overflow-hidden flex flex-col items-center justify-center" style={{ width, height, fontFamily: 'Barlow, sans-serif' }}>
+    <div className="relative overflow-hidden flex flex-col" style={{ width, height, fontFamily: bodyFont || 'Barlow, sans-serif', justifyContent: pos.justifyContent }}>
       {imageUrl ? (
         <img src={imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
       ) : (
         <div className="absolute inset-0 bg-[#e0e0e0]" />
       )}
       <div className="absolute inset-0 bg-black/40" />
-      <div className="relative z-10 text-center" style={{ padding: '8%' }}>
+      <div className="relative z-10" style={{ padding: '8%', textAlign: pos.textAlign }}>
         {headline && (
-          <div className="font-bold leading-none" style={{ fontSize: width * 0.12, color: brandColor }}>
+          <div className="font-bold leading-none" style={{ fontSize: width * 0.12, color: headlineColor === '#ffffff' ? brandColor : headlineColor, fontFamily: headlineFont || undefined }}>
             {headline}
           </div>
         )}
         {bodyText && (
-          <div className="text-white/90 leading-snug mt-[3%]" style={{ fontSize: width * 0.035 }}>
+          <div className="leading-snug mt-[3%]" style={{ fontSize: width * 0.035, color: bodyColor, opacity: 0.9 }}>
             {bodyText}
           </div>
         )}
-        {ctaText && (
+        {showCta && (
           <div
             className="inline-block font-bold rounded-[6px] mt-[5%]"
             style={{ background: brandColor, color: '#000', fontSize: width * 0.028, padding: `${width * 0.012}px ${width * 0.03}px` }}
           >
-            {ctaText}
+            {ctaText || 'CTA'}
           </div>
         )}
       </div>
