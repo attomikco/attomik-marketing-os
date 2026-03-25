@@ -332,7 +332,11 @@ export default function CreativeBuilder({
             <span className="text-[10px] text-muted uppercase tracking-wide flex-shrink-0">Text bar</span>
             <div className="flex gap-1">
               {(['none', 'top', 'bottom'] as const).map(v => (
-                <button key={v} onClick={() => setTextBanner(v)}
+                <button key={v} onClick={() => {
+                  setTextBanner(v)
+                  if (v === 'top') setTextPosition(p => p.replace(/^(top|bottom|center)/, 'top') as TextPosition)
+                  if (v === 'bottom') setTextPosition(p => p.replace(/^(top|bottom|center)/, 'bottom') as TextPosition)
+                }}
                   {...pillCls(textBanner === v)}>{v === 'none' ? 'Off' : v.charAt(0).toUpperCase() + v.slice(1)}</button>
               ))}
             </div>
