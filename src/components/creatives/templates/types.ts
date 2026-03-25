@@ -20,6 +20,21 @@ export interface TemplateProps {
   bodySizeMul: number
   showOverlay: boolean
   overlayOpacity: number
+  /** Text banner: 'none' | 'top' | 'bottom' */
+  textBanner: 'none' | 'top' | 'bottom'
+  textBannerColor: string
+}
+
+/** Banner style for text bar at top or bottom */
+export function bannerStyle(banner: 'none' | 'top' | 'bottom', bannerColor: string, height: number): React.CSSProperties | null {
+  if (banner === 'none') return null
+  return {
+    position: 'absolute' as const,
+    left: 0, right: 0,
+    [banner]: 0,
+    height: height * 0.22,
+    background: bannerColor,
+  }
 }
 
 /** CSS alignment helpers derived from TextPosition */

@@ -78,6 +78,8 @@ export default function CreativeBuilder({
   const [bodySizeMul, setBodySizeMul] = useState(1)
   const [showOverlay, setShowOverlay] = useState(false)
   const [overlayOpacity, setOverlayOpacity] = useState(50)
+  const [textBanner, setTextBanner] = useState<'none' | 'top' | 'bottom'>('none')
+  const [textBannerColor, setTextBannerColor] = useState<string>('#000000')
   const [copySource, setCopySource] = useState<'manual' | 'generated'>('manual')
 
   const previewRef = useRef<HTMLDivElement>(null)
@@ -325,6 +327,26 @@ export default function CreativeBuilder({
             </div>
           </div>
 
+          {/* Text banner */}
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-muted uppercase tracking-wide flex-shrink-0">Text bar</span>
+            <div className="flex gap-1">
+              {(['none', 'top', 'bottom'] as const).map(v => (
+                <button key={v} onClick={() => setTextBanner(v)}
+                  {...pillCls(textBanner === v)}>{v === 'none' ? 'Off' : v.charAt(0).toUpperCase() + v.slice(1)}</button>
+              ))}
+            </div>
+            {textBanner !== 'none' && (
+              <div className="flex gap-1 ml-auto">
+                {brandColors.map(c => (
+                  <button key={'tb-' + c.value} onClick={() => setTextBannerColor(c.value)}
+                    className="w-5 h-5 rounded-[3px] border-2 transition-all flex-shrink-0"
+                    style={{ background: c.value, borderColor: textBannerColor === c.value ? '#00ff97' : '#e0e0e0' }} />
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Font & color rows */}
           <div className="space-y-2">
             {[
@@ -389,6 +411,8 @@ export default function CreativeBuilder({
                     bodySizeMul={bodySizeMul}
                     showOverlay={showOverlay}
                     overlayOpacity={overlayOpacity / 100}
+                    textBanner={textBanner}
+                    textBannerColor={textBannerColor}
                   />
                 </div>
               </div>

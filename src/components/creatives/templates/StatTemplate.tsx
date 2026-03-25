@@ -1,7 +1,8 @@
-import { TemplateProps, positionStyles } from './types'
+import { TemplateProps, positionStyles, bannerStyle } from './types'
 
-export default function StatTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity }: TemplateProps) {
+export default function StatTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity, textBanner, textBannerColor }: TemplateProps) {
   const pos = positionStyles(textPosition)
+  const banner = bannerStyle(textBanner, textBannerColor, height)
 
   return (
     <div className="relative overflow-hidden flex flex-col" style={{ width, height, fontFamily: bodyFont || 'Barlow, sans-serif', justifyContent: pos.justifyContent }}>
@@ -13,6 +14,7 @@ export default function StatTemplate({ imageUrl, headline, bodyText, ctaText, br
       {showOverlay && (
         <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${overlayOpacity})` }} />
       )}
+      {banner && <div style={banner} />}
       <div className="relative z-10" style={{ padding: '8%', textAlign: pos.textAlign }}>
         {headline && (
           <div className="font-bold leading-none" style={{ fontSize: width * 0.12 * headlineSizeMul, color: headlineColor === '#ffffff' ? brandColor : headlineColor, fontFamily: headlineFont || undefined }}>

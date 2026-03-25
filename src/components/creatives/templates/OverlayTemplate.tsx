@@ -1,7 +1,8 @@
-import { TemplateProps, positionStyles } from './types'
+import { TemplateProps, positionStyles, bannerStyle } from './types'
 
-export default function OverlayTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity }: TemplateProps) {
+export default function OverlayTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity, textBanner, textBannerColor }: TemplateProps) {
   const pos = positionStyles(textPosition)
+  const banner = bannerStyle(textBanner, textBannerColor, height)
 
   return (
     <div className="relative overflow-hidden" style={{ width, height, fontFamily: bodyFont || 'Barlow, sans-serif' }}>
@@ -13,6 +14,7 @@ export default function OverlayTemplate({ imageUrl, headline, bodyText, ctaText,
       {showOverlay && (
         <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${overlayOpacity})` }} />
       )}
+      {banner && <div style={banner} />}
       <div
         className="absolute inset-0 flex flex-col"
         style={{ justifyContent: pos.justifyContent }}
