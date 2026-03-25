@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { BrandImage, FontStyle } from '@/types'
-import { ChevronDown, ImageIcon, Check, Eye, EyeOff, Sparkles, Loader2 } from 'lucide-react'
+import { ChevronDown, ImageIcon, Check, Eye, EyeOff, Sparkles, Loader2, Bookmark, X } from 'lucide-react'
 import { TextPosition } from './templates/types'
 import OverlayTemplate from './templates/OverlayTemplate'
 import SplitTemplate from './templates/SplitTemplate'
@@ -90,8 +90,11 @@ export default function CreativeBuilder({
   const [generating, setGenerating] = useState(false)
   const [batchGenerating, setBatchGenerating] = useState(false)
   const batchAbortRef = useRef<AbortController | null>(null)
-  const [variations, setVariations] = useState<{ headline: string; body: string; cta: string; imageId: string | null; templateId: string }[]>([])
+  type Variation = { headline: string; body: string; cta: string; imageId: string | null; templateId: string }
+  const [variations, setVariations] = useState<Variation[]>([])
   const [activeVariation, setActiveVariation] = useState<number | null>(null)
+  const [savedDrafts, setSavedDrafts] = useState<Variation[]>([])
+  const [activeDraft, setActiveDraft] = useState<number | null>(null)
 
   const previewRef = useRef<HTMLDivElement>(null)
 
@@ -302,6 +305,33 @@ Nothing else.`,
     setSelectedImageId(v.imageId)
     setTemplateId(v.templateId)
     setActiveVariation(i)
+    setActiveDraft(null)
+  }
+
+  function saveVariationAsDraft(i: number) {
+    const v = variations[i]
+    if (!v) return
+    // Don't add duplicates
+    if (savedDrafts.some(d => d.headline === v.headline && d.imageId === v.imageId)) return
+    setSavedDrafts(prev => [...prev, v])
+  }
+
+  function loadDraft(i: number) {
+    const d = savedDrafts[i]
+    if (!d) return
+    setHeadline(d.headline)
+    setBodyText(d.body)
+    setCtaText(d.cta)
+    setSelectedImageId(d.imageId)
+    setTemplateId(d.templateId)
+    setActiveDraft(i)
+    setActiveVariation(null)
+  }
+
+  function removeDraft(i: number) {
+    setSavedDrafts(prev => prev.filter((_, j) => j !== i))
+    if (activeDraft === i) setActiveDraft(null)
+    else if (activeDraft !== null && activeDraft > i) setActiveDraft(activeDraft - 1)
   }
 
   const selectedImage = images.find(i => i.id === selectedImageId)
@@ -580,49 +610,72 @@ Nothing else.`,
             </div>
           </div>
 
+          {/* Saved drafts */}
+          {savedDrafts.length > 0 && (
+            <div className="bg-paper border border-border rounded-card p-4">
+              <div className="label mb-3">Saved drafts ({savedDrafts.length})</div>
+              <div className="grid grid-cols-5 gap-2">
+                {savedDrafts.map((d, i) => {
+                  const dImg = images.find(img => img.id === d.imageId)
+                  const dImgUrl = dImg ? getPublicUrl(dImg.storage_path) : null
+                  const DTemplate = TEMPLATES.find(t => t.id === d.templateId)!.component
+                  const thumbScale = 100 / size.w
+                  return (
+                    <div key={i} className="relative group">
+                      <button onClick={() => loadDraft(i)}
+                        className="w-full rounded-[4px] overflow-hidden border-2 transition-all hover:opacity-90"
+                        style={{ borderColor: activeDraft === i ? '#00ff97' : '#e0e0e0', aspectRatio: `${size.w}/${size.h}` }}>
+                        <div style={{ width: size.w, height: size.h, transform: `scale(${thumbScale})`, transformOrigin: 'top left' }}>
+                          <DTemplate imageUrl={dImgUrl} headline={d.headline} bodyText={d.body} ctaText={d.cta} brandColor={brandColor}
+                            width={size.w} height={size.h} textPosition={textPosition} showCta={showCta}
+                            headlineColor={headlineColor} bodyColor={bodyColor} headlineFont={headlineFont} headlineWeight={headlineWeight}
+                            headlineTransform={headlineTransform} bodyFont={bodyFont} bodyWeight={bodyWeight} bodyTransform={bodyTransform}
+                            bgColor={bgColor} headlineSizeMul={headlineSizeMul} bodySizeMul={bodySizeMul}
+                            showOverlay={showOverlay} overlayOpacity={overlayOpacity / 100} textBanner={textBanner} textBannerColor={textBannerColor} />
+                        </div>
+                      </button>
+                      <button onClick={() => removeDraft(i)}
+                        className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-danger">
+                        <X size={10} />
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Variations strip */}
           {variations.length > 0 && (
             <div className="bg-paper border border-border rounded-card p-4">
-              <div className="label mb-3">Variations ({variations.length}/10)</div>
+              <div className="label mb-3">Generated ({variations.length}/10)</div>
               <div className="grid grid-cols-5 gap-2">
                 {variations.map((v, i) => {
                   const vImg = images.find(img => img.id === v.imageId)
                   const vImgUrl = vImg ? getPublicUrl(vImg.storage_path) : null
                   const VTemplate = TEMPLATES.find(t => t.id === v.templateId)!.component
                   const thumbScale = 100 / size.w
+                  const isSaved = savedDrafts.some(d => d.headline === v.headline && d.imageId === v.imageId)
                   return (
-                    <button key={i} onClick={() => loadVariation(i)}
-                      className="rounded-[4px] overflow-hidden border-2 transition-all hover:opacity-90"
-                      style={{ borderColor: activeVariation === i ? '#00ff97' : '#e0e0e0', aspectRatio: `${size.w}/${size.h}` }}>
-                      <div style={{ width: size.w, height: size.h, transform: `scale(${thumbScale})`, transformOrigin: 'top left' }}>
-                        <VTemplate
-                          imageUrl={vImgUrl}
-                          headline={v.headline}
-                          bodyText={v.body}
-                          ctaText={v.cta}
-                          brandColor={brandColor}
-                          width={size.w}
-                          height={size.h}
-                          textPosition={textPosition}
-                          showCta={showCta}
-                          headlineColor={headlineColor}
-                          bodyColor={bodyColor}
-                          headlineFont={headlineFont}
-                          headlineWeight={headlineWeight}
-                          headlineTransform={headlineTransform}
-                          bodyFont={bodyFont}
-                          bodyWeight={bodyWeight}
-                          bodyTransform={bodyTransform}
-                          bgColor={bgColor}
-                          headlineSizeMul={headlineSizeMul}
-                          bodySizeMul={bodySizeMul}
-                          showOverlay={showOverlay}
-                          overlayOpacity={overlayOpacity / 100}
-                          textBanner={textBanner}
-                          textBannerColor={textBannerColor}
-                        />
-                      </div>
-                    </button>
+                    <div key={i} className="relative group">
+                      <button onClick={() => loadVariation(i)}
+                        className="w-full rounded-[4px] overflow-hidden border-2 transition-all hover:opacity-90"
+                        style={{ borderColor: activeVariation === i ? '#00ff97' : '#e0e0e0', aspectRatio: `${size.w}/${size.h}` }}>
+                        <div style={{ width: size.w, height: size.h, transform: `scale(${thumbScale})`, transformOrigin: 'top left' }}>
+                          <VTemplate imageUrl={vImgUrl} headline={v.headline} bodyText={v.body} ctaText={v.cta} brandColor={brandColor}
+                            width={size.w} height={size.h} textPosition={textPosition} showCta={showCta}
+                            headlineColor={headlineColor} bodyColor={bodyColor} headlineFont={headlineFont} headlineWeight={headlineWeight}
+                            headlineTransform={headlineTransform} bodyFont={bodyFont} bodyWeight={bodyWeight} bodyTransform={bodyTransform}
+                            bgColor={bgColor} headlineSizeMul={headlineSizeMul} bodySizeMul={bodySizeMul}
+                            showOverlay={showOverlay} overlayOpacity={overlayOpacity / 100} textBanner={textBanner} textBannerColor={textBannerColor} />
+                        </div>
+                      </button>
+                      <button onClick={() => saveVariationAsDraft(i)}
+                        className={`absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full transition-all hover:scale-110 ${isSaved ? '' : 'opacity-0 group-hover:opacity-100'}`}
+                        style={{ background: isSaved ? '#00ff97' : 'rgba(0,0,0,0.6)', color: isSaved ? '#000' : '#fff' }}>
+                        <Bookmark size={10} fill={isSaved ? 'currentColor' : 'none'} />
+                      </button>
+                    </div>
                   )
                 })}
               </div>
