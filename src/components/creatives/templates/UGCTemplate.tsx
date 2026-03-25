@@ -12,24 +12,26 @@ export default function UGCTemplate({ imageUrl, headline, bodyText, ctaText, bra
       ) : (
         <div className="absolute inset-0 bg-[#e0e0e0]" />
       )}
-      {showOverlay && (
-        <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${overlayOpacity})` }} />
-      )}
       {banner && <div style={banner} />}
       <div className="absolute inset-0 flex flex-col" style={{ justifyContent: pos.justifyContent, padding: '5%' }}>
-        <div style={{ textAlign: pos.textAlign }}>
-          {headline && (
-            <div className="inline-block leading-tight rounded-[4px]"
-              style={{ fontSize: width * 0.035 * headlineSizeMul, color: headlineColor, fontFamily: headlineFont || undefined, fontWeight: parseInt(headlineWeight), textTransform: headlineTransform as any }}>
-              {headline}
-            </div>
+        <div className="relative" style={{ textAlign: pos.textAlign }}>
+          {showOverlay && (
+            <div className="absolute inset-0 -m-[2%] rounded-[8px]" style={{ background: `rgba(0,0,0,${overlayOpacity})` }} />
           )}
-          {bodyText && (
-            <div className="inline-block leading-snug rounded-[4px] mt-[1.5%]"
-              style={{ fontSize: width * 0.026 * bodySizeMul, color: bodyColor, fontWeight: parseInt(bodyWeight), textTransform: bodyTransform as any }}>
-              {bodyText}
-            </div>
-          )}
+          <div className="relative">
+            {headline && (
+              <div className="inline-block leading-tight rounded-[4px]"
+                style={{ fontSize: width * 0.035 * headlineSizeMul, color: headlineColor, fontFamily: headlineFont || undefined, fontWeight: parseInt(headlineWeight), textTransform: headlineTransform as any }}>
+                {headline}
+              </div>
+            )}
+            {bodyText && (
+              <div className="inline-block leading-snug rounded-[4px] mt-[1.5%]"
+                style={{ fontSize: width * 0.026 * bodySizeMul, color: bodyColor, fontWeight: parseInt(bodyWeight), textTransform: bodyTransform as any }}>
+                {bodyText}
+              </div>
+            )}
+          </div>
         </div>
       </div>
       {showCta && (

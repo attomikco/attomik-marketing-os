@@ -79,7 +79,7 @@ export default function CreativeBuilder({
   const [headlineTransform, setHeadlineTransform] = useState<string>('none')
   const [bodyWeight, setBodyWeight] = useState<string>('400')
   const [bodyTransform, setBodyTransform] = useState<string>('none')
-  const [bgColor, setBgColor] = useState<string>('#ffffff')
+  const [bgColor, setBgColor] = useState<string>(brands[0]?.primary_color || '#000000')
   const [headlineSizeMul, setHeadlineSizeMul] = useState(1)
   const [bodySizeMul, setBodySizeMul] = useState(1)
   const [showOverlay, setShowOverlay] = useState(false)
@@ -129,6 +129,8 @@ export default function CreativeBuilder({
     setBodyFont(b?.family || brand?.font_secondary || brand?.font_primary || '')
     setBodyWeight(b?.weight || '400')
     setBodyTransform(b?.transform || 'none')
+    setBgColor(brand?.primary_color || '#000000')
+    setTextBannerColor(brand?.primary_color || '#000000')
   }, [brandId])
 
   // Load brand images + recent copy when brand changes
