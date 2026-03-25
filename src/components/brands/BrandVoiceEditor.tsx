@@ -8,6 +8,7 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
   const supabase = createClient()
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({
     brand_voice:     brand.brand_voice || '',
     target_audience: brand.target_audience || '',
@@ -22,7 +23,8 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
 
   async function save() {
     setSaving(true)
-    await supabase.from('brands').update({
+    setError(null)
+    const { error: err } = await supabase.from('brands').update({
       brand_voice:     form.brand_voice || null,
       target_audience: form.target_audience || null,
       tone_keywords:   form.tone_keywords ? form.tone_keywords.split(',').map(s => s.trim()).filter(Boolean) : null,
@@ -34,6 +36,10 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
       logo_url:        form.logo_url || null,
     }).eq('id', brand.id)
     setSaving(false)
+    if (err) {
+      setError(err.message)
+      return
+    }
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -114,6 +120,7 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
           </div>
         </div>
       </div>
+      {error && <p className="text-sm text-danger mt-4">{error}</p>}
     </div>
   )
 }

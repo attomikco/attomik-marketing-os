@@ -152,13 +152,13 @@ alter table campaigns enable row level security;
 alter table generated_content enable row level security;
 alter table email_sends enable row level security;
 
-create policy "authenticated_all" on brands for all to authenticated using (true);
-create policy "authenticated_all" on brand_assets for all to authenticated using (true);
-create policy "authenticated_all" on brand_images for all to authenticated using (true);
-create policy "authenticated_all" on brand_voice_examples for all to authenticated using (true);
-create policy "authenticated_all" on campaigns for all to authenticated using (true);
-create policy "authenticated_all" on generated_content for all to authenticated using (true);
-create policy "authenticated_all" on email_sends for all to authenticated using (true);
+create policy "authenticated_all" on brands for all to authenticated using (true) with check (true);
+create policy "authenticated_all" on brand_assets for all to authenticated using (true) with check (true);
+create policy "authenticated_all" on brand_images for all to authenticated using (true) with check (true);
+create policy "authenticated_all" on brand_voice_examples for all to authenticated using (true) with check (true);
+create policy "authenticated_all" on campaigns for all to authenticated using (true) with check (true);
+create policy "authenticated_all" on generated_content for all to authenticated using (true) with check (true);
+create policy "authenticated_all" on email_sends for all to authenticated using (true) with check (true);
 
 -- ============================================
 -- UPDATED_AT TRIGGER
