@@ -13,7 +13,11 @@ export interface TemplateProps {
   headlineColor: string
   bodyColor: string
   headlineFont: string
+  headlineWeight: string
+  headlineTransform: string
   bodyFont: string
+  bodyWeight: string
+  bodyTransform: string
   bgColor: string
   /** Multiplier relative to the template default, e.g. 1 = 100%, 1.5 = 150% */
   headlineSizeMul: number

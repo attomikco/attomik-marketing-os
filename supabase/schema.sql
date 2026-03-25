@@ -22,6 +22,8 @@ create table brands (
   accent_color text,
   font_primary text,
   font_secondary text,
+  font_heading jsonb,
+  font_body jsonb,
   brand_voice text,
   target_audience text,
   tone_keywords text[],

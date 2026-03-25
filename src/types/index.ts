@@ -4,6 +4,12 @@ export type CampaignStatus = 'draft' | 'in_review' | 'approved' | 'scheduled' | 
 export type AssetType = 'guidelines' | 'html_template' | 'logo' | 'other'
 export type ImageTag = 'product' | 'lifestyle' | 'ugc' | 'background' | 'seasonal' | 'other'
 
+export interface FontStyle {
+  family: string
+  weight: string
+  transform: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
+}
+
 export interface Competitor {
   name: string
   website?: string
@@ -49,6 +55,8 @@ export interface Brand {
   accent_color: string | null
   font_primary: string | null
   font_secondary: string | null
+  font_heading: FontStyle | null
+  font_body: FontStyle | null
   brand_voice: string | null
   target_audience: string | null
   tone_keywords: string[] | null

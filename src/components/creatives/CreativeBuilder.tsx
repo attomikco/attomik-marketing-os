@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { BrandImage } from '@/types'
+import { BrandImage, FontStyle } from '@/types'
 import { ChevronDown, ImageIcon, Check, Eye, EyeOff } from 'lucide-react'
 import { TextPosition } from './templates/types'
 import OverlayTemplate from './templates/OverlayTemplate'
@@ -19,6 +19,8 @@ interface Brand {
   accent_color: string | null
   font_primary: string | null
   font_secondary: string | null
+  font_heading: FontStyle | null
+  font_body: FontStyle | null
 }
 
 interface GeneratedCopy {
@@ -73,6 +75,10 @@ export default function CreativeBuilder({
   const [bodyColor, setBodyColor] = useState<string>('#ffffff')
   const [headlineFont, setHeadlineFont] = useState<string>('')
   const [bodyFont, setBodyFont] = useState<string>('')
+  const [headlineWeight, setHeadlineWeight] = useState<string>('700')
+  const [headlineTransform, setHeadlineTransform] = useState<string>('none')
+  const [bodyWeight, setBodyWeight] = useState<string>('400')
+  const [bodyTransform, setBodyTransform] = useState<string>('none')
   const [bgColor, setBgColor] = useState<string>('#ffffff')
   const [headlineSizeMul, setHeadlineSizeMul] = useState(1)
   const [bodySizeMul, setBodySizeMul] = useState(1)
@@ -115,8 +121,14 @@ export default function CreativeBuilder({
 
   // Auto-select brand fonts when brand changes
   useEffect(() => {
-    setHeadlineFont(brand?.font_primary || '')
-    setBodyFont(brand?.font_secondary || brand?.font_primary || '')
+    const h = brand?.font_heading
+    const b = brand?.font_body
+    setHeadlineFont(h?.family || brand?.font_primary || '')
+    setHeadlineWeight(h?.weight || '700')
+    setHeadlineTransform(h?.transform || 'none')
+    setBodyFont(b?.family || brand?.font_secondary || brand?.font_primary || '')
+    setBodyWeight(b?.weight || '400')
+    setBodyTransform(b?.transform || 'none')
   }, [brandId])
 
   // Load brand images + recent copy when brand changes
@@ -409,7 +421,11 @@ export default function CreativeBuilder({
                     headlineColor={headlineColor}
                     bodyColor={bodyColor}
                     headlineFont={headlineFont}
+                    headlineWeight={headlineWeight}
+                    headlineTransform={headlineTransform}
                     bodyFont={bodyFont}
+                    bodyWeight={bodyWeight}
+                    bodyTransform={bodyTransform}
                     bgColor={bgColor}
                     headlineSizeMul={headlineSizeMul}
                     bodySizeMul={bodySizeMul}

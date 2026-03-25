@@ -1,6 +1,6 @@
 import { TemplateProps, positionStyles, bannerStyle } from './types'
 
-export default function OverlayTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity, textBanner, textBannerColor }: TemplateProps) {
+export default function OverlayTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight, bodyTransform, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity, textBanner, textBannerColor }: TemplateProps) {
   const pos = positionStyles(textPosition)
   const banner = bannerStyle(textBanner, textBannerColor, height)
 
@@ -15,26 +15,21 @@ export default function OverlayTemplate({ imageUrl, headline, bodyText, ctaText,
         <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${overlayOpacity})` }} />
       )}
       {banner && <div style={banner} />}
-      <div
-        className="absolute inset-0 flex flex-col"
-        style={{ justifyContent: pos.justifyContent }}
-      >
+      <div className="absolute inset-0 flex flex-col" style={{ justifyContent: pos.justifyContent }}>
         <div style={{ padding: '6%', textAlign: pos.textAlign }}>
           {headline && (
-            <div className="font-bold leading-tight mb-[2%]" style={{ fontSize: width * 0.05 * headlineSizeMul, color: headlineColor, fontFamily: headlineFont || undefined }}>
+            <div className="leading-tight mb-[2%]" style={{ fontSize: width * 0.05 * headlineSizeMul, color: headlineColor, fontFamily: headlineFont || undefined, fontWeight: parseInt(headlineWeight), textTransform: headlineTransform as any }}>
               {headline}
             </div>
           )}
           {bodyText && (
-            <div className="leading-snug mb-[3%]" style={{ fontSize: width * 0.032 * bodySizeMul, color: bodyColor, opacity: 0.85 }}>
+            <div className="leading-snug mb-[3%]" style={{ fontSize: width * 0.032 * bodySizeMul, color: bodyColor, opacity: 0.85, fontWeight: parseInt(bodyWeight), textTransform: bodyTransform as any }}>
               {bodyText}
             </div>
           )}
           {showCta && (
-            <div
-              className="inline-block font-bold rounded-[6px]"
-              style={{ background: brandColor, color: '#000', fontSize: width * 0.03 * bodySizeMul, padding: `${width * 0.015}px ${width * 0.035}px` }}
-            >
+            <div className="inline-block font-bold rounded-[6px]"
+              style={{ background: brandColor, color: '#000', fontSize: width * 0.03 * bodySizeMul, padding: `${width * 0.015}px ${width * 0.035}px` }}>
               {ctaText || 'CTA'}
             </div>
           )}

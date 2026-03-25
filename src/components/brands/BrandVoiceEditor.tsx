@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Brand } from '@/types'
+import { Brand, FontStyle } from '@/types'
 import { Check, Loader2 } from 'lucide-react'
 
 export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
@@ -22,12 +22,18 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
     font_primary:    brand.font_primary || '',
     font_secondary:  brand.font_secondary || '',
   })
+  const [fontHeading, setFontHeading] = useState<FontStyle>(
+    brand.font_heading || { family: '', weight: '700', transform: 'none' }
+  )
+  const [fontBody, setFontBody] = useState<FontStyle>(
+    brand.font_body || { family: '', weight: '400', transform: 'none' }
+  )
 
   // Load Google Fonts for preview
   useEffect(() => {
-    const fonts = [form.font_primary, form.font_secondary].filter(Boolean)
+    const fonts = [fontHeading.family, fontBody.family].filter(Boolean)
     if (fonts.length === 0) return
-    const families = fonts.map(f => f.replace(/ /g, '+')).join('&family=')
+    const families = Array.from(new Set(fonts)).map(f => f.replace(/ /g, '+')).join('&family=')
     const id = 'brand-fonts-link'
     let link = document.getElementById(id) as HTMLLinkElement | null
     if (!link) {
@@ -36,8 +42,8 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
       link.rel = 'stylesheet'
       document.head.appendChild(link)
     }
-    link.href = `https://fonts.googleapis.com/css2?family=${families}&display=swap`
-  }, [form.font_primary, form.font_secondary])
+    link.href = `https://fonts.googleapis.com/css2?family=${families}:wght@400;500;600;700;800;900&display=swap`
+  }, [fontHeading.family, fontBody.family])
 
   async function save() {
     setSaving(true)
@@ -52,8 +58,10 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
       secondary_color: form.secondary_color || null,
       accent_color:    form.accent_color || null,
       logo_url:        form.logo_url || null,
-      font_primary:    form.font_primary || null,
-      font_secondary:  form.font_secondary || null,
+      font_primary:    fontHeading.family || null,
+      font_secondary:  fontBody.family || null,
+      font_heading:    fontHeading.family ? fontHeading : null,
+      font_body:       fontBody.family ? fontBody : null,
     }).eq('id', brand.id)
     setSaving(false)
     if (err) {
@@ -128,26 +136,44 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="label block mb-1.5">Primary font</label>
-            <input className={inputCls} value={form.font_primary}
-              onChange={e => setForm(f => ({ ...f, font_primary: e.target.value }))}
-              placeholder="Barlow" />
-            {form.font_primary && (
-              <p className="text-xs mt-1" style={{ fontFamily: form.font_primary }}>Preview: The quick brown fox</p>
+        {[
+          { label: 'Heading font', font: fontHeading, setFont: setFontHeading },
+          { label: 'Body font', font: fontBody, setFont: setFontBody },
+        ].map(({ label, font, setFont }) => (
+          <div key={label}>
+            <label className="label block mb-1.5">{label}</label>
+            <div className="flex items-center gap-2">
+              <input className={inputCls} value={font.family}
+                onChange={e => setFont(f => ({ ...f, family: e.target.value }))}
+                placeholder="e.g. Helvetica, Inter, Playfair Display" />
+              <select value={font.weight}
+                onChange={e => setFont(f => ({ ...f, weight: e.target.value }))}
+                className={inputCls + ' !w-28 flex-shrink-0 appearance-none'}>
+                <option value="300">Light</option>
+                <option value="400">Regular</option>
+                <option value="500">Medium</option>
+                <option value="600">Semibold</option>
+                <option value="700">Bold</option>
+                <option value="800">Extra Bold</option>
+                <option value="900">Black</option>
+              </select>
+              <select value={font.transform}
+                onChange={e => setFont(f => ({ ...f, transform: e.target.value as FontStyle['transform'] }))}
+                className={inputCls + ' !w-28 flex-shrink-0 appearance-none'}>
+                <option value="none">Normal</option>
+                <option value="uppercase">ALL CAPS</option>
+                <option value="capitalize">Title Case</option>
+                <option value="lowercase">lowercase</option>
+              </select>
+            </div>
+            {font.family && (
+              <p className="text-sm mt-1.5 text-muted"
+                style={{ fontFamily: font.family, fontWeight: parseInt(font.weight), textTransform: font.transform }}>
+                Preview: The quick brown fox jumps over the lazy dog
+              </p>
             )}
           </div>
-          <div>
-            <label className="label block mb-1.5">Secondary font</label>
-            <input className={inputCls} value={form.font_secondary}
-              onChange={e => setForm(f => ({ ...f, font_secondary: e.target.value }))}
-              placeholder="Georgia" />
-            {form.font_secondary && (
-              <p className="text-xs mt-1" style={{ fontFamily: form.font_secondary }}>Preview: The quick brown fox</p>
-            )}
-          </div>
-        </div>
+        ))}
         <div>
           <label className="label block mb-1.5">Logo URL</label>
           <div className="flex items-center gap-3">

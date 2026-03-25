@@ -1,6 +1,6 @@
 import { TemplateProps, positionStyles } from './types'
 
-export default function TestimonialTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, bodyFont, bgColor, headlineSizeMul, bodySizeMul }: TemplateProps) {
+export default function TestimonialTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight, bodyTransform, bgColor, headlineSizeMul, bodySizeMul }: TemplateProps) {
   const pos = positionStyles(textPosition)
   const imgHeight = height * 0.5
 
@@ -15,12 +15,12 @@ export default function TestimonialTemplate({ imageUrl, headline, bodyText, ctaT
       </div>
       <div className="flex-1 flex flex-col" style={{ padding: '5%', justifyContent: pos.justifyContent, textAlign: pos.textAlign, background: bgColor }}>
         {bodyText && (
-          <div className="italic leading-snug mb-[3%]" style={{ fontSize: width * 0.036 * bodySizeMul, color: bodyColor }}>
+          <div className="italic leading-snug mb-[3%]" style={{ fontSize: width * 0.036 * bodySizeMul, color: bodyColor, fontWeight: parseInt(bodyWeight), textTransform: bodyTransform as any }}>
             &ldquo;{bodyText}&rdquo;
           </div>
         )}
         {headline && (
-          <div className="font-bold leading-tight mb-[2%]" style={{ fontSize: width * 0.028 * headlineSizeMul, color: headlineColor, fontFamily: headlineFont || undefined }}>
+          <div className="leading-tight mb-[2%]" style={{ fontSize: width * 0.028 * headlineSizeMul, color: headlineColor, fontFamily: headlineFont || undefined, fontWeight: parseInt(headlineWeight), textTransform: headlineTransform as any }}>
             {headline}
           </div>
         )}
