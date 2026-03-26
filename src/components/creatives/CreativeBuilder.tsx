@@ -354,10 +354,10 @@ export default function CreativeBuilder({
     const container = exportRef.current
     if (!container) throw new Error('Export container not available')
     // Make visible for html2canvas to capture
-    container.style.cssText = `position:fixed;top:0;left:0;width:${w}px;height:${h}px;z-index:9999;`
+    container.style.cssText = `position:fixed;top:0;left:0;width:${w}px;height:${h}px;z-index:9999;overflow:hidden;`
     container.innerHTML = ''
     const { createRoot } = await import('react-dom/client')
-    const wrapper = document.createElement('div'); wrapper.style.width = `${w}px`; wrapper.style.height = `${h}px`
+    const wrapper = document.createElement('div'); wrapper.style.cssText = `width:${w}px;height:${h}px;overflow:hidden;`
     container.appendChild(wrapper)
     const root = createRoot(wrapper)
     root.render(<Component {...props} width={w} height={h} />)
