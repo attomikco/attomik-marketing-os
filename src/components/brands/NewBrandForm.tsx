@@ -52,8 +52,8 @@ export default function NewBrandForm() {
             onChange={e => setForm(f => ({ ...f, website: e.target.value }))} />
         </div>
         <div>
-          <label className="label block mb-1.5">Industry</label>
-          <input className={inputCls} value={form.industry} placeholder="DTC Wine, DTC Coffee…"
+          <label className="label block mb-1.5">Product category</label>
+          <input className={inputCls} value={form.industry} placeholder="Wine, Coffee, Skincare…"
             onChange={e => setForm(f => ({ ...f, industry: e.target.value }))} />
         </div>
       </div>
