@@ -1,76 +1,92 @@
 import { TemplateProps, ff, px } from './types'
 
-const EDGE_PAD        = 48
-const AVATAR_SIZE     = 40
-const BRAND_NAME_SIZE = 18
-const SPONSORED_SIZE  = 13
-const HEADLINE_SIZE   = 44
-const BODY_SIZE       = 26
-const GRADIENT_HEIGHT = 0.40
+const EDGE_PAD        = 80
+const HEADLINE_SIZE   = 96
+const BODY_SIZE       = 30
+const CTA_SIZE        = 26
+const CTA_PAD_V       = 18
+const CTA_PAD_H       = 48
+const DIVIDER_W       = 48
+const DIVIDER_H       = 3
+const GAP_HEAD_DIV    = 28
+const GAP_DIV_BODY    = 22
+const GAP_BODY_CTA    = 36
+const BRAND_SIZE      = 16
 
-export default function UGCTemplate({
-  imageUrl, headline, bodyText, brandColor, brandName, width, height,
-  headlineFont, headlineWeight, headlineTransform, headlineColor,
+export default function MinimalTemplate({
+  headline, bodyText, ctaText, brandColor, brandName, width, height,
+  showCta, headlineFont, headlineWeight, headlineTransform, headlineColor,
   bodyFont, bodyWeight, bodyTransform, bodyColor, headlineSizeMul, bodySizeMul,
+  ctaColor, ctaFontColor, bgColor,
 }: TemplateProps) {
   const p = px(EDGE_PAD, width)
 
   return (
-    <div style={{ position: 'relative', overflow: 'hidden', width, height, fontFamily: ff(undefined) }}>
-      {imageUrl ? (
-        <img src={imageUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-      ) : (
-        <div style={{ position: 'absolute', inset: 0, background: '#1a1a1a' }} />
-      )}
-
+    <div style={{ position: 'relative', overflow: 'hidden', width, height, fontFamily: ff(bodyFont), background: bgColor || '#000' }}>
+      {/* Content */}
       <div style={{
-        position: 'absolute', left: 0, right: 0, bottom: 0,
-        height: Math.round(height * GRADIENT_HEIGHT),
-        background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 100%)',
-        pointerEvents: 'none' as const,
-      }} />
-
-      <div style={{
-        position: 'absolute', top: p, left: p, right: p,
-        display: 'flex', alignItems: 'center', gap: px(12, width),
+        position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' as const,
+        alignItems: 'center', justifyContent: 'center', padding: p,
+        textAlign: 'center' as const,
       }}>
-        <div style={{
-          width: px(AVATAR_SIZE, width), height: px(AVATAR_SIZE, width),
-          borderRadius: '50%', background: brandColor, flexShrink: 0,
-        }} />
-        <div>
-          <div style={{ fontSize: px(BRAND_NAME_SIZE, width), fontWeight: 600, color: '#fff', fontFamily: ff(headlineFont) }}>
-            {brandName}
-          </div>
-          <div style={{ fontSize: px(SPONSORED_SIZE, width), fontWeight: 400, color: 'rgba(255,255,255,0.55)' }}>
-            Sponsored
-          </div>
-        </div>
-      </div>
-
-      <div style={{ position: 'absolute', bottom: p, left: p, right: p, maxWidth: '85%' }}>
         {headline && (
           <div style={{
             fontSize: px(HEADLINE_SIZE, width) * headlineSizeMul,
-            fontWeight: parseInt(headlineWeight) || 700, lineHeight: 1.2,
+            fontWeight: parseInt(headlineWeight) || 800,
+            letterSpacing: '-0.03em', lineHeight: 1.05,
             color: headlineColor, fontFamily: ff(headlineFont),
             textTransform: headlineTransform as any,
-            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden',
+            maxWidth: '90%',
+            display: '-webkit-box', WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical' as const, overflow: 'hidden',
           }}>
             {headline}
           </div>
         )}
+
+        {headline && bodyText && (
+          <div style={{
+            width: px(DIVIDER_W, width), height: px(DIVIDER_H, width),
+            background: headlineColor, borderRadius: 2,
+            margin: `${px(GAP_HEAD_DIV, width)}px auto ${px(GAP_DIV_BODY, width)}px`,
+          }} />
+        )}
+
         {bodyText && (
           <div style={{
             fontSize: px(BODY_SIZE, width) * bodySizeMul,
-            fontWeight: parseInt(bodyWeight) || 400, lineHeight: 1.45,
-            color: bodyColor, fontFamily: ff(bodyFont),
-            textTransform: bodyTransform as any, marginTop: px(8, width),
-            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden',
+            fontWeight: parseInt(bodyWeight) || 400,
+            lineHeight: 1.55, color: bodyColor,
+            fontFamily: ff(bodyFont), textTransform: bodyTransform as any,
+            maxWidth: '80%',
+            display: '-webkit-box', WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical' as const, overflow: 'hidden',
           }}>
             {bodyText}
           </div>
         )}
+
+        {showCta && (
+          <div style={{
+            marginTop: px(GAP_BODY_CTA, width), display: 'inline-block',
+            background: ctaColor || brandColor, color: ctaFontColor || '#000',
+            fontSize: px(CTA_SIZE, width) * bodySizeMul, fontWeight: 700,
+            padding: `${px(CTA_PAD_V, width)}px ${px(CTA_PAD_H, width)}px`,
+            borderRadius: 6, fontFamily: ff(headlineFont),
+          }}>
+            {ctaText || 'Shop Now'}
+          </div>
+        )}
+      </div>
+
+      {/* Brand watermark */}
+      <div style={{
+        position: 'absolute', bottom: px(32, width), left: 0, right: 0,
+        textAlign: 'center' as const, fontSize: px(BRAND_SIZE, width),
+        fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const,
+        color: headlineColor, opacity: 0.3, fontFamily: ff(headlineFont),
+      }}>
+        {brandName}
       </div>
     </div>
   )
