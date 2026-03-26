@@ -1,5 +1,5 @@
 export type BrandStatus = 'active' | 'paused' | 'offboarded'
-export type CampaignType = 'email' | 'ad_copy' | 'social' | 'seo' | 'dtc_brief'
+export type CampaignType = 'email' | 'ad_copy' | 'social' | 'seo' | 'dtc_brief' | 'funnel'
 export type CampaignStatus = 'draft' | 'in_review' | 'approved' | 'scheduled' | 'sent' | 'archived'
 export type AssetType = 'guidelines' | 'html_template' | 'logo' | 'other'
 export type ImageTag = 'product' | 'lifestyle' | 'ugc' | 'background' | 'seasonal' | 'other'
@@ -121,7 +121,21 @@ export interface Campaign {
   from_email: string | null
   reply_to: string | null
   preview_text: string | null
+  angle: string | null
   brand?: Brand
+}
+
+export interface CampaignAsset {
+  id: string
+  created_at: string
+  campaign_id: string
+  brand_id: string
+  file_name: string
+  storage_path: string
+  mime_type: string | null
+  size_bytes: number | null
+  asset_type: 'creative' | 'other'
+  notes: string | null
 }
 
 export interface GeneratedContent {
@@ -163,6 +177,7 @@ export type Database = {
       campaigns: { Row: Campaign; Insert: Omit<Campaign, 'id' | 'created_at' | 'updated_at'>; Update: Partial<Campaign>; Relationships: Rel[] }
       generated_content: { Row: GeneratedContent; Insert: Omit<GeneratedContent, 'id' | 'created_at'>; Update: Partial<GeneratedContent>; Relationships: Rel[] }
       email_sends: { Row: EmailSend; Insert: Omit<EmailSend, 'id' | 'created_at'>; Update: Partial<EmailSend>; Relationships: Rel[] }
+      campaign_assets: { Row: CampaignAsset; Insert: Omit<CampaignAsset, 'id' | 'created_at'>; Update: Partial<CampaignAsset>; Relationships: Rel[] }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

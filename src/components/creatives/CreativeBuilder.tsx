@@ -59,9 +59,11 @@ const POSITIONS: { pos: TextPosition; i: number }[] = [
 export default function CreativeBuilder({
   brands,
   defaultBrandId,
+  campaignId,
 }: {
   brands: Brand[]
   defaultBrandId?: string
+  campaignId?: string
 }) {
   const supabase = createClient()
 
@@ -423,11 +425,33 @@ Nothing else.`,
     setExporting(true)
     try {
       const dataUrl = await renderAtFullSize(size.w, size.h, sizeId)
+      const fileName = `${brandSlug}-${templateId}-${sizeId}-${Date.now()}.png`
+
+      // Download locally
       const link = document.createElement('a')
-      link.download = `${brandSlug}-${templateId}-${sizeId}-${Date.now()}.png`
+      link.download = fileName
       link.href = dataUrl
       link.click()
-      setExportToast('Downloaded creative')
+
+      // Also save to campaign if scoped
+      if (campaignId && brand) {
+        const base64 = dataUrl.split(',')[1]
+        const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+        const blob = new Blob([bytes], { type: 'image/png' })
+        const path = `${campaignId}/${fileName}`
+        await supabase.storage.from('campaign-assets').upload(path, blob, { contentType: 'image/png' })
+        await supabase.from('campaign_assets').insert({
+          campaign_id: campaignId,
+          brand_id: brand.id,
+          file_name: fileName,
+          storage_path: path,
+          mime_type: 'image/png',
+          size_bytes: blob.size,
+          asset_type: 'creative',
+        })
+      }
+
+      setExportToast(campaignId ? 'Downloaded & saved to campaign' : 'Downloaded creative')
       setTimeout(() => setExportToast(null), 3000)
     } catch (err) {
       console.error('Export failed:', err)
