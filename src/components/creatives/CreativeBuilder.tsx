@@ -173,7 +173,7 @@ export default function CreativeBuilder({
       const id = 'brand-fonts-link'
       let link = document.getElementById(id) as HTMLLinkElement | null
       if (!link) { link = document.createElement('link'); link.id = id; link.rel = 'stylesheet'; document.head.appendChild(link) }
-      link.href = `https://fonts.googleapis.com/css2?family=${families}&display=swap`
+      link.href = `https://fonts.googleapis.com/css2?family=${families}:wght@300;400;500;600;700;800;900&display=swap`
     }
     // Inject custom @font-face CSS if present
     const styleId = 'brand-custom-fonts'
