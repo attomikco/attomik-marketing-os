@@ -109,7 +109,7 @@ export default function CreativeBuilder({
   const [bgColor, setBgColor] = useState<string>('#000000')
   const [headlineSizeMul, setHeadlineSizeMul] = useState(1)
   const [bodySizeMul, setBodySizeMul] = useState(1)
-  const [showOverlay, setShowOverlay] = useState(true)
+  const [showOverlay, setShowOverlay] = useState(false)
   const [overlayOpacity, setOverlayOpacity] = useState(10)
   const [imagePosition, setImagePosition] = useState<string>('center')
   const [textBanner, setTextBanner] = useState<'none' | 'top' | 'bottom'>('none')
@@ -228,7 +228,7 @@ export default function CreativeBuilder({
     setCtaText(nb?.default_cta || 'Shop Now')
     // Reset style to defaults on brand switch
     setHeadlineSizeMul(1); setBodySizeMul(1)
-    setShowOverlay(true); setOverlayOpacity(10)
+    setShowOverlay(false); setOverlayOpacity(10)
     setTextBanner('none'); setTextPosition('bottom-left')
     setImagePosition('center')
     setActiveVariation(null); setActiveDraft(null)
