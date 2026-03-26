@@ -336,7 +336,11 @@ export default function CreativeBuilder({
     try {
       const templateEl = previewRef.current?.querySelector('[data-template]') as HTMLElement | null
       if (!templateEl) throw new Error('Template element not found')
+      // Remove scale transform so html2canvas captures at full size
+      const savedTransform = templateEl.style.transform
+      templateEl.style.transform = 'none'
       const dataUrl = await captureElement(templateEl, size.w, size.h)
+      templateEl.style.transform = savedTransform
       const fileName = `${brandSlug}-${templateId}-${sizeId}-${Date.now()}.png`
       const link = document.createElement('a'); link.download = fileName; link.href = dataUrl; link.click()
       if (campaignId && brand) {
