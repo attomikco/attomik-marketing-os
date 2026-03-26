@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { BrandImage, FontStyle } from '@/types'
 import { ChevronDown, ImageIcon, Check, Eye, EyeOff, Sparkles, Loader2, Bookmark, X, Download } from 'lucide-react'
-import { toPng } from 'html-to-image'
+import html2canvas from 'html2canvas'
 import JSZip from 'jszip'
 import { TextPosition, ff } from './templates/types'
 import OverlayTemplate from './templates/OverlayTemplate'
@@ -313,18 +313,15 @@ export default function CreativeBuilder({
     container.appendChild(wrapper)
     const root = createRoot(wrapper)
     root.render(<TemplateComponent {...templateProps} width={w} height={h} />)
-    // Wait for React to paint + images to load
-    await new Promise(r => setTimeout(r, 200))
+    await new Promise(r => setTimeout(r, 300))
     const imgs = container.querySelectorAll('img')
     await Promise.all(Array.from(imgs).map(img => {
       if (img.complete && img.naturalWidth > 0) return Promise.resolve()
       return new Promise(r => { img.onload = r; img.onerror = r })
     }))
     await new Promise(r => setTimeout(r, 100))
-    // html-to-image needs multiple passes for fonts & images
-    const opts = { width: w, height: h, pixelRatio: 1, cacheBust: true, skipAutoScale: true }
-    await toPng(container, opts).catch(() => {}) // warm-up pass
-    const dataUrl = await toPng(container, opts)
+    const canvas = await html2canvas(container, { width: w, height: h, scale: 1, useCORS: true, allowTaint: true, logging: false })
+    const dataUrl = canvas.toDataURL('image/png')
     root.unmount()
     container.innerHTML = ''
     return dataUrl
@@ -379,13 +376,12 @@ export default function CreativeBuilder({
         container.appendChild(wrapper)
         const root = createRoot(wrapper)
         root.render(<VComp {...props} />)
-        await new Promise(r => setTimeout(r, 200))
+        await new Promise(r => setTimeout(r, 300))
         const imgs = container.querySelectorAll('img')
         await Promise.all(Array.from(imgs).map(img => img.complete && img.naturalWidth > 0 ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r })))
         await new Promise(r => setTimeout(r, 100))
-        const opts = { width: size.w, height: size.h, pixelRatio: 1, cacheBust: true, skipAutoScale: true }
-        await toPng(container, opts).catch(() => {})
-        const dataUrl = await toPng(container, opts)
+        const canvas = await html2canvas(container, { width: size.w, height: size.h, scale: 1, useCORS: true, allowTaint: true, logging: false })
+        const dataUrl = canvas.toDataURL('image/png')
         root.unmount()
         container.innerHTML = ''
         zip.file(`${brandSlug}-${v.templateId}-${sizeId}-${i + 1}.png`, dataUrl.split(',')[1], { base64: true })
