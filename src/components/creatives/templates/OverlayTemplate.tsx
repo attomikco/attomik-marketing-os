@@ -69,7 +69,7 @@ export default function OverlayTemplate({
       <div style={{
         position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' as const,
         justifyContent: pos.justifyContent,
-        padding: `${isTop && isTall ? p * 3 : p}px ${p}px ${p}px`,
+        padding: `${isTop && isTall ? p * 3 : p}px ${p}px ${!showCta && !isTop ? p * 2 : p}px`,
       }}>
         <div style={{ textAlign: pos.textAlign, maxWidth: '85%', alignSelf: pos.alignItems === 'flex-end' ? 'flex-end' : pos.alignItems === 'center' ? 'center' : 'flex-start' }}>
           {headline && (
