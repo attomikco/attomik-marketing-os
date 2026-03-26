@@ -1,5 +1,7 @@
 import { TemplateProps, ff, px } from './types'
 
+const NAMES = ['Alex S.', 'Jordan M.', 'Taylor R.', 'Morgan K.', 'Casey L.', 'Riley P.', 'Jamie W.', 'Quinn D.', 'Avery T.', 'Skyler B.']
+
 const IMAGE_RATIO     = 0.62
 const PANEL_PAD_H     = 56
 const PANEL_PAD_V     = 28
@@ -21,6 +23,8 @@ export default function TestimonialTemplate({
   const padH = px(PANEL_PAD_H, width)
   const padV = px(PANEL_PAD_V, width)
   const starColor = ctaColor || brandColor
+  const nameIndex = (bodyText || '').split('').reduce((sum, c) => sum + c.charCodeAt(0), 0) % NAMES.length
+  const reviewerName = NAMES[nameIndex]
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column' as const, overflow: 'hidden', width, height, fontFamily: ff(bodyFont) }}>
@@ -56,14 +60,14 @@ export default function TestimonialTemplate({
           </div>
         )}
 
-        {headline && (
+        {bodyText && (
           <div style={{ marginTop: px(18, width) }}>
             <div style={{
               fontSize: px(NAME_SIZE, width) * headlineSizeMul,
               fontWeight: 600, color: bodyColor,
-              fontFamily: ff(bodyFont), textTransform: bodyTransform as any, lineHeight: 1.2,
+              fontFamily: ff(bodyFont), lineHeight: 1.2,
             }}>
-              {headline}
+              {reviewerName}
             </div>
             <div style={{ fontSize: px(HANDLE_SIZE, width), fontWeight: 400, color: '#888', fontFamily: ff(bodyFont), marginTop: 3 }}>
               Verified buyer
