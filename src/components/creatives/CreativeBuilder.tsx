@@ -324,13 +324,15 @@ export default function CreativeBuilder({
   function loadDraft(i: number) { const d = savedDrafts[i]; if (!d) return; setHeadline(d.headline); setBodyText(d.body); setCtaText(d.cta); setSelectedImageId(d.imageId); setTemplateId(d.templateId); setSizeId(d.sizeId); applyStyle(d.style); setActiveDraft(i); setActiveVariation(null) }
   function removeDraft(i: number) { setSavedDrafts(prev => prev.filter((_, j) => j !== i)); if (activeDraft === i) setActiveDraft(null); else if (activeDraft !== null && activeDraft > i) setActiveDraft(activeDraft - 1) }
 
-  // ── Auto-sync edits back to active variation ──────────────────────
+  // ── Auto-sync edits back to active variation/draft ─────────────────
   useEffect(() => {
-    if (activeVariation === null) return
-    setVariations(prev => prev.map((v, i) => i === activeVariation
-      ? { ...v, headline, body: bodyText, cta: ctaText, imageId: selectedImageId, templateId, style: captureStyle() }
-      : v
-    ))
+    const snapshot = { headline, body: bodyText, cta: ctaText, imageId: selectedImageId, templateId, style: captureStyle() }
+    if (activeVariation !== null) {
+      setVariations(prev => prev.map((v, i) => i === activeVariation ? { ...v, ...snapshot } : v))
+    }
+    if (activeDraft !== null) {
+      setSavedDrafts(prev => prev.map((d, i) => i === activeDraft ? { ...d, ...snapshot } : d))
+    }
   }, [headline, bodyText, ctaText, selectedImageId, templateId, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight, bodyTransform, bgColor, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity, textBanner, textBannerColor, textPosition, showCta, imagePosition])
 
   // ── Export ─────────────────────────────────────────────────────────
