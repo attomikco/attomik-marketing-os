@@ -10,7 +10,7 @@ const EDGE_PAD        = 64
 const GRADIENT_HEIGHT = 0.50
 const DIVIDER_W       = 48
 const DIVIDER_H       = 3
-const GAP_HEADLINE_DIVIDER = 20
+const GAP_HEADLINE_DIVIDER = 28
 const GAP_DIVIDER_BODY     = 16
 const GAP_BODY_CTA         = 28
 
