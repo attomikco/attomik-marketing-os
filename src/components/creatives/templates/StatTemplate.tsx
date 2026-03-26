@@ -1,39 +1,78 @@
-import { TemplateProps, positionStyles, bannerStyle } from './types'
+import { TemplateProps, TEXT_SHADOW, ff } from './types'
 
-export default function StatTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight, bodyTransform, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity, textBanner, textBannerColor, ctaColor, ctaFontColor }: TemplateProps) {
-  const pos = positionStyles(textPosition)
-  const banner = bannerStyle(textBanner, textBannerColor, height)
+export default function StatTemplate({
+  imageUrl, headline, bodyText, brandColor, brandName, width, height,
+  headlineFont, headlineWeight, headlineTransform,
+  bodyFont, bodyWeight, bodyTransform, headlineSizeMul, bodySizeMul,
+  headlineColor,
+}: TemplateProps) {
+  const pad = Math.max(width * 0.04, 32)
+  // Use brand color for the big stat number, fall back to accent green
+  const statColor = (headlineColor === '#ffffff' || headlineColor === '#fff') ? brandColor : headlineColor
 
   return (
-    <div className="relative overflow-hidden flex flex-col" style={{ width, height, fontFamily: bodyFont || 'Barlow, sans-serif', justifyContent: pos.justifyContent }}>
+    <div style={{ position: 'relative', overflow: 'hidden', width, height, fontFamily: ff(bodyFont) }}>
+      {/* Full-bleed image */}
       {imageUrl ? (
-        <img src={imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <img src={imageUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
       ) : (
-        <div className="absolute inset-0 bg-[#e0e0e0]" />
+        <div style={{ position: 'absolute', inset: 0, background: '#e0e0e0' }} />
       )}
-      {banner && <div style={banner} />}
-      <div className="relative" style={{ padding: '8%', textAlign: pos.textAlign }}>
-        {showOverlay && (
-          <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${overlayOpacity})` }} />
+
+      {/* Dark overlay */}
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }} />
+
+      {/* Centered content */}
+      <div style={{
+        position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' as const,
+        alignItems: 'center', justifyContent: 'center', padding: pad, textAlign: 'center' as const,
+      }}>
+        {/* Big stat number */}
+        {headline && (
+          <div style={{
+            fontSize: width * 0.072 * headlineSizeMul,
+            fontWeight: parseInt(headlineWeight) || 800,
+            letterSpacing: '-0.03em',
+            lineHeight: 1,
+            color: statColor || brandColor,
+            textShadow: TEXT_SHADOW,
+            fontFamily: ff(headlineFont),
+            textTransform: headlineTransform as any,
+          }}>
+            {headline}
+          </div>
         )}
-        <div className="relative z-10">
-          {headline && (
-            <div className="leading-none" style={{ fontSize: width * 0.12 * headlineSizeMul, color: headlineColor === '#ffffff' ? brandColor : headlineColor, fontFamily: headlineFont || undefined, fontWeight: parseInt(headlineWeight), textTransform: headlineTransform as any }}>
-              {headline}
-            </div>
-          )}
-          {bodyText && (
-            <div className="leading-snug mt-[3%]" style={{ fontSize: width * 0.035 * bodySizeMul, color: bodyColor, opacity: 0.9, fontWeight: parseInt(bodyWeight), textTransform: bodyTransform as any }}>
-              {bodyText}
-            </div>
-          )}
-          {showCta && (
-            <div className="inline-block font-bold rounded-[6px] mt-[5%]"
-              style={{ background: ctaColor, color: ctaFontColor, fontSize: width * 0.028 * bodySizeMul, padding: `${width * 0.012}px ${width * 0.03}px` }}>
-              {ctaText || 'CTA'}
-            </div>
-          )}
-        </div>
+
+        {/* Stat label */}
+        {bodyText && (
+          <div style={{
+            fontSize: width * 0.017 * bodySizeMul,
+            fontWeight: 600,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase' as const,
+            lineHeight: 1.4,
+            color: '#fff',
+            textShadow: TEXT_SHADOW,
+            fontFamily: ff(bodyFont),
+            marginTop: width * 0.015,
+          }}>
+            {bodyText}
+          </div>
+        )}
+      </div>
+
+      {/* Brand name — bottom center */}
+      <div style={{
+        position: 'absolute', bottom: pad, left: 0, right: 0,
+        textAlign: 'center' as const,
+        fontSize: width * 0.012,
+        fontWeight: 600,
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase' as const,
+        color: 'rgba(255,255,255,0.5)',
+        fontFamily: ff(headlineFont),
+      }}>
+        {brandName}
       </div>
     </div>
   )

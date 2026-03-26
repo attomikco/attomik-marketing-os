@@ -6,6 +6,7 @@ export interface TemplateProps {
   bodyText: string
   ctaText: string
   brandColor: string
+  brandName: string
   width: number
   height: number
   textPosition: TextPosition
@@ -31,6 +32,9 @@ export interface TemplateProps {
   ctaFontColor: string
 }
 
+/** Shared text shadow for text over images */
+export const TEXT_SHADOW = '0 1px 3px rgba(0,0,0,0.4)'
+
 /** Banner style for text bar at top or bottom */
 export function bannerStyle(banner: 'none' | 'top' | 'bottom', bannerColor: string, height: number): React.CSSProperties | null {
   if (banner === 'none') return null
@@ -48,4 +52,9 @@ export function positionStyles(pos: TextPosition) {
   const v = pos.startsWith('top') ? 'flex-start' : pos.startsWith('bottom') ? 'flex-end' : 'center'
   const h = pos.endsWith('left') ? 'flex-start' : pos.endsWith('right') ? 'flex-end' : 'center'
   return { justifyContent: v, alignItems: h, textAlign: (h === 'center' ? 'center' : h === 'flex-end' ? 'right' : 'left') as 'left' | 'center' | 'right' }
+}
+
+/** Resolve font family with Barlow fallback */
+export function ff(font: string | undefined) {
+  return font ? `${font}, Barlow, sans-serif` : 'Barlow, sans-serif'
 }

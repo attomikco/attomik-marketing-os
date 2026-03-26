@@ -1,47 +1,80 @@
-import { TemplateProps, positionStyles, bannerStyle } from './types'
+import { TemplateProps, TEXT_SHADOW, ff } from './types'
 
-export default function UGCTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight, bodyTransform, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity, textBanner, textBannerColor, ctaColor, ctaFontColor }: TemplateProps) {
-  const pos = positionStyles(textPosition)
-  const isBottom = textPosition.startsWith('bottom')
-  const banner = bannerStyle(textBanner, textBannerColor, height)
+export default function UGCTemplate({
+  imageUrl, headline, bodyText, brandName, width, height,
+  headlineFont, headlineWeight, headlineTransform,
+  bodyFont, bodyWeight, bodyTransform, headlineSizeMul, bodySizeMul,
+}: TemplateProps) {
+  const pad = Math.max(width * 0.04, 32)
 
   return (
-    <div className="relative overflow-hidden" style={{ width, height, fontFamily: bodyFont || 'Barlow, sans-serif' }}>
+    <div style={{ position: 'relative', overflow: 'hidden', width, height, fontFamily: ff(bodyFont) }}>
+      {/* Full-bleed image */}
       {imageUrl ? (
-        <img src={imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <img src={imageUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
       ) : (
-        <div className="absolute inset-0 bg-[#e0e0e0]" />
+        <div style={{ position: 'absolute', inset: 0, background: '#e0e0e0' }} />
       )}
-      {banner && <div style={banner} />}
-      <div className="absolute inset-0 flex flex-col" style={{ justifyContent: pos.justifyContent, padding: '5%' }}>
-        <div className="relative" style={{ textAlign: pos.textAlign }}>
-          {showOverlay && (
-            <div className="absolute inset-0 -m-[2%] rounded-[8px]" style={{ background: `rgba(0,0,0,${overlayOpacity})` }} />
-          )}
-          <div className="relative">
-            {headline && (
-              <div className="inline-block leading-tight rounded-[4px]"
-                style={{ fontSize: width * 0.035 * headlineSizeMul, color: headlineColor, fontFamily: headlineFont || undefined, fontWeight: parseInt(headlineWeight), textTransform: headlineTransform as any }}>
-                {headline}
-              </div>
-            )}
-            {bodyText && (
-              <div className="inline-block leading-snug rounded-[4px] mt-[1.5%]"
-                style={{ fontSize: width * 0.026 * bodySizeMul, color: bodyColor, fontWeight: parseInt(bodyWeight), textTransform: bodyTransform as any }}>
-                {bodyText}
-              </div>
-            )}
-          </div>
-        </div>
+
+      {/* Subtle bottom gradient for text readability */}
+      <div style={{
+        position: 'absolute', left: 0, right: 0, bottom: 0,
+        height: height * 0.35,
+        background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.45) 100%)',
+      }} />
+
+      {/* Brand pill — top left */}
+      <div style={{
+        position: 'absolute', top: pad, left: pad,
+        background: '#fff',
+        borderRadius: 20,
+        padding: `${width * 0.005}px ${width * 0.012}px`,
+        fontSize: width * 0.013,
+        fontWeight: 600,
+        color: '#000',
+        fontFamily: ff(headlineFont),
+        boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+      }}>
+        {brandName}
       </div>
-      {showCta && (
-        <div className="absolute" style={{ [isBottom ? 'top' : 'bottom']: '5%', right: '5%' }}>
-          <div className="font-bold rounded-[6px]"
-            style={{ background: ctaColor, color: ctaFontColor, fontSize: width * 0.026 * bodySizeMul, padding: `${width * 0.01}px ${width * 0.025}px` }}>
-            {ctaText || 'CTA'}
+
+      {/* Headline — bottom left, organic feel */}
+      <div style={{
+        position: 'absolute', bottom: pad, left: pad, right: pad,
+        maxWidth: '80%',
+      }}>
+        {headline && (
+          <div style={{
+            fontSize: width * 0.02 * headlineSizeMul,
+            fontWeight: parseInt(headlineWeight) || 700,
+            lineHeight: 1.3,
+            color: '#fff',
+            textShadow: TEXT_SHADOW,
+            fontFamily: ff(headlineFont),
+            textTransform: headlineTransform as any,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical' as const,
+            overflow: 'hidden',
+          }}>
+            {headline}
           </div>
-        </div>
-      )}
+        )}
+        {bodyText && (
+          <div style={{
+            fontSize: width * 0.013 * bodySizeMul,
+            fontWeight: parseInt(bodyWeight) || 400,
+            lineHeight: 1.5,
+            color: 'rgba(255,255,255,0.7)',
+            textShadow: TEXT_SHADOW,
+            fontFamily: ff(bodyFont),
+            textTransform: bodyTransform as any,
+            marginTop: width * 0.005,
+          }}>
+            {bodyText}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

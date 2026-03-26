@@ -1,33 +1,115 @@
-import { TemplateProps, positionStyles } from './types'
+import { TemplateProps, ff } from './types'
 
-export default function TestimonialTemplate({ imageUrl, headline, bodyText, ctaText, brandColor, width, height, textPosition, showCta, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight, bodyTransform, bgColor, headlineSizeMul, bodySizeMul, ctaColor, ctaFontColor }: TemplateProps) {
-  const pos = positionStyles(textPosition)
-  const imgHeight = height * 0.5
+export default function TestimonialTemplate({
+  imageUrl, headline, bodyText, ctaText, brandColor, brandName, width, height,
+  showCta, headlineFont, headlineWeight, headlineTransform,
+  bodyFont, bodyWeight, bodyTransform, bgColor, headlineSizeMul, bodySizeMul,
+  headlineColor, bodyColor, ctaColor, ctaFontColor,
+}: TemplateProps) {
+  const imgH = height * 0.55
+  const panelH = height - imgH
+  const pad = Math.max(width * 0.05, 32)
+  const starSize = width * 0.018
 
   return (
-    <div className="flex flex-col overflow-hidden" style={{ width, height, fontFamily: bodyFont || 'Barlow, sans-serif' }}>
-      <div className="relative flex-shrink-0" style={{ height: imgHeight }}>
+    <div style={{ display: 'flex', flexDirection: 'column' as const, overflow: 'hidden', width, height, fontFamily: ff(bodyFont) }}>
+      {/* Image — top 55% */}
+      <div style={{ position: 'relative', height: imgH, flexShrink: 0 }}>
         {imageUrl ? (
-          <img src={imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={imageUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
-          <div className="absolute inset-0 bg-[#e0e0e0]" />
+          <div style={{ position: 'absolute', inset: 0, background: '#e0e0e0' }} />
         )}
       </div>
-      <div className="flex-1 flex flex-col items-center" style={{ padding: '5%', justifyContent: 'center', textAlign: 'center', background: bgColor }}>
+
+      {/* White panel — bottom 45% */}
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'column' as const, position: 'relative',
+        background: bgColor || '#ffffff', padding: pad, paddingTop: pad * 0.8,
+        justifyContent: 'center',
+      }}>
+        {/* Large quotation mark */}
+        <div style={{
+          position: 'absolute', top: pad * 0.4, left: pad,
+          fontSize: width * 0.06,
+          fontWeight: 800,
+          lineHeight: 1,
+          color: brandColor,
+          fontFamily: ff(headlineFont),
+          userSelect: 'none' as const,
+        }}>
+          &ldquo;
+        </div>
+
+        {/* Star rating */}
+        <div style={{ display: 'flex', gap: starSize * 0.2, marginBottom: pad * 0.3 }}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <svg key={i} width={starSize} height={starSize} viewBox="0 0 20 20" fill={brandColor}>
+              <path d="M10 1l2.39 4.84L17.82 6.9l-3.91 3.81.92 5.39L10 13.47l-4.83 2.63.92-5.39L2.18 6.9l5.43-.79L10 1z" />
+            </svg>
+          ))}
+        </div>
+
+        {/* Quote text */}
         {bodyText && (
-          <div className="italic leading-snug mb-[3%]" style={{ fontSize: width * 0.036 * bodySizeMul, color: bodyColor, fontWeight: parseInt(bodyWeight), textTransform: bodyTransform as any }}>
-            &ldquo;{bodyText}&rdquo;
+          <div style={{
+            fontSize: width * 0.016 * bodySizeMul,
+            fontWeight: 600,
+            fontStyle: 'italic',
+            lineHeight: 1.5,
+            color: bodyColor || '#000',
+            fontFamily: ff(bodyFont),
+            textTransform: bodyTransform as any,
+            maxWidth: '90%',
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical' as const,
+            overflow: 'hidden',
+          }}>
+            {bodyText}
           </div>
         )}
+
+        {/* Attribution */}
         {headline && (
-          <div className="leading-tight mb-[2%]" style={{ fontSize: width * 0.028 * headlineSizeMul, color: headlineColor, fontFamily: headlineFont || undefined, fontWeight: parseInt(headlineWeight), textTransform: headlineTransform as any }}>
-            {headline}
+          <div style={{ marginTop: pad * 0.35 }}>
+            <div style={{
+              fontSize: width * 0.014 * headlineSizeMul,
+              fontWeight: parseInt(headlineWeight) || 700,
+              letterSpacing: '-0.02em',
+              color: headlineColor || '#000',
+              fontFamily: ff(headlineFont),
+              textTransform: headlineTransform as any,
+            }}>
+              {headline}
+            </div>
+            <div style={{
+              fontSize: width * 0.012,
+              fontWeight: 400,
+              color: '#999',
+              marginTop: 2,
+              fontFamily: ff(bodyFont),
+            }}>
+              Verified buyer
+            </div>
           </div>
         )}
+
+        {/* CTA */}
         {showCta && (
-          <div className="inline-block font-bold rounded-[6px]"
-            style={{ fontSize: width * 0.024 * bodySizeMul, background: ctaColor, color: ctaFontColor, padding: `${width * 0.01}px ${width * 0.025}px` }}>
-            {ctaText || 'CTA'}
+          <div style={{
+            marginTop: pad * 0.4,
+            background: ctaColor || brandColor,
+            color: ctaFontColor || '#000',
+            fontSize: width * 0.014 * bodySizeMul,
+            fontWeight: 700,
+            padding: `${width * 0.012}px ${width * 0.028}px`,
+            borderRadius: 6,
+            textAlign: 'center' as const,
+            alignSelf: 'flex-start',
+            fontFamily: ff(headlineFont),
+          }}>
+            {ctaText || 'Shop Now'}
           </div>
         )}
       </div>

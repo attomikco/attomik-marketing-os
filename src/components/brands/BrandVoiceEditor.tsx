@@ -56,7 +56,7 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
     setSaving(true)
     setError(null)
 
-    // Core fields that always exist
+    // Core fields (columns that always exist)
     const { error: err } = await supabase.from('brands').update({
       brand_voice:     form.brand_voice || null,
       target_audience: form.target_audience || null,
@@ -66,6 +66,7 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
       primary_color:   form.primary_color || null,
       secondary_color: form.secondary_color || null,
       accent_color:    form.accent_color || null,
+      logo_url:        form.logo_url || null,
       font_primary:    fontHeading.family ? `${fontHeading.family}|${fontHeading.weight}|${fontHeading.transform}` : null,
       font_secondary:  fontBody.family ? `${fontBody.family}|${fontBody.weight}|${fontBody.transform}` : null,
     }).eq('id', brand.id)
@@ -76,15 +77,20 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
       return
     }
 
-    // Newer columns — save separately so core save isn't blocked by schema cache
-    await supabase.from('brands').update({
-      logo_url:          form.logo_url || null,
+    // Newer columns — separate call so core save works even if migration hasn't been applied yet
+    const { error: err2 } = await supabase.from('brands').update({
       accent_font_color: form.accent_font_color || null,
       heading_color:     form.heading_color || null,
       body_color:        form.body_color || null,
       font_heading:      fontHeading.family ? fontHeading : null,
       font_body:         fontBody.family ? fontBody : null,
     }).eq('id', brand.id)
+
+    if (err2) {
+      setError('Colors saved, but text color columns are missing — run the Supabase migration.')
+      setSaving(false)
+      return
+    }
 
     setSaving(false)
     setSaved(true)

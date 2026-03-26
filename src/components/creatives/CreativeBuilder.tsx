@@ -1,8 +1,10 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { BrandImage, FontStyle } from '@/types'
-import { ChevronDown, ImageIcon, Check, Eye, EyeOff, Sparkles, Loader2, Bookmark, X } from 'lucide-react'
+import { ChevronDown, ImageIcon, Check, Eye, EyeOff, Sparkles, Loader2, Bookmark, X, Download } from 'lucide-react'
+import { toPng } from 'html-to-image'
+import JSZip from 'jszip'
 import { TextPosition } from './templates/types'
 import OverlayTemplate from './templates/OverlayTemplate'
 import SplitTemplate from './templates/SplitTemplate'
@@ -99,8 +101,12 @@ export default function CreativeBuilder({
   const [activeVariation, setActiveVariation] = useState<number | null>(null)
   const [savedDrafts, setSavedDrafts] = useState<Variation[]>([])
   const [activeDraft, setActiveDraft] = useState<number | null>(null)
+  const [exporting, setExporting] = useState(false)
+  const [exportingAll, setExportingAll] = useState(false)
+  const [exportToast, setExportToast] = useState<string | null>(null)
 
   const previewRef = useRef<HTMLDivElement>(null)
+  const exportRef = useRef<HTMLDivElement>(null)
 
   const brand = brands.find(b => b.id === brandId)
   const brandColor = brand?.primary_color || '#00ff97'
@@ -346,6 +352,111 @@ Nothing else.`,
 
   const selectedImage = images.find(i => i.id === selectedImageId)
   const imageUrl = selectedImage ? getPublicUrl(selectedImage.storage_path) : null
+  const brandSlug = brand?.slug || brand?.name?.toLowerCase().replace(/\s+/g, '-') || 'creative'
+
+  const renderAtFullSize = useCallback(async (w: number, h: number, sLabel: string): Promise<string> => {
+    const container = exportRef.current
+    if (!container) throw new Error('Export container not available')
+
+    // Render template at full resolution into the hidden div
+    container.style.width = `${w}px`
+    container.style.height = `${h}px`
+    container.innerHTML = ''
+
+    const { createRoot } = await import('react-dom/client')
+    const wrapper = document.createElement('div')
+    wrapper.style.width = `${w}px`
+    wrapper.style.height = `${h}px`
+    container.appendChild(wrapper)
+
+    await new Promise<void>((resolve) => {
+      const root = createRoot(wrapper)
+      root.render(
+        <TemplateComponent
+          imageUrl={imageUrl}
+          headline={headline}
+          bodyText={bodyText}
+          ctaText={ctaText}
+          brandColor={brandColor}
+          brandName={brand?.name || ''}
+          width={w}
+          height={h}
+          textPosition={textPosition}
+          showCta={showCta}
+          headlineColor={headlineColor}
+          bodyColor={bodyColor}
+          headlineFont={headlineFont}
+          headlineWeight={headlineWeight}
+          headlineTransform={headlineTransform}
+          bodyFont={bodyFont}
+          bodyWeight={bodyWeight}
+          bodyTransform={bodyTransform}
+          bgColor={bgColor}
+          headlineSizeMul={headlineSizeMul}
+          bodySizeMul={bodySizeMul}
+          showOverlay={showOverlay}
+          overlayOpacity={overlayOpacity / 100}
+          textBanner={textBanner}
+          textBannerColor={textBannerColor}
+          ctaColor={ctaColor}
+          ctaFontColor={ctaFontColor}
+        />
+      )
+      // Give React + images time to render
+      setTimeout(() => { resolve() }, 300)
+    })
+
+    const dataUrl = await toPng(container, {
+      width: w,
+      height: h,
+      pixelRatio: 1,
+      cacheBust: true,
+    })
+    container.innerHTML = ''
+    return dataUrl
+  }, [TemplateComponent, imageUrl, headline, bodyText, ctaText, brandColor, textPosition, showCta,
+      headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight,
+      bodyTransform, bgColor, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity, textBanner,
+      textBannerColor, ctaColor, ctaFontColor])
+
+  async function exportPng() {
+    setExporting(true)
+    try {
+      const dataUrl = await renderAtFullSize(size.w, size.h, sizeId)
+      const link = document.createElement('a')
+      link.download = `${brandSlug}-${templateId}-${sizeId}-${Date.now()}.png`
+      link.href = dataUrl
+      link.click()
+      setExportToast('Downloaded creative')
+      setTimeout(() => setExportToast(null), 3000)
+    } catch (err) {
+      console.error('Export failed:', err)
+    }
+    setExporting(false)
+  }
+
+  async function exportAllSizes() {
+    setExportingAll(true)
+    try {
+      const zip = new JSZip()
+      for (const s of SIZES) {
+        const dataUrl = await renderAtFullSize(s.w, s.h, s.id)
+        const base64 = dataUrl.split(',')[1]
+        zip.file(`${brandSlug}-${templateId}-${s.id}-${s.w}x${s.h}.png`, base64, { base64: true })
+      }
+      const blob = await zip.generateAsync({ type: 'blob' })
+      const link = document.createElement('a')
+      link.download = `${brandSlug}-${templateId}-all-sizes-${Date.now()}.zip`
+      link.href = URL.createObjectURL(blob)
+      link.click()
+      URL.revokeObjectURL(link.href)
+      setExportToast(`Downloaded ${SIZES.length} creatives`)
+      setTimeout(() => setExportToast(null), 3000)
+    } catch (err) {
+      console.error('Export all failed:', err)
+    }
+    setExportingAll(false)
+  }
 
   // Scale preview to fit container
   const maxPreviewW = 480
@@ -565,9 +676,24 @@ Nothing else.`,
         <div className="lg:sticky lg:top-4 space-y-4">
           <div className="bg-paper border border-border rounded-card p-5">
             <div className="flex items-center justify-between mb-3">
-              <div className="label">Preview</div>
               <div className="flex items-center gap-3">
+                <div className="label">Preview</div>
                 <span className="text-xs text-muted">{template.label} &middot; {size.w}&times;{size.h}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={exportPng} disabled={exporting || exportingAll}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-pill border border-border transition-all hover:border-ink disabled:opacity-40"
+                  style={{ color: '#000' }}>
+                  {exporting ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+                  PNG
+                </button>
+                <button onClick={exportAllSizes} disabled={exporting || exportingAll}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-pill transition-all hover:opacity-80 disabled:opacity-40"
+                  style={{ background: '#000', color: '#00ff97' }}>
+                  {exportingAll ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+                  All sizes
+                </button>
+                <span className="w-px h-4 bg-border" />
                 {batchGenerating ? (
                   <button onClick={stopBatch}
                     className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-pill bg-ink text-paper hover:opacity-80 transition-opacity">
@@ -606,6 +732,7 @@ Nothing else.`,
                     bodyText={bodyText}
                     ctaText={ctaText}
                     brandColor={brandColor}
+                    brandName={brand?.name || ''}
                     width={size.w}
                     height={size.h}
                     textPosition={textPosition}
@@ -649,7 +776,7 @@ Nothing else.`,
                         className="w-full rounded-[4px] overflow-hidden border-2 transition-all hover:opacity-90"
                         style={{ borderColor: activeDraft === i ? '#00ff97' : '#e0e0e0', aspectRatio: `${size.w}/${size.h}` }}>
                         <div style={{ width: size.w, height: size.h, transform: `scale(${thumbScale})`, transformOrigin: 'top left' }}>
-                          <DTemplate imageUrl={dImgUrl} headline={d.headline} bodyText={d.body} ctaText={d.cta} brandColor={brandColor}
+                          <DTemplate imageUrl={dImgUrl} headline={d.headline} bodyText={d.body} ctaText={d.cta} brandColor={brandColor} brandName={brand?.name || ''}
                             width={size.w} height={size.h} textPosition={textPosition} showCta={showCta}
                             headlineColor={headlineColor} bodyColor={bodyColor} headlineFont={headlineFont} headlineWeight={headlineWeight}
                             headlineTransform={headlineTransform} bodyFont={bodyFont} bodyWeight={bodyWeight} bodyTransform={bodyTransform}
@@ -685,7 +812,7 @@ Nothing else.`,
                         className="w-full rounded-[4px] overflow-hidden border-2 transition-all hover:opacity-90"
                         style={{ borderColor: activeVariation === i ? '#00ff97' : '#e0e0e0', aspectRatio: `${size.w}/${size.h}` }}>
                         <div style={{ width: size.w, height: size.h, transform: `scale(${thumbScale})`, transformOrigin: 'top left' }}>
-                          <VTemplate imageUrl={vImgUrl} headline={v.headline} bodyText={v.body} ctaText={v.cta} brandColor={brandColor}
+                          <VTemplate imageUrl={vImgUrl} headline={v.headline} bodyText={v.body} ctaText={v.cta} brandColor={brandColor} brandName={brand?.name || ''}
                             width={size.w} height={size.h} textPosition={textPosition} showCta={showCta}
                             headlineColor={headlineColor} bodyColor={bodyColor} headlineFont={headlineFont} headlineWeight={headlineWeight}
                             headlineTransform={headlineTransform} bodyFont={bodyFont} bodyWeight={bodyWeight} bodyTransform={bodyTransform}
@@ -706,6 +833,22 @@ Nothing else.`,
           )}
         </div>
       </div>
+
+      {/* Hidden off-screen container for full-resolution PNG export */}
+      <div
+        ref={exportRef}
+        aria-hidden
+        style={{ position: 'fixed', left: '-9999px', top: 0, overflow: 'hidden', pointerEvents: 'none' }}
+      />
+
+      {/* Export toast */}
+      {exportToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-pill shadow-lg animate-in fade-in slide-in-from-bottom-4"
+          style={{ background: '#000', color: '#00ff97' }}>
+          <Check size={14} />
+          {exportToast}
+        </div>
+      )}
     </div>
   )
 }
