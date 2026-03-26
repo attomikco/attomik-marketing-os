@@ -453,7 +453,7 @@ export default function CreativeBuilder({
         {/* Template pills */}
         <div className="flex gap-1">
           {TEMPLATES.map(t => (
-            <button key={t.id} onClick={() => setTemplateId(t.id)} {...pill(templateId === t.id)}>{t.label}</button>
+            <button key={t.id} onClick={() => { setTemplateId(t.id); if (t.id === 'stat') setTextPosition('center') }} {...pill(templateId === t.id)}>{t.label}</button>
           ))}
         </div>
 
