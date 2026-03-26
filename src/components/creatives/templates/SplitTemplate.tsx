@@ -1,19 +1,34 @@
 import { TemplateProps, ff, px } from './types'
 
+// ── Easy-to-edit design tokens (all values at 1080px reference) ──────
+const IMAGE_RATIO     = 0.52     // left side image width
+const BAR_W           = 6        // brand color vertical bar
+const PANEL_PAD       = 56       // padding inside text panel
+const BRAND_SIZE      = 14
+const HEADLINE_SIZE   = 64       // big and bold
+const BODY_SIZE       = 26
+const CTA_SIZE        = 24
+const CTA_PAD         = 20
+const DIVIDER_W       = 48
+const DIVIDER_H       = 3
+const GAP_BRAND_HEAD  = 24
+const GAP_HEAD_DIV    = 28
+const GAP_DIV_BODY    = 24
+
 export default function SplitTemplate({
   imageUrl, headline, bodyText, ctaText, brandColor, brandName, width, height,
   showCta, headlineFont, headlineWeight, headlineTransform,
   bodyFont, bodyWeight, bodyTransform, bgColor, headlineSizeMul, bodySizeMul,
   headlineColor, bodyColor, ctaColor, ctaFontColor,
 }: TemplateProps) {
-  const imgW = Math.round(width * 0.55)
-  const barW = px(6, width)
-  const panelW = width - imgW - barW
-  const pad = px(48, width)
+  const imgW = Math.round(width * IMAGE_RATIO)
+  const bar = px(BAR_W, width)
+  const panelW = width - imgW - bar
+  const pad = px(PANEL_PAD, width)
 
   return (
     <div style={{ display: 'flex', overflow: 'hidden', width, height, fontFamily: ff(bodyFont) }}>
-      {/* Image — left 55%, full height, no border radius */}
+      {/* Image — left side */}
       <div style={{ position: 'relative', width: imgW, height: '100%', flexShrink: 0 }}>
         {imageUrl ? (
           <img src={imageUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -23,16 +38,16 @@ export default function SplitTemplate({
       </div>
 
       {/* Brand color vertical bar */}
-      <div style={{ width: barW, background: brandColor, flexShrink: 0 }} />
+      <div style={{ width: bar, background: brandColor, flexShrink: 0 }} />
 
-      {/* Text panel — right 45% */}
+      {/* Text panel */}
       <div style={{
         width: panelW, display: 'flex', flexDirection: 'column' as const,
         background: bgColor || '#ffffff', padding: pad,
       }}>
-        {/* Brand name — top label */}
+        {/* Brand name label */}
         <div style={{
-          fontSize: px(13, width),
+          fontSize: px(BRAND_SIZE, width),
           fontWeight: 700,
           letterSpacing: '0.1em',
           textTransform: 'uppercase' as const,
@@ -45,14 +60,14 @@ export default function SplitTemplate({
         {/* Headline */}
         {headline && (
           <div style={{
-            fontSize: px(56, width) * headlineSizeMul,
+            fontSize: px(HEADLINE_SIZE, width) * headlineSizeMul,
             fontWeight: parseInt(headlineWeight) || 800,
             letterSpacing: '-0.03em',
             lineHeight: 1.05,
             color: headlineColor || '#000',
             fontFamily: ff(headlineFont),
             textTransform: headlineTransform as any,
-            marginTop: px(20, width),
+            marginTop: px(GAP_BRAND_HEAD, width),
             display: '-webkit-box',
             WebkitLineClamp: 3,
             WebkitBoxOrient: 'vertical' as const,
@@ -64,18 +79,17 @@ export default function SplitTemplate({
 
         {/* Divider line */}
         <div style={{
-          width: px(40, width), height: px(3, width),
-          background: brandColor,
-          margin: `${px(24, width)}px 0`,
-          borderRadius: 2,
+          width: px(DIVIDER_W, width), height: px(DIVIDER_H, width),
+          background: brandColor, borderRadius: 2,
+          margin: `${px(GAP_HEAD_DIV, width)}px 0 ${px(GAP_DIV_BODY, width)}px`,
         }} />
 
         {/* Body */}
         {bodyText && (
           <div style={{
-            fontSize: px(22, width) * bodySizeMul,
+            fontSize: px(BODY_SIZE, width) * bodySizeMul,
             fontWeight: parseInt(bodyWeight) || 400,
-            lineHeight: 1.6,
+            lineHeight: 1.55,
             color: bodyColor || '#555',
             fontFamily: ff(bodyFont),
             textTransform: bodyTransform as any,
@@ -91,15 +105,15 @@ export default function SplitTemplate({
         {/* Spacer pushes CTA to bottom */}
         <div style={{ flex: 1 }} />
 
-        {/* CTA — full width of text panel */}
+        {/* CTA — full width */}
         {showCta && (
           <div style={{
             marginTop: px(24, width),
             background: ctaColor || brandColor,
             color: ctaFontColor || '#000',
-            fontSize: px(22, width) * bodySizeMul,
+            fontSize: px(CTA_SIZE, width) * bodySizeMul,
             fontWeight: 700,
-            padding: `${px(18, width)}px`,
+            padding: px(CTA_PAD, width),
             borderRadius: 6,
             textAlign: 'center' as const,
             fontFamily: ff(headlineFont),

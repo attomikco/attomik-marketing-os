@@ -1,66 +1,76 @@
 import { TemplateProps, TEXT_SHADOW, ff, px } from './types'
 
+// ── Easy-to-edit design tokens (all values at 1080px reference) ──────
+const EDGE_PAD        = 48
+const AVATAR_SIZE     = 40
+const BRAND_NAME_SIZE = 18
+const SPONSORED_SIZE  = 13
+const HEADLINE_SIZE   = 44       // bigger — fills space at bottom
+const BODY_SIZE       = 26
+const GRADIENT_HEIGHT = 0.40     // subtle bottom gradient for readability
+
 export default function UGCTemplate({
-  imageUrl, headline, brandColor, brandName, width, height,
+  imageUrl, headline, bodyText, brandColor, brandName, width, height,
   headlineFont, headlineWeight, headlineTransform,
-  headlineSizeMul,
+  bodyFont, bodyWeight, bodyTransform, headlineSizeMul, bodySizeMul,
 }: TemplateProps) {
-  const pad = px(60, width)
-  const avatarSize = px(32, width)
+  const p = px(EDGE_PAD, width)
 
   return (
     <div style={{ position: 'relative', overflow: 'hidden', width, height, fontFamily: ff(undefined) }}>
-      {/* Full-bleed image — completely natural, no overlays */}
+      {/* Full-bleed image */}
       {imageUrl ? (
         <img src={imageUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
       ) : (
         <div style={{ position: 'absolute', inset: 0, background: '#1a1a1a' }} />
       )}
 
-      {/* Top bar — Instagram story-style UI */}
+      {/* Subtle bottom gradient for text readability */}
       <div style={{
-        position: 'absolute', top: pad, left: pad, right: pad,
-        display: 'flex', alignItems: 'center', gap: px(10, width),
+        position: 'absolute', left: 0, right: 0, bottom: 0,
+        height: Math.round(height * GRADIENT_HEIGHT),
+        background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 100%)',
+        pointerEvents: 'none' as const,
+      }} />
+
+      {/* Top bar — IG story style */}
+      <div style={{
+        position: 'absolute', top: p, left: p, right: p,
+        display: 'flex', alignItems: 'center', gap: px(12, width),
       }}>
-        {/* Avatar circle */}
         <div style={{
-          width: avatarSize, height: avatarSize, borderRadius: '50%',
-          background: brandColor, flexShrink: 0,
+          width: px(AVATAR_SIZE, width), height: px(AVATAR_SIZE, width),
+          borderRadius: '50%', background: brandColor, flexShrink: 0,
         }} />
-        <div style={{ display: 'flex', flexDirection: 'column' as const }}>
-          <span style={{
-            fontSize: px(15, width),
-            fontWeight: 600,
-            color: '#fff',
+        <div>
+          <div style={{
+            fontSize: px(BRAND_NAME_SIZE, width),
+            fontWeight: 600, color: '#fff',
             textShadow: TEXT_SHADOW,
             fontFamily: ff(headlineFont),
           }}>
             {brandName}
-          </span>
-          <span style={{
-            fontSize: px(12, width),
+          </div>
+          <div style={{
+            fontSize: px(SPONSORED_SIZE, width),
             fontWeight: 400,
-            color: 'rgba(255,255,255,0.5)',
+            color: 'rgba(255,255,255,0.55)',
             textShadow: TEXT_SHADOW,
-            fontFamily: ff(undefined),
           }}>
             Sponsored
-          </span>
+          </div>
         </div>
       </div>
 
-      {/* Headline — bottom left, natural feel with text shadow */}
-      {headline && (
-        <div style={{
-          position: 'absolute', bottom: pad, left: pad, right: pad,
-          maxWidth: '80%',
-        }}>
+      {/* Bottom text — headline + optional body */}
+      <div style={{ position: 'absolute', bottom: p, left: p, right: p, maxWidth: '85%' }}>
+        {headline && (
           <div style={{
-            fontSize: px(32, width) * headlineSizeMul,
+            fontSize: px(HEADLINE_SIZE, width) * headlineSizeMul,
             fontWeight: parseInt(headlineWeight) || 700,
-            lineHeight: 1.3,
+            lineHeight: 1.2,
             color: '#fff',
-            textShadow: '0 2px 8px rgba(0,0,0,0.6)',
+            textShadow: TEXT_SHADOW,
             fontFamily: ff(headlineFont),
             textTransform: headlineTransform as any,
             display: '-webkit-box',
@@ -70,8 +80,26 @@ export default function UGCTemplate({
           }}>
             {headline}
           </div>
-        </div>
-      )}
+        )}
+        {bodyText && (
+          <div style={{
+            fontSize: px(BODY_SIZE, width) * bodySizeMul,
+            fontWeight: parseInt(bodyWeight) || 400,
+            lineHeight: 1.45,
+            color: 'rgba(255,255,255,0.75)',
+            textShadow: TEXT_SHADOW,
+            fontFamily: ff(bodyFont),
+            textTransform: bodyTransform as any,
+            marginTop: px(8, width),
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical' as const,
+            overflow: 'hidden',
+          }}>
+            {bodyText}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
