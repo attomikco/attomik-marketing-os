@@ -1,12 +1,12 @@
 import { TemplateProps, ff, px } from './types'
 
-const IMAGE_RATIO     = 0.50
+const IMAGE_RATIO     = 0.62
 const PANEL_PAD_H     = 56
-const PANEL_PAD_V     = 32
-const QUOTE_SIZE      = 38
-const NAME_SIZE       = 24
-const HANDLE_SIZE     = 18
-const STAR_SIZE       = 26
+const PANEL_PAD_V     = 28
+const QUOTE_SIZE      = 42
+const NAME_SIZE       = 26
+const HANDLE_SIZE     = 20
+const STAR_SIZE       = 30
 const CTA_SIZE        = 24
 const CTA_PAD_V       = 16
 const CTA_PAD_H       = 40
@@ -20,6 +20,7 @@ export default function TestimonialTemplate({
   const imgH = Math.round(height * IMAGE_RATIO)
   const padH = px(PANEL_PAD_H, width)
   const padV = px(PANEL_PAD_V, width)
+  const starColor = ctaColor || brandColor
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column' as const, overflow: 'hidden', width, height, fontFamily: ff(bodyFont) }}>
@@ -37,19 +38,17 @@ export default function TestimonialTemplate({
         background: bgColor || '#ffffff', padding: `${padV}px ${padH}px`,
         textAlign: 'center' as const,
       }}>
-        <div style={{ display: 'flex', gap: px(4, width), marginBottom: px(14, width) }}>
+        <div style={{ display: 'flex', gap: px(6, width), marginBottom: px(14, width) }}>
           {Array.from({ length: 5 }).map((_, i) => (
-            <svg key={i} width={px(STAR_SIZE, width)} height={px(STAR_SIZE, width)} viewBox="0 0 20 20" fill={brandColor}>
-              <path d="M10 1l2.39 4.84L17.82 6.9l-3.91 3.81.92 5.39L10 13.47l-4.83 2.63.92-5.39L2.18 6.9l5.43-.79L10 1z" />
-            </svg>
+            <span key={i} style={{ fontSize: px(STAR_SIZE, width), lineHeight: 1, color: starColor }}>&#9733;</span>
           ))}
         </div>
 
         {bodyText && (
           <div style={{
-            fontSize: px(QUOTE_SIZE, width) * bodySizeMul, fontWeight: 600,
-            fontStyle: 'italic', lineHeight: 1.45, color: bodyColor,
-            fontFamily: ff(bodyFont), textTransform: bodyTransform as any,
+            fontSize: px(QUOTE_SIZE, width) * bodySizeMul, fontWeight: parseInt(headlineWeight) || 700,
+            fontStyle: 'italic', lineHeight: 1.4, color: headlineColor,
+            fontFamily: ff(headlineFont), textTransform: headlineTransform as any,
             maxWidth: '90%', display: '-webkit-box', WebkitLineClamp: 3,
             WebkitBoxOrient: 'vertical' as const, overflow: 'hidden',
           }}>
@@ -58,11 +57,11 @@ export default function TestimonialTemplate({
         )}
 
         {headline && (
-          <div style={{ marginTop: px(16, width) }}>
+          <div style={{ marginTop: px(18, width) }}>
             <div style={{
               fontSize: px(NAME_SIZE, width) * headlineSizeMul,
-              fontWeight: parseInt(headlineWeight) || 700, color: headlineColor,
-              fontFamily: ff(headlineFont), textTransform: headlineTransform as any, lineHeight: 1.2,
+              fontWeight: 600, color: bodyColor,
+              fontFamily: ff(bodyFont), textTransform: bodyTransform as any, lineHeight: 1.2,
             }}>
               {headline}
             </div>
@@ -74,7 +73,7 @@ export default function TestimonialTemplate({
 
         {showCta && (
           <div style={{
-            marginTop: px(16, width), display: 'inline-block',
+            marginTop: px(18, width), display: 'inline-block',
             background: ctaColor || brandColor, color: ctaFontColor || '#000',
             fontSize: px(CTA_SIZE, width) * bodySizeMul, fontWeight: 700,
             padding: `${px(CTA_PAD_V, width)}px ${px(CTA_PAD_H, width)}px`,
