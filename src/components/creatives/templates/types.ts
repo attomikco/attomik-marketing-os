@@ -31,6 +31,20 @@ export interface TemplateProps {
   ctaColor: string
   ctaFontColor: string
   imagePosition: string
+  // Template-specific (optional)
+  callouts?: { icon: string; label: string; description: string }[]
+  statStripText?: string
+  oldWayItems?: string[]
+  newWayItems?: string[]
+  subtitle?: string
+  brandLogoUrl?: string | null
+  productImageUrl?: string | null
+}
+
+export interface Callout {
+  icon: string
+  label: string
+  description: string
 }
 
 /** Banner style for text bar at top or bottom */

@@ -12,6 +12,10 @@ import TestimonialTemplate from './templates/TestimonialTemplate'
 import StatTemplate from './templates/StatTemplate'
 import UGCTemplate from './templates/UGCTemplate'
 import GridTemplate from './templates/GridTemplate'
+import InfographicTemplate from './templates/InfographicTemplate'
+import ComparisonTemplate from './templates/ComparisonTemplate'
+import MissionTemplate from './templates/MissionTemplate'
+import { Callout } from './templates/types'
 
 interface Brand {
   id: string
@@ -49,6 +53,9 @@ const TEMPLATES = [
   { id: 'stat',         label: 'Stat',          component: StatTemplate },
   { id: 'ugc',          label: 'Card',          component: UGCTemplate },
   { id: 'grid',         label: 'Grid',          component: GridTemplate },
+  { id: 'infographic', label: 'Info',          component: InfographicTemplate },
+  { id: 'comparison',  label: 'Compare',       component: ComparisonTemplate },
+  { id: 'mission',     label: 'Mission',       component: MissionTemplate },
 ] as const
 
 const SIZES = [
@@ -107,6 +114,19 @@ export default function CreativeBuilder({
   const [imagePosition, setImagePosition] = useState<string>('center')
   const [textBanner, setTextBanner] = useState<'none' | 'top' | 'bottom'>('none')
   const [textBannerColor, setTextBannerColor] = useState<string>('#000000')
+  // Template-specific state
+  const defaultCallouts: Callout[] = [
+    { icon: '🌿', label: 'Natural', description: 'Clean ingredients' },
+    { icon: '⚡', label: 'Energy', description: 'Sustained focus' },
+    { icon: '🍋', label: 'Fresh', description: 'Real fruit flavor' },
+    { icon: '💧', label: 'Hydrating', description: 'Electrolyte-rich' },
+  ]
+  const [callouts, setCallouts] = useState<Callout[]>(defaultCallouts)
+  const [statStripText, setStatStripText] = useState('Only 1g of Sugar')
+  const [oldWayItems, setOldWayItems] = useState<string[]>(['Artificial ingredients', 'Sugary mixers', 'Next-day regret'])
+  const [newWayItems, setNewWayItems] = useState<string[]>(['All natural', 'Zero sugar', 'Feel great tomorrow'])
+  const [subtitle, setSubtitle] = useState('')
+  const [selectedProductImageId, setSelectedProductImageId] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
   const [batchGenerating, setBatchGenerating] = useState(false)
   const [batchCount, setBatchCount] = useState(5)
@@ -164,6 +184,9 @@ export default function CreativeBuilder({
   const TemplateComponent = template.component
   const selectedImage = images.find(i => i.id === selectedImageId)
   const imageUrl = selectedImage ? supabase.storage.from('brand-images').getPublicUrl(selectedImage.storage_path).data.publicUrl : null
+  const productImage = images.find(i => i.id === selectedProductImageId)
+  const productImageUrl = productImage ? supabase.storage.from('brand-images').getPublicUrl(productImage.storage_path).data.publicUrl : null
+  const brandLogoUrl = brand?.logo_url || null
   const brandSlug = brand?.slug || brand?.name?.toLowerCase().replace(/\s+/g, '-') || 'creative'
 
   // ── Effects ────────────────────────────────────────────────────────
@@ -304,6 +327,7 @@ export default function CreativeBuilder({
     textPosition, showCta, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform,
     bodyFont, bodyWeight, bodyTransform, bgColor, headlineSizeMul, bodySizeMul,
     showOverlay, overlayOpacity: overlayOpacity / 100, textBanner, textBannerColor, ctaColor, ctaFontColor, imagePosition,
+    callouts, statStripText, oldWayItems, newWayItems, subtitle, brandLogoUrl, productImageUrl,
   }
 
   async function captureElement(el: HTMLElement, w: number, h: number): Promise<string> {
@@ -678,6 +702,70 @@ export default function CreativeBuilder({
               </button>
             </div>
           </div>
+
+          {/* Template-specific fields */}
+          {templateId === 'infographic' && (
+            <div className="bg-paper border border-border rounded-card p-4 space-y-2.5">
+              <label className="label block">Callouts</label>
+              {callouts.map((c, i) => (
+                <div key={i} className="flex gap-1.5">
+                  <input className={inputCls + ' !w-10 text-center flex-shrink-0'} value={c.icon} placeholder="🌿"
+                    onChange={e => setCallouts(prev => prev.map((x, j) => j === i ? { ...x, icon: e.target.value } : x))} />
+                  <input className={inputCls + ' !w-24 flex-shrink-0'} value={c.label} placeholder="Label"
+                    onChange={e => setCallouts(prev => prev.map((x, j) => j === i ? { ...x, label: e.target.value } : x))} />
+                  <input className={inputCls} value={c.description} placeholder="Description"
+                    onChange={e => setCallouts(prev => prev.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} />
+                </div>
+              ))}
+              <div>
+                <label className="text-[10px] text-muted uppercase tracking-wide font-semibold block mb-1">Stat strip</label>
+                <input className={inputCls} value={statStripText} onChange={e => setStatStripText(e.target.value)} placeholder="Only 1g of Sugar" />
+              </div>
+            </div>
+          )}
+
+          {templateId === 'comparison' && (
+            <div className="bg-paper border border-border rounded-card p-4 space-y-2.5">
+              <label className="label block">Old way</label>
+              {oldWayItems.map((item, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <span className="text-red-500 text-sm font-bold flex-shrink-0">✗</span>
+                  <input className={inputCls} value={item}
+                    onChange={e => setOldWayItems(prev => prev.map((x, j) => j === i ? e.target.value : x))} placeholder={`Problem ${i + 1}`} />
+                </div>
+              ))}
+              <label className="label block pt-1">The {brand?.name} way</label>
+              {newWayItems.map((item, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <span className="text-green-500 text-sm font-bold flex-shrink-0">✓</span>
+                  <input className={inputCls} value={item}
+                    onChange={e => setNewWayItems(prev => prev.map((x, j) => j === i ? e.target.value : x))} placeholder={`Benefit ${i + 1}`} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {templateId === 'mission' && (
+            <div className="bg-paper border border-border rounded-card p-4 space-y-2.5">
+              <label className="label block">Mission</label>
+              <input className={inputCls} value={subtitle} onChange={e => setSubtitle(e.target.value)} placeholder="Subtitle / mission statement" />
+              {images.length > 0 && (
+                <div>
+                  <label className="text-[10px] text-muted uppercase tracking-wide font-semibold block mb-1">Product image</label>
+                  <div className="grid grid-cols-4 gap-1 max-h-[100px] overflow-y-auto">
+                    {images.map(img => (
+                      <button key={img.id} onClick={() => setSelectedProductImageId(img.id === selectedProductImageId ? null : img.id)}
+                        className="aspect-square rounded-[3px] overflow-hidden border-2 transition-all"
+                        style={{ borderColor: selectedProductImageId === img.id ? '#00ff97' : '#e0e0e0' }}>
+                        <img src={supabase.storage.from('brand-images').getPublicUrl(img.storage_path).data.publicUrl}
+                          alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Style */}
           <div className="bg-paper border border-border rounded-card p-4 space-y-3">
