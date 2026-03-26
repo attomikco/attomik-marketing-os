@@ -470,9 +470,9 @@ export default function CreativeBuilder({
     <div className="space-y-4">
 
       {/* ═══ TOP TOOLBAR ═══ */}
-      <div className="bg-paper border border-border rounded-card px-4 py-3 space-y-2.5">
-        {/* Row 1: Brand + Actions */}
-        <div className="flex items-center gap-3">
+      <div className="bg-paper border border-border rounded-card px-4 py-3 space-y-3">
+        {/* Row 1: Brand + Export */}
+        <div className="flex items-center justify-between">
           <div className="relative">
             <select value={brandId} onChange={e => setBrandId(e.target.value)}
               className="text-sm font-semibold border border-border rounded-btn pl-3 pr-7 py-1.5 bg-cream appearance-none focus:outline-none focus:border-accent">
@@ -480,7 +480,7 @@ export default function CreativeBuilder({
             </select>
             <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
           </div>
-          <div className="flex items-center gap-1.5 ml-auto">
+          <div className="flex items-center gap-1.5">
             <button onClick={generateCopy} disabled={generating}
               className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-pill bg-ink text-accent hover:opacity-80 transition-opacity disabled:opacity-50">
               {generating ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
@@ -499,14 +499,18 @@ export default function CreativeBuilder({
             </button>
           </div>
         </div>
-        {/* Row 2: Templates + Sizes */}
-        <div className="flex items-center gap-2">
+        {/* Row 2: Templates */}
+        <div>
+          <span className="text-[10px] text-muted uppercase tracking-wide font-semibold block mb-1.5">Template</span>
           <div className="flex flex-wrap gap-1">
             {TEMPLATES.map(t => (
               <button key={t.id} onClick={() => { setTemplateId(t.id); if (t.id === 'stat') { setTextPosition('center'); setShowOverlay(true); setOverlayOpacity(30) } }} {...pill(templateId === t.id)}>{t.label}</button>
             ))}
           </div>
-          <span className="w-px h-5 bg-border flex-shrink-0" />
+        </div>
+        {/* Row 3: Sizes */}
+        <div>
+          <span className="text-[10px] text-muted uppercase tracking-wide font-semibold block mb-1.5">Size</span>
           <div className="flex gap-1">
             {SIZES.map(s => (
               <button key={s.id} onClick={() => setSizeId(s.id)} {...pill(sizeId === s.id)}>{s.label}</button>
