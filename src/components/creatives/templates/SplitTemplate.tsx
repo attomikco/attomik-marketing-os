@@ -1,19 +1,20 @@
 import { TemplateProps, ff, px } from './types'
 
 // ── Easy-to-edit design tokens (all values at 1080px reference) ──────
-const IMAGE_RATIO     = 0.52     // left side image width
+const IMAGE_RATIO     = 0.50     // left side image width
 const BAR_W           = 6        // brand color vertical bar
 const PANEL_PAD       = 56       // padding inside text panel
-const BRAND_SIZE      = 14
-const HEADLINE_SIZE   = 64       // big and bold
-const BODY_SIZE       = 26
-const CTA_SIZE        = 24
-const CTA_PAD         = 20
+const BRAND_SIZE      = 16
+const HEADLINE_SIZE   = 76       // big and bold
+const BODY_SIZE       = 30
+const CTA_SIZE        = 26
+const CTA_PAD         = 22
 const DIVIDER_W       = 48
 const DIVIDER_H       = 3
-const GAP_BRAND_HEAD  = 24
-const GAP_HEAD_DIV    = 28
-const GAP_DIV_BODY    = 24
+const GAP_BRAND_HEAD  = 20
+const GAP_HEAD_DIV    = 24
+const GAP_DIV_BODY    = 20
+const GAP_BODY_CTA    = 28
 
 export default function SplitTemplate({
   imageUrl, headline, bodyText, ctaText, brandColor, brandName, width, height,
@@ -40,10 +41,12 @@ export default function SplitTemplate({
       {/* Brand color vertical bar */}
       <div style={{ width: bar, background: brandColor, flexShrink: 0 }} />
 
-      {/* Text panel */}
+      {/* Text panel — centered vertically and horizontally */}
       <div style={{
         width: panelW, display: 'flex', flexDirection: 'column' as const,
+        alignItems: 'center', justifyContent: 'center',
         background: bgColor || '#ffffff', padding: pad,
+        textAlign: 'center' as const,
       }}>
         {/* Brand name label */}
         <div style={{
@@ -102,20 +105,16 @@ export default function SplitTemplate({
           </div>
         )}
 
-        {/* Spacer pushes CTA to bottom */}
-        <div style={{ flex: 1 }} />
-
         {/* CTA — full width */}
         {showCta && (
           <div style={{
-            marginTop: px(24, width),
+            marginTop: px(GAP_BODY_CTA, width),
             background: ctaColor || brandColor,
             color: ctaFontColor || '#000',
             fontSize: px(CTA_SIZE, width) * bodySizeMul,
             fontWeight: 700,
-            padding: px(CTA_PAD, width),
+            padding: `${px(CTA_PAD, width)}px ${px(CTA_PAD * 2, width)}px`,
             borderRadius: 6,
-            textAlign: 'center' as const,
             fontFamily: ff(headlineFont),
           }}>
             {ctaText || 'Shop Now'}
