@@ -472,11 +472,26 @@ export default function CreativeBuilder({
               </div>
             </div>
 
-            {/* Preview canvas */}
-            <div className="flex justify-center" ref={previewRef}>
-              <div className="rounded-btn overflow-hidden border border-border shadow-sm" style={{ width: previewW, height: previewH }}>
+            {/* Preview canvas + FB copy */}
+            <div className="flex gap-5 items-start" ref={previewRef}>
+              <div className="rounded-btn overflow-hidden border border-border shadow-sm flex-shrink-0" style={{ width: previewW, height: previewH }}>
                 <div style={{ width: size.w, height: size.h, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
                   <TemplateComponent {...templateProps} width={size.w} height={size.h} />
+                </div>
+              </div>
+              {/* FB Ad copy preview */}
+              <div className="flex-1 min-w-0 text-sm space-y-3 pt-1">
+                <div>
+                  <span className="text-[10px] text-muted uppercase tracking-wide font-semibold block mb-1">Primary Text</span>
+                  <p className="text-ink leading-relaxed text-[13px]">{bodyText || 'Body text goes here'}</p>
+                </div>
+                <div className="border-t border-border pt-3">
+                  <span className="text-[10px] text-muted uppercase tracking-wide font-semibold block mb-1">Headline</span>
+                  <p className="text-ink font-bold text-[14px] leading-snug">{headline || 'Your headline here'}</p>
+                </div>
+                <div className="border-t border-border pt-3">
+                  <span className="text-[10px] text-muted uppercase tracking-wide font-semibold block mb-1">Description</span>
+                  <p className="text-muted text-[12px] leading-relaxed">{ctaText || 'Shop Now'}</p>
                 </div>
               </div>
             </div>
