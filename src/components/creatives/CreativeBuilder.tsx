@@ -311,17 +311,21 @@ export default function CreativeBuilder({
     const { createRoot } = await import('react-dom/client')
     const wrapper = document.createElement('div'); wrapper.style.width = `${w}px`; wrapper.style.height = `${h}px`
     container.appendChild(wrapper)
-    await new Promise<void>((resolve) => {
-      const root = createRoot(wrapper)
-      root.render(<TemplateComponent {...templateProps} width={w} height={h} />)
-      setTimeout(async () => {
-        // Wait for all images to load
-        const imgs = container.querySelectorAll('img')
-        await Promise.all(Array.from(imgs).map(img => img.complete ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r })))
-        resolve()
-      }, 100)
-    })
-    const dataUrl = await toPng(container, { width: w, height: h, pixelRatio: 1, cacheBust: true, includeQueryParams: true, fetchRequestInit: { mode: 'cors', credentials: 'omit' } })
+    const root = createRoot(wrapper)
+    root.render(<TemplateComponent {...templateProps} width={w} height={h} />)
+    // Wait for React to paint + images to load
+    await new Promise(r => setTimeout(r, 200))
+    const imgs = container.querySelectorAll('img')
+    await Promise.all(Array.from(imgs).map(img => {
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve()
+      return new Promise(r => { img.onload = r; img.onerror = r })
+    }))
+    await new Promise(r => setTimeout(r, 100))
+    // html-to-image needs multiple passes for fonts & images
+    const opts = { width: w, height: h, pixelRatio: 1, cacheBust: true, skipAutoScale: true }
+    await toPng(container, opts).catch(() => {}) // warm-up pass
+    const dataUrl = await toPng(container, opts)
+    root.unmount()
     container.innerHTML = ''
     return dataUrl
   }, [TemplateComponent, ...Object.values(templateProps)])
@@ -373,8 +377,16 @@ export default function CreativeBuilder({
         container.style.width = `${size.w}px`; container.style.height = `${size.h}px`; container.innerHTML = ''
         const wrapper = document.createElement('div'); wrapper.style.width = `${size.w}px`; wrapper.style.height = `${size.h}px`
         container.appendChild(wrapper)
-        await new Promise<void>((resolve) => { const root = createRoot(wrapper); root.render(<VComp {...props} />); setTimeout(() => resolve(), 300) })
-        const dataUrl = await toPng(container, { width: size.w, height: size.h, pixelRatio: 1, cacheBust: true, includeQueryParams: true, fetchRequestInit: { mode: 'cors', credentials: 'omit' } })
+        const root = createRoot(wrapper)
+        root.render(<VComp {...props} />)
+        await new Promise(r => setTimeout(r, 200))
+        const imgs = container.querySelectorAll('img')
+        await Promise.all(Array.from(imgs).map(img => img.complete && img.naturalWidth > 0 ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r })))
+        await new Promise(r => setTimeout(r, 100))
+        const opts = { width: size.w, height: size.h, pixelRatio: 1, cacheBust: true, skipAutoScale: true }
+        await toPng(container, opts).catch(() => {})
+        const dataUrl = await toPng(container, opts)
+        root.unmount()
         container.innerHTML = ''
         zip.file(`${brandSlug}-${v.templateId}-${sizeId}-${i + 1}.png`, dataUrl.split(',')[1], { base64: true })
       }
@@ -823,7 +835,7 @@ export default function CreativeBuilder({
       </div>
 
       {/* Hidden export container */}
-      <div ref={exportRef} aria-hidden style={{ position: 'fixed', left: '-9999px', top: 0, pointerEvents: 'none', zIndex: -1 }} />
+      <div ref={exportRef} aria-hidden style={{ position: 'fixed', top: 0, left: 0, opacity: 0, pointerEvents: 'none', zIndex: -1 }} />
 
       {/* Toast */}
       {exportToast && (
