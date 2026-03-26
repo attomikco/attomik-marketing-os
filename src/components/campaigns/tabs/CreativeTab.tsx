@@ -1,21 +1,36 @@
 'use client'
-import { Brand, CampaignAsset } from '@/types'
+import { Brand, Campaign, CampaignAsset } from '@/types'
 import CreativeBuilder from '@/components/creatives/CreativeBuilder'
+
+function buildBrief(campaign: Campaign): string {
+  const parts = []
+  if (campaign.angle) parts.push(`Angle: ${campaign.angle}`)
+  if (campaign.offer) parts.push(`Offer/product: ${campaign.offer}`)
+  if (campaign.key_message) parts.push(`Key message: ${campaign.key_message}`)
+  if (campaign.goal) parts.push(`Goal: ${campaign.goal}`)
+  if (campaign.audience_notes) parts.push(`Audience: ${campaign.audience_notes}`)
+  return parts.join('\n')
+}
 
 export default function CreativeTab({
   brand,
   brands,
-  campaignId,
+  campaign,
   assets,
 }: {
   brand: Brand
   brands: Brand[]
-  campaignId: string
+  campaign: Campaign
   assets: CampaignAsset[]
 }) {
   return (
     <div>
-      <CreativeBuilder brands={brands} defaultBrandId={brand.id} campaignId={campaignId} />
+      <CreativeBuilder
+        brands={brands}
+        defaultBrandId={brand.id}
+        campaignId={campaign.id}
+        campaignBrief={buildBrief(campaign)}
+      />
 
       {/* Saved campaign creatives */}
       {assets.length > 0 && (

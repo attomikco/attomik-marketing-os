@@ -12,7 +12,7 @@ export default async function NewCampaignPage({
   const supabase = await createClient()
   const { data: brands } = await supabase
     .from('brands')
-    .select('id, name, primary_color')
+    .select('id, name, primary_color, products, target_audience')
     .eq('status', 'active')
     .order('name')
 

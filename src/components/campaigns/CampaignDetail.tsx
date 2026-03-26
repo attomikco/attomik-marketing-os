@@ -56,7 +56,7 @@ export default function CampaignDetail({
 
       {/* Tab content */}
       {tab === 'brief' && <BriefTab campaign={campaign} />}
-      {tab === 'creative' && <CreativeTab brand={brand} brands={brands} campaignId={campaign.id} assets={campaignAssets} />}
+      {tab === 'creative' && <CreativeTab brand={brand} brands={brands} campaign={campaign} assets={campaignAssets} />}
       {tab === 'ad-copy' && <AdCopyTab campaign={campaign} brand={brand} content={adCopyContent} />}
       {tab === 'landing' && <LandingBriefTab campaign={campaign} brand={brand} content={landingContent} />}
     </div>

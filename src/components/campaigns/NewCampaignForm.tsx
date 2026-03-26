@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { Product } from '@/types'
 import { Loader2, ChevronDown } from 'lucide-react'
 
 const TYPES = [
@@ -13,13 +14,24 @@ const TYPES = [
   { value: 'dtc_brief', label: 'DTC strategy brief' },
 ]
 
-interface Brand { id: string; name: string; primary_color: string | null }
+interface Brand {
+  id: string
+  name: string
+  primary_color: string | null
+  products: Product[] | null
+  target_audience: string | null
+}
 
 export default function NewCampaignForm({ brands, defaultBrandId }: { brands: Brand[]; defaultBrandId?: string }) {
   const supabase = createClient()
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const initialBrand = brands.find(b => b.id === (defaultBrandId || brands[0]?.id))
+  const productSummary = (brand: Brand | undefined) =>
+    brand?.products?.map(p => `${p.name}${p.price_range ? ` (${p.price_range})` : ''}${p.description ? ` — ${p.description}` : ''}`).join('\n') || ''
+
   const [form, setForm] = useState({
     brand_id: defaultBrandId || brands[0]?.id || '',
     name: '',
@@ -27,11 +39,23 @@ export default function NewCampaignForm({ brands, defaultBrandId }: { brands: Br
     angle: '',
     goal: '',
     key_message: '',
-    offer: '',
-    audience_notes: '',
+    offer: productSummary(initialBrand),
+    audience_notes: initialBrand?.target_audience || '',
   })
 
-  const set = (key: string, val: string) => setForm(f => ({ ...f, [key]: val }))
+  function set(key: string, val: string) {
+    setForm(f => ({ ...f, [key]: val }))
+  }
+
+  function onBrandChange(brandId: string) {
+    const b = brands.find(br => br.id === brandId)
+    setForm(f => ({
+      ...f,
+      brand_id: brandId,
+      offer: f.offer || productSummary(b),
+      audience_notes: f.audience_notes || b?.target_audience || '',
+    }))
+  }
 
   const inputCls = "w-full text-sm border border-border rounded-btn px-3 py-2.5 bg-cream focus:outline-none focus:border-accent transition-colors font-sans placeholder:text-[#bbb]"
 
@@ -67,7 +91,7 @@ export default function NewCampaignForm({ brands, defaultBrandId }: { brands: Br
         <div>
           <label className="label block mb-1.5">Brand *</label>
           <div className="relative">
-            <select value={form.brand_id} onChange={e => set('brand_id', e.target.value)} className={inputCls + ' pr-8 appearance-none'}>
+            <select value={form.brand_id} onChange={e => onBrandChange(e.target.value)} className={inputCls + ' pr-8 appearance-none'}>
               {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
             <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
@@ -104,8 +128,9 @@ export default function NewCampaignForm({ brands, defaultBrandId }: { brands: Br
       {/* Brief fields */}
       <div>
         <label className="label block mb-1.5">Offer / product</label>
-        <textarea className={inputCls + ' resize-none'} rows={2} value={form.offer} onChange={e => set('offer', e.target.value)}
-          placeholder="What are you selling? e.g. Summer rosé 4-pack, 20% off, free shipping over $40" />
+        <textarea className={inputCls + ' resize-none'} rows={3} value={form.offer} onChange={e => set('offer', e.target.value)}
+          placeholder="What are you selling?" />
+        <p className="text-xs text-muted mt-1">Pre-filled from brand products. Edit as needed.</p>
       </div>
 
       <div>
@@ -123,7 +148,8 @@ export default function NewCampaignForm({ brands, defaultBrandId }: { brands: Br
       <div>
         <label className="label block mb-1.5">Audience notes</label>
         <textarea className={inputCls + ' resize-none'} rows={2} value={form.audience_notes} onChange={e => set('audience_notes', e.target.value)}
-          placeholder="Who is this for? Override the brand default audience if needed." />
+          placeholder="Who is this for?" />
+        <p className="text-xs text-muted mt-1">Pre-filled from brand target audience.</p>
       </div>
 
       {error && <p className="text-sm text-danger">{error}</p>}

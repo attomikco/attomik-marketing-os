@@ -60,10 +60,12 @@ export default function CreativeBuilder({
   brands,
   defaultBrandId,
   campaignId,
+  campaignBrief,
 }: {
   brands: Brand[]
   defaultBrandId?: string
   campaignId?: string
+  campaignBrief?: string
 }) {
   const supabase = createClient()
 
@@ -202,7 +204,7 @@ export default function CreativeBuilder({
           tone: 'on-brand',
           platform: 'creative',
           subtype: 'image ad',
-          brief: `Generate exactly one short headline (under 8 words) and one body line (under 20 words) for a visual ad creative. Format as:
+          brief: `Generate exactly one short headline (under 8 words) and one body line (under 20 words) for a visual ad creative.${campaignBrief ? `\n\nCAMPAIGN CONTEXT:\n${campaignBrief}` : ''}\n\nFormat as:
 HEADLINE: <headline text>
 BODY: <body text>
 CTA: <cta text>
@@ -269,7 +271,7 @@ Nothing else.`,
             tone: 'on-brand',
             platform: 'creative',
             subtype: 'image ad',
-            brief: `Generate exactly one unique short headline (under 8 words) and one body line (under 20 words) for a visual ad creative. Variation ${i + 1} of 10 — make each one distinct. Format as:
+            brief: `Generate exactly one unique short headline (under 8 words) and one body line (under 20 words) for a visual ad creative. Variation ${i + 1} of 10 — make each one distinct.${campaignBrief ? `\n\nCAMPAIGN CONTEXT:\n${campaignBrief}` : ''}\n\nFormat as:
 HEADLINE: <headline text>
 BODY: <body text>
 CTA: <cta text>
