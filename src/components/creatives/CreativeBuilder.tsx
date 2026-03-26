@@ -196,7 +196,8 @@ export default function CreativeBuilder({
     setBgColor(nb?.primary_color || '#000000')
     setTextBannerColor(nb?.primary_color || '#000000')
     setHeadline(nb?.default_headline || `Discover ${nb?.name || 'Our Brand'}`)
-    setBodyText(nb?.default_body_text || `Premium quality crafted for ${nb?.target_audience || 'you'}`)
+    const audience = nb?.target_audience?.split(/[;,]/)[0]?.trim() || 'you'
+    setBodyText(nb?.default_body_text || `Premium quality crafted for ${audience}`)
     setCtaText(nb?.default_cta || 'Shop Now')
   }, [brandId, brands])
 
@@ -303,7 +304,15 @@ export default function CreativeBuilder({
     showOverlay, overlayOpacity: overlayOpacity / 100, textBanner, textBannerColor, ctaColor, ctaFontColor, imagePosition,
   }
 
-  const renderAtFullSize = useCallback(async (w: number, h: number): Promise<string> => {
+  async function captureElement(el: HTMLElement, w: number, h: number): Promise<string> {
+    const canvas = await html2canvas(el, {
+      width: w, height: h, scale: 1,
+      useCORS: true, allowTaint: true, logging: false,
+    })
+    return canvas.toDataURL('image/png')
+  }
+
+  async function renderAndCapture(Component: any, props: any, w: number, h: number): Promise<string> {
     const container = exportRef.current
     if (!container) throw new Error('Export container not available')
     container.style.width = `${w}px`; container.style.height = `${h}px`; container.innerHTML = ''
@@ -311,25 +320,23 @@ export default function CreativeBuilder({
     const wrapper = document.createElement('div'); wrapper.style.width = `${w}px`; wrapper.style.height = `${h}px`
     container.appendChild(wrapper)
     const root = createRoot(wrapper)
-    root.render(<TemplateComponent {...templateProps} width={w} height={h} />)
-    await new Promise(r => setTimeout(r, 300))
+    root.render(<Component {...props} width={w} height={h} />)
+    await new Promise(r => setTimeout(r, 500))
     const imgs = container.querySelectorAll('img')
-    await Promise.all(Array.from(imgs).map(img => {
-      if (img.complete && img.naturalWidth > 0) return Promise.resolve()
-      return new Promise(r => { img.onload = r; img.onerror = r })
-    }))
-    await new Promise(r => setTimeout(r, 100))
-    const canvas = await html2canvas(container, { width: w, height: h, scale: 1, useCORS: true, allowTaint: true, logging: false })
-    const dataUrl = canvas.toDataURL('image/png')
+    await Promise.all(Array.from(imgs).map(img => img.complete && img.naturalWidth > 0 ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r })))
+    await new Promise(r => setTimeout(r, 200))
+    const dataUrl = await captureElement(container, w, h)
     root.unmount()
     container.innerHTML = ''
     return dataUrl
-  }, [TemplateComponent, ...Object.values(templateProps)])
+  }
 
   async function exportPng() {
     setExporting(true)
     try {
-      const dataUrl = await renderAtFullSize(size.w, size.h)
+      const templateEl = previewRef.current?.querySelector('[data-template]') as HTMLElement | null
+      if (!templateEl) throw new Error('Template element not found')
+      const dataUrl = await captureElement(templateEl, size.w, size.h)
       const fileName = `${brandSlug}-${templateId}-${sizeId}-${Date.now()}.png`
       const link = document.createElement('a'); link.download = fileName; link.href = dataUrl; link.click()
       if (campaignId && brand) {
@@ -348,7 +355,7 @@ export default function CreativeBuilder({
     setExportingAll(true)
     try {
       const zip = new JSZip()
-      for (const s of SIZES) { const dataUrl = await renderAtFullSize(s.w, s.h); zip.file(`${brandSlug}-${templateId}-${s.id}-${s.w}x${s.h}.png`, dataUrl.split(',')[1], { base64: true }) }
+      for (const s of SIZES) { const dataUrl = await renderAndCapture(TemplateComponent, templateProps, s.w, s.h); zip.file(`${brandSlug}-${templateId}-${s.id}-${s.w}x${s.h}.png`, dataUrl.split(',')[1], { base64: true }) }
       const blob = await zip.generateAsync({ type: 'blob' }); const link = document.createElement('a')
       link.download = `${brandSlug}-${templateId}-all-sizes-${Date.now()}.zip`; link.href = URL.createObjectURL(blob); link.click(); URL.revokeObjectURL(link.href)
       setExportToast(`Downloaded ${SIZES.length} creatives`); setTimeout(() => setExportToast(null), 3000)
@@ -361,28 +368,13 @@ export default function CreativeBuilder({
     setExportingAll(true)
     try {
       const zip = new JSZip()
-      const container = exportRef.current
-      if (!container) throw new Error('Export container not available')
-      const { createRoot } = await import('react-dom/client')
       for (let i = 0; i < variations.length; i++) {
         const v = variations[i]
         const VComp = TEMPLATES.find(t => t.id === v.templateId)!.component
         const vImg = images.find(img => img.id === v.imageId)
         const vImgUrl = vImg ? getPublicUrl(vImg.storage_path) : null
-        const props = { ...thumbProps(v, vImgUrl), width: size.w, height: size.h }
-        container.style.width = `${size.w}px`; container.style.height = `${size.h}px`; container.innerHTML = ''
-        const wrapper = document.createElement('div'); wrapper.style.width = `${size.w}px`; wrapper.style.height = `${size.h}px`
-        container.appendChild(wrapper)
-        const root = createRoot(wrapper)
-        root.render(<VComp {...props} />)
-        await new Promise(r => setTimeout(r, 300))
-        const imgs = container.querySelectorAll('img')
-        await Promise.all(Array.from(imgs).map(img => img.complete && img.naturalWidth > 0 ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r })))
-        await new Promise(r => setTimeout(r, 100))
-        const canvas = await html2canvas(container, { width: size.w, height: size.h, scale: 1, useCORS: true, allowTaint: true, logging: false })
-        const dataUrl = canvas.toDataURL('image/png')
-        root.unmount()
-        container.innerHTML = ''
+        const props = thumbProps(v, vImgUrl)
+        const dataUrl = await renderAndCapture(VComp, props, size.w, size.h)
         zip.file(`${brandSlug}-${v.templateId}-${sizeId}-${i + 1}.png`, dataUrl.split(',')[1], { base64: true })
       }
       const blob = await zip.generateAsync({ type: 'blob' }); const link = document.createElement('a')
@@ -536,7 +528,7 @@ export default function CreativeBuilder({
             {/* Preview canvas + FB copy */}
             <div className="flex gap-5 items-start" ref={previewRef}>
               <div className="rounded-btn overflow-hidden border border-border shadow-sm flex-shrink-0" style={{ width: previewW, height: previewH }}>
-                <div style={{ width: size.w, height: size.h, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+                <div data-template style={{ width: size.w, height: size.h, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
                   <TemplateComponent {...templateProps} width={size.w} height={size.h} />
                 </div>
               </div>
