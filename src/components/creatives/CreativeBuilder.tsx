@@ -715,7 +715,7 @@ export default function CreativeBuilder({
                   ))}
                 </div>
               </div>
-              <div className="flex-1 space-y-2">
+              <div className="flex-1 min-w-0 space-y-2">
                 <div>
                   <span className="text-[10px] text-muted uppercase tracking-wide block mb-1">Background</span>
                   <div className="flex gap-1">
@@ -736,11 +736,11 @@ export default function CreativeBuilder({
                   </button>
                 </div>
                 {showOverlay && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
                     <input type="range" min={0} max={100} step={5} value={overlayOpacity}
                       onChange={e => setOverlayOpacity(parseInt(e.target.value))}
-                      className="flex-1 accent-[#00ff97]" />
-                    <span className="text-[11px] font-mono text-muted w-8 text-right">{overlayOpacity}%</span>
+                      className="flex-1 min-w-0 accent-[#00ff97]" />
+                    <span className="text-[10px] font-mono text-muted flex-shrink-0">{overlayOpacity}%</span>
                   </div>
                 )}
               </div>
