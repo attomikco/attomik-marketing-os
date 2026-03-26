@@ -11,6 +11,7 @@ import SplitTemplate from './templates/SplitTemplate'
 import TestimonialTemplate from './templates/TestimonialTemplate'
 import StatTemplate from './templates/StatTemplate'
 import UGCTemplate from './templates/UGCTemplate'
+import GridTemplate from './templates/GridTemplate'
 
 interface Brand {
   id: string
@@ -47,6 +48,7 @@ const TEMPLATES = [
   { id: 'testimonial',  label: 'Testimonial',   component: TestimonialTemplate },
   { id: 'stat',         label: 'Stat',          component: StatTemplate },
   { id: 'ugc',          label: 'Card',          component: UGCTemplate },
+  { id: 'grid',         label: 'Grid',          component: GridTemplate },
 ] as const
 
 const SIZES = [
