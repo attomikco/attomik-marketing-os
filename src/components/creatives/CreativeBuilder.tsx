@@ -474,7 +474,7 @@ export default function CreativeBuilder({
         <span className="w-px h-5 bg-border" />
 
         {/* Template pills */}
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1">
           {TEMPLATES.map(t => (
             <button key={t.id} onClick={() => { setTemplateId(t.id); if (t.id === 'stat') { setTextPosition('center'); setShowOverlay(true); setOverlayOpacity(30) } }} {...pill(templateId === t.id)}>{t.label}</button>
           ))}
