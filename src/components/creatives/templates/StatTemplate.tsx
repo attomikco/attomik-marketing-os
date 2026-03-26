@@ -25,7 +25,7 @@ export default function StatTemplate({
   return (
     <div style={{ position: 'relative', overflow: 'hidden', width, height, fontFamily: ff(bodyFont), background: bgColor }}>
       {imageUrl ? (
-        <img src={imageUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: `center ${imagePosition || 'center'}` }} />
+        <img crossOrigin="anonymous" src={imageUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: `center ${imagePosition || 'center'}` }} />
       ) : (
         <div style={{ position: 'absolute', inset: 0, background: bgColor || '#1a1a1a' }} />
       )}

@@ -305,9 +305,14 @@ export default function CreativeBuilder({
     await new Promise<void>((resolve) => {
       const root = createRoot(wrapper)
       root.render(<TemplateComponent {...templateProps} width={w} height={h} />)
-      setTimeout(() => resolve(), 300)
+      setTimeout(async () => {
+        // Wait for all images to load
+        const imgs = container.querySelectorAll('img')
+        await Promise.all(Array.from(imgs).map(img => img.complete ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r })))
+        resolve()
+      }, 100)
     })
-    const dataUrl = await toPng(container, { width: w, height: h, pixelRatio: 1, cacheBust: true })
+    const dataUrl = await toPng(container, { width: w, height: h, pixelRatio: 1, cacheBust: true, includeQueryParams: true, fetchRequestInit: { mode: 'cors', credentials: 'omit' } })
     container.innerHTML = ''
     return dataUrl
   }, [TemplateComponent, ...Object.values(templateProps)])
@@ -360,7 +365,7 @@ export default function CreativeBuilder({
         const wrapper = document.createElement('div'); wrapper.style.width = `${size.w}px`; wrapper.style.height = `${size.h}px`
         container.appendChild(wrapper)
         await new Promise<void>((resolve) => { const root = createRoot(wrapper); root.render(<VComp {...props} />); setTimeout(() => resolve(), 300) })
-        const dataUrl = await toPng(container, { width: size.w, height: size.h, pixelRatio: 1, cacheBust: true })
+        const dataUrl = await toPng(container, { width: size.w, height: size.h, pixelRatio: 1, cacheBust: true, includeQueryParams: true, fetchRequestInit: { mode: 'cors', credentials: 'omit' } })
         container.innerHTML = ''
         zip.file(`${brandSlug}-${v.templateId}-${sizeId}-${i + 1}.png`, dataUrl.split(',')[1], { base64: true })
       }
@@ -805,7 +810,7 @@ export default function CreativeBuilder({
       </div>
 
       {/* Hidden export container */}
-      <div ref={exportRef} aria-hidden style={{ position: 'fixed', left: '-9999px', top: 0, overflow: 'hidden', pointerEvents: 'none' }} />
+      <div ref={exportRef} aria-hidden style={{ position: 'fixed', left: '-9999px', top: 0, pointerEvents: 'none', zIndex: -1 }} />
 
       {/* Toast */}
       {exportToast && (
