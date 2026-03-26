@@ -46,7 +46,7 @@ const TEMPLATES = [
   { id: 'split',        label: 'Split',         component: SplitTemplate },
   { id: 'testimonial',  label: 'Testimonial',   component: TestimonialTemplate },
   { id: 'stat',         label: 'Stat',          component: StatTemplate },
-  { id: 'ugc',          label: 'Minimal',       component: UGCTemplate },
+  { id: 'ugc',          label: 'Card',          component: UGCTemplate },
 ] as const
 
 const SIZES = [
