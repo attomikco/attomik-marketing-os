@@ -340,6 +340,35 @@ export default function CreativeBuilder({
     setExportingAll(false)
   }
 
+  async function exportAllVariations() {
+    if (variations.length === 0) return
+    setExportingAll(true)
+    try {
+      const zip = new JSZip()
+      const container = exportRef.current
+      if (!container) throw new Error('Export container not available')
+      const { createRoot } = await import('react-dom/client')
+      for (let i = 0; i < variations.length; i++) {
+        const v = variations[i]
+        const VComp = TEMPLATES.find(t => t.id === v.templateId)!.component
+        const vImg = images.find(img => img.id === v.imageId)
+        const vImgUrl = vImg ? getPublicUrl(vImg.storage_path) : null
+        const props = { ...thumbProps(v, vImgUrl), width: size.w, height: size.h }
+        container.style.width = `${size.w}px`; container.style.height = `${size.h}px`; container.innerHTML = ''
+        const wrapper = document.createElement('div'); wrapper.style.width = `${size.w}px`; wrapper.style.height = `${size.h}px`
+        container.appendChild(wrapper)
+        await new Promise<void>((resolve) => { const root = createRoot(wrapper); root.render(<VComp {...props} />); setTimeout(() => resolve(), 300) })
+        const dataUrl = await toPng(container, { width: size.w, height: size.h, pixelRatio: 1, cacheBust: true })
+        container.innerHTML = ''
+        zip.file(`${brandSlug}-${v.templateId}-${sizeId}-${i + 1}.png`, dataUrl.split(',')[1], { base64: true })
+      }
+      const blob = await zip.generateAsync({ type: 'blob' }); const link = document.createElement('a')
+      link.download = `${brandSlug}-variations-${sizeId}-${Date.now()}.zip`; link.href = URL.createObjectURL(blob); link.click(); URL.revokeObjectURL(link.href)
+      setExportToast(`Downloaded ${variations.length} variations`); setTimeout(() => setExportToast(null), 3000)
+    } catch (err) { console.error('Export variations failed:', err) }
+    setExportingAll(false)
+  }
+
   // ── Preview scaling ────────────────────────────────────────────────
   const maxPreviewH = 420
   const scale = maxPreviewH / size.h
@@ -461,7 +490,7 @@ export default function CreativeBuilder({
                   </button>
                 ) : (
                   <>
-                    {[3, 5, 10].map(n => (
+                    {[3, 5, 10, 15, 20].map(n => (
                       <button key={n} onClick={() => setBatchCount(n)}
                         className="text-[11px] font-semibold w-6 h-6 rounded-full border transition-all"
                         style={batchCount === n
@@ -512,7 +541,13 @@ export default function CreativeBuilder({
           {/* ── Variations strip ── */}
           {variations.length > 0 && (
             <div className="bg-paper border border-border rounded-card p-4 mt-4">
-              <div className="label mb-3">Generated ({variations.length})</div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="label">Generated ({variations.length})</div>
+                <button onClick={exportAllVariations} disabled={exportingAll}
+                  className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted hover:text-ink transition-colors disabled:opacity-40">
+                  <Download size={11} /> Download all ({size.w}&times;{size.h})
+                </button>
+              </div>
               <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
                 {variations.map((v, i) => {
                   const vImg = images.find(img => img.id === v.imageId)
