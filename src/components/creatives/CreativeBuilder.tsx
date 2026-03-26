@@ -50,6 +50,12 @@ const SIZES = [
   { id: 'square45',  label: '4:5',        w: 1080, h: 1350 },
 ]
 
+const POSITIONS: { pos: TextPosition; i: number }[] = [
+  { pos: 'top-left', i: 0 }, { pos: 'top-center', i: 1 }, { pos: 'top-right', i: 2 },
+  { pos: 'center', i: 4 },
+  { pos: 'bottom-left', i: 6 }, { pos: 'bottom-center', i: 7 }, { pos: 'bottom-right', i: 8 },
+]
+
 export default function CreativeBuilder({
   brands,
   defaultBrandId,
@@ -512,73 +518,109 @@ export default function CreativeBuilder({
           <div className="bg-paper border border-border rounded-card p-4 space-y-3">
             <label className="label block">Style</label>
 
-            {/* Headline color + size */}
-            <div>
-              <span className="text-[10px] text-muted uppercase tracking-wide block mb-1">Headline</span>
-              <div className="flex items-center gap-2">
-                <div className="flex gap-0.5 flex-shrink-0">
-                  {brandColors.map(c => (
-                    <button key={'hc-' + c.value} onClick={() => setHeadlineColor(c.value)}
-                      className="w-5 h-5 rounded-[3px] border-2 transition-all"
-                      style={{ background: c.value, borderColor: headlineColor === c.value ? '#000' : '#e0e0e0' }} />
-                  ))}
+            {/* Text position grid + Background */}
+            <div className="flex gap-4">
+              <div>
+                <span className="text-[10px] text-muted uppercase tracking-wide block mb-1">Position</span>
+                <div className="grid grid-cols-3 gap-0.5 w-[72px]">
+                  {Array.from({ length: 9 }).map((_, i) => {
+                    const match = POSITIONS.find(p => p.i === i)
+                    if (!match) return <div key={i} className="w-6 h-6" />
+                    return (
+                      <button key={i} onClick={() => setTextPosition(match.pos)}
+                        className="w-6 h-6 rounded-[3px] border transition-all"
+                        style={textPosition === match.pos
+                          ? { background: '#000', borderColor: '#000' }
+                          : { background: '#f2f2f2', borderColor: '#e0e0e0' }}
+                        title={match.pos} />
+                    )
+                  })}
                 </div>
-                <input type="range" min={0.5} max={2} step={0.1} value={headlineSizeMul}
-                  onChange={e => setHeadlineSizeMul(parseFloat(e.target.value))}
-                  className="flex-1 accent-[#00ff97] min-w-0" />
-                <span className="text-[10px] font-mono text-muted w-8 text-right">{Math.round(headlineSizeMul * 100)}%</span>
+              </div>
+              <div className="flex-1 space-y-2">
+                <div>
+                  <span className="text-[10px] text-muted uppercase tracking-wide block mb-1">Background</span>
+                  <div className="flex gap-1">
+                    {brandColors.map(c => (
+                      <button key={'bg-' + c.value} onClick={() => setBgColor(c.value)}
+                        className="w-5 h-5 rounded-[3px] border-2 transition-all flex-shrink-0"
+                        style={{ background: c.value, borderColor: bgColor === c.value ? '#000' : '#e0e0e0' }}
+                        title={c.label} />
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-muted uppercase tracking-wide">Overlay</span>
+                  <button onClick={() => setShowOverlay(!showOverlay)}
+                    className="flex items-center gap-1 text-xs text-muted hover:text-ink transition-colors">
+                    {showOverlay ? <Eye size={11} /> : <EyeOff size={11} />}
+                    {showOverlay ? 'On' : 'Off'}
+                  </button>
+                </div>
+                {showOverlay && (
+                  <div className="flex items-center gap-2">
+                    <input type="range" min={0} max={100} step={5} value={overlayOpacity}
+                      onChange={e => setOverlayOpacity(parseInt(e.target.value))}
+                      className="flex-1 accent-[#00ff97]" />
+                    <span className="text-[11px] font-mono text-muted w-8 text-right">{overlayOpacity}%</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Body color + size */}
-            <div>
-              <span className="text-[10px] text-muted uppercase tracking-wide block mb-1">Body</span>
-              <div className="flex items-center gap-2">
-                <div className="flex gap-0.5 flex-shrink-0">
-                  {brandColors.map(c => (
-                    <button key={'bc-' + c.value} onClick={() => setBodyColor(c.value)}
-                      className="w-5 h-5 rounded-[3px] border-2 transition-all"
-                      style={{ background: c.value, borderColor: bodyColor === c.value ? '#000' : '#e0e0e0' }} />
-                  ))}
-                </div>
-                <input type="range" min={0.5} max={2} step={0.1} value={bodySizeMul}
-                  onChange={e => setBodySizeMul(parseFloat(e.target.value))}
-                  className="flex-1 accent-[#00ff97] min-w-0" />
-                <span className="text-[10px] font-mono text-muted w-8 text-right">{Math.round(bodySizeMul * 100)}%</span>
-              </div>
-            </div>
-
-            {/* Background */}
-            <div>
-              <span className="text-[10px] text-muted uppercase tracking-wide block mb-1">Background</span>
+            {/* Text banner */}
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] text-muted uppercase tracking-wide flex-shrink-0">Text bar</span>
               <div className="flex gap-1">
-                {brandColors.map(c => (
-                  <button key={'bg-' + c.value} onClick={() => setBgColor(c.value)}
-                    className="w-5 h-5 rounded-[3px] border-2 transition-all flex-shrink-0"
-                    style={{ background: c.value, borderColor: bgColor === c.value ? '#000' : '#e0e0e0' }}
-                    title={c.label} />
+                {(['none', 'top', 'bottom'] as const).map(v => (
+                  <button key={v} onClick={() => {
+                    setTextBanner(v)
+                    if (v === 'top') setTextPosition(p => p.replace(/^(top|bottom|center)/, 'top') as TextPosition)
+                    if (v === 'bottom') setTextPosition(p => p.replace(/^(top|bottom|center)/, 'bottom') as TextPosition)
+                  }}
+                    {...pill(textBanner === v)}>{v === 'none' ? 'Off' : v.charAt(0).toUpperCase() + v.slice(1)}</button>
                 ))}
               </div>
-            </div>
-
-            {/* Overlay */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-muted uppercase tracking-wide">Overlay</span>
-                <button onClick={() => setShowOverlay(!showOverlay)}
-                  className="flex items-center gap-1 text-xs text-muted hover:text-ink transition-colors">
-                  {showOverlay ? <Eye size={11} /> : <EyeOff size={11} />}
-                  {showOverlay ? 'On' : 'Off'}
-                </button>
-              </div>
-              {showOverlay && (
-                <div className="flex items-center gap-2">
-                  <input type="range" min={0} max={100} step={5} value={overlayOpacity}
-                    onChange={e => setOverlayOpacity(parseInt(e.target.value))}
-                    className="flex-1 accent-[#00ff97]" />
-                  <span className="text-[11px] font-mono text-muted w-8 text-right">{overlayOpacity}%</span>
+              {textBanner !== 'none' && (
+                <div className="flex gap-1 ml-auto">
+                  {brandColors.map(c => (
+                    <button key={'tb-' + c.value} onClick={() => setTextBannerColor(c.value)}
+                      className="w-5 h-5 rounded-[3px] border-2 transition-all flex-shrink-0"
+                      style={{ background: c.value, borderColor: textBannerColor === c.value ? '#00ff97' : '#e0e0e0' }} />
+                  ))}
                 </div>
               )}
+            </div>
+
+            {/* Font & color rows */}
+            <div className="space-y-2">
+              {[
+                { label: 'H', font: headlineFont, setFont: setHeadlineFont, color: headlineColor, setColor: setHeadlineColor, sizeMul: headlineSizeMul, setSizeMul: setHeadlineSizeMul },
+                { label: 'B', font: bodyFont, setFont: setBodyFont, color: bodyColor, setColor: setBodyColor, sizeMul: bodySizeMul, setSizeMul: setBodySizeMul },
+              ].map(row => (
+                <div key={row.label} className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-muted w-4 flex-shrink-0">{row.label}</span>
+                  <select value={row.font} onChange={e => row.setFont(e.target.value)}
+                    className="text-xs border border-border rounded-btn px-2 py-1 bg-cream focus:outline-none focus:border-accent w-24 flex-shrink-0 appearance-none">
+                    <option value="">Barlow</option>
+                    {brand?.font_primary && <option value={brand.font_primary.split('|')[0]}>{brand.font_primary.split('|')[0]}</option>}
+                    {brand?.font_secondary && brand.font_secondary.split('|')[0] !== brand.font_primary?.split('|')[0] && (
+                      <option value={brand.font_secondary.split('|')[0]}>{brand.font_secondary.split('|')[0]}</option>
+                    )}
+                  </select>
+                  <div className="flex gap-0.5 flex-shrink-0">
+                    {brandColors.map(c => (
+                      <button key={row.label + c.value} onClick={() => row.setColor(c.value)}
+                        className="w-5 h-5 rounded-[3px] border-2 transition-all"
+                        style={{ background: c.value, borderColor: row.color === c.value ? '#000' : '#e0e0e0' }} />
+                    ))}
+                  </div>
+                  <input type="range" min={0.5} max={2} step={0.1} value={row.sizeMul}
+                    onChange={e => row.setSizeMul(parseFloat(e.target.value))}
+                    className="flex-1 accent-[#00ff97] min-w-0" />
+                  <span className="text-[10px] font-mono text-muted w-7 text-right flex-shrink-0">{Math.round(row.sizeMul * 100)}%</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
