@@ -89,7 +89,6 @@ export default function PreviewClient({
   const adVariation = adVariations[0] || null
   const [landingBrief, setLandingBrief] = useState<LandingBrief | null>(existingLandingBrief)
   const [magicModal, setMagicModal] = useState<{ mode: 'adcopy' | 'landing'; isDone: boolean } | null>(null)
-  const continueResolverRef = useRef<(() => void) | null>(null)
   const [showReel, setShowReel] = useState(false)
 
   // Brand image URLs
@@ -97,8 +96,20 @@ export default function PreviewClient({
   const [lifestyleImageUrl, setLifestyleImageUrl] = useState<string | null>(null)
   const brandImageUrl = productImageUrl // backward compat
 
+  // Brand colors
+  const brandPrimary = brand.primary_color || '#000000'
+  const brandSecondary = brand.secondary_color || brandPrimary
+  const brandAccent = brand.accent_color || brandSecondary
+  function isLightColor(hex: string): boolean {
+    const c = (hex || '').replace('#', ''); if (c.length < 6) return false
+    const r = parseInt(c.slice(0,2),16); const g = parseInt(c.slice(2,4),16); const b = parseInt(c.slice(4,6),16)
+    return (r*299+g*587+b*114)/1000 > 128
+  }
+  const textOnPrimary = isLightColor(brandPrimary) ? '#000000' : '#ffffff'
+  const textOnAccent = isLightColor(brandAccent) ? '#000000' : '#ffffff'
+  console.log('[Brand Colors Applied]', { primary: brandPrimary, secondary: brandSecondary, accent: brandAccent })
+
   // Brand font
-  const brandAccent = brand.primary_color || '#1a1a1a'
   const fh = brand.font_heading
   const fontFamily = fh?.family || brand.font_primary?.split('|')[0] || ''
 
@@ -159,9 +170,9 @@ export default function PreviewClient({
         const res = await fetch(`/api/campaigns/${campaign.id}/ad-copy`, { method: 'POST' })
         const data = await res.json()
         if (data?.variations) setAdVariations(data.variations)
-      } catch {}
+      } catch (e) { console.error('[Generation] Ad copy failed:', e) }
       setMagicModal({ mode: 'adcopy', isDone: true })
-      await new Promise<void>(resolve => { continueResolverRef.current = resolve })
+      await new Promise(r => setTimeout(r, 1500))
       setMagicModal(null)
       await new Promise(r => setTimeout(r, 300))
 
@@ -171,9 +182,9 @@ export default function PreviewClient({
         const res = await fetch(`/api/campaigns/${campaign.id}/landing-brief`, { method: 'POST' })
         const data = await res.json()
         if (data?.hero) setLandingBrief(data)
-      } catch {}
+      } catch (e) { console.error('[Generation] Landing failed:', e) }
       setMagicModal({ mode: 'landing', isDone: true })
-      await new Promise<void>(resolve => { continueResolverRef.current = resolve })
+      await new Promise(r => setTimeout(r, 1500))
       setMagicModal(null)
       await new Promise(r => setTimeout(r, 300))
 
@@ -229,10 +240,6 @@ export default function PreviewClient({
         mode={magicModal?.mode || 'adcopy'}
         isDone={magicModal?.isDone || false}
         brandName={brand.name}
-        onComplete={() => {
-          continueResolverRef.current?.()
-          continueResolverRef.current = null
-        }}
       />
 
       {showReel && adVariation && (
@@ -298,26 +305,24 @@ export default function PreviewClient({
           </div>
 
           {adVariation ? (() => {
-            console.log('[Preview] productImageUrl:', productImageUrl)
-            console.log('[Preview] lifestyleImageUrl:', lifestyleImageUrl)
-            const CARD_H = 360
+            const CARD_H = 320
             const baseProps = {
               headline: adVariation.headline,
               bodyText: adVariation.primary_text.slice(0, 100),
               ctaText: landingBrief?.hero?.cta_text || 'Shop Now',
-              brandColor: brandAccent,
+              brandColor: brandPrimary,
               brandName: brand.name,
               headlineFont: fontFamily, headlineWeight: fh?.weight || '800',
               headlineTransform: fh?.transform || 'none',
-              headlineColor: '#ffffff', bodyFont: fontFamily, bodyWeight: '400',
-              bodyTransform: 'none', bodyColor: 'rgba(255,255,255,0.85)',
+              headlineColor: textOnPrimary, bodyFont: fontFamily, bodyWeight: '400',
+              bodyTransform: 'none', bodyColor: textOnPrimary,
               headlineSizeMul: 1, bodySizeMul: 1,
               showOverlay: true, overlayOpacity: 0.35,
-              textBanner: 'none' as const, textBannerColor: '#000',
-              showCta: true, ctaColor: brand.accent_color || brandAccent,
-              ctaFontColor: '#000', imagePosition: 'center',
+              textBanner: 'none' as const, textBannerColor: brandPrimary,
+              showCta: true, ctaColor: brandAccent,
+              ctaFontColor: textOnAccent, imagePosition: 'center',
+              bgColor: brandPrimary,
             }
-            // All cards 360px tall, width varies by aspect ratio
             const cards = [
               { label: 'Facebook Feed', srcW: 1080, srcH: 1080, Comp: OverlayTemplate, img: productImageUrl, pos: 'center' as const, tp: 'center' as const },
               { label: 'Instagram 4:5', srcW: 1080, srcH: 1350, Comp: SplitTemplate, img: productImageUrl, pos: 'center' as const, tp: 'center' as const },
@@ -327,34 +332,39 @@ export default function PreviewClient({
             ]
             return (
               <>
-                {/* Gallery — all cards same height */}
-                <div className="flex gap-5 overflow-x-auto pb-4 -mx-4 md:-mx-10 px-4 md:px-10" style={{ scrollSnapType: 'x mandatory' }}>
-                  {cards.map((c, i) => {
-                    const scale = CARD_H / c.srcH
-                    const cardW = Math.round(c.srcW * scale)
-                    return (
-                      <div key={i} className="flex-shrink-0 flex flex-col items-center" style={{ scrollSnapAlign: 'center' }}>
-                        <div className="text-xs text-muted mb-2 font-medium">{c.label}</div>
-                        <div className="border border-border overflow-hidden shadow-sm" style={{ width: cardW, height: CARD_H, borderRadius: 12, position: 'relative' }}>
-                          <div style={{ position: 'absolute', top: 0, left: 0, width: c.srcW, height: c.srcH, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
-                            <c.Comp {...baseProps} width={c.srcW} height={c.srcH} imageUrl={c.img} bgColor={c.img ? '#000' : brandAccent} textPosition={c.tp} imagePosition={c.pos} />
+                {/* Gallery — all cards 320px tall */}
+                <div style={{ width: '100%', overflowX: 'auto', overflowY: 'hidden', paddingBottom: 16 }}>
+                  <div style={{ display: 'flex', flexDirection: 'row', gap: 16, alignItems: 'flex-start', width: 'fit-content', minWidth: '100%' }}>
+                    {cards.map((c, i) => {
+                      const scale = CARD_H / c.srcH
+                      const cardW = Math.round(c.srcW * scale)
+                      return (
+                        <div key={i} style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                          <div style={{ fontSize: 11, color: '#888', marginBottom: 8, textAlign: 'center', fontWeight: 500 }}>{c.label}</div>
+                          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 12, border: '1px solid #e0e0e0', width: cardW, height: CARD_H, flexShrink: 0 }}>
+                            <div style={{ position: 'absolute', top: 0, left: 0, width: c.srcW, height: c.srcH, transform: `scale(${scale})`, transformOrigin: 'top left', pointerEvents: 'none' }}>
+                              <c.Comp {...baseProps} width={c.srcW} height={c.srcH} imageUrl={c.img} bgColor={c.img ? '#000' : brandPrimary} textPosition={c.tp} imagePosition={c.pos} />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )
-                  })}
+                      )
+                    })}
+                  </div>
                 </div>
 
-                {/* Platform mockups — side by side */}
-                <div className="text-center text-xs text-muted mb-4 font-medium mt-8">How your ad looks across platforms</div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+                {/* Platform mockups — 3 columns */}
+                <div style={{ fontSize: 11, color: '#888', textAlign: 'center', marginBottom: 16, marginTop: 24, fontWeight: 500 }}>How your ad looks across platforms</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24, alignItems: 'flex-start', width: '100%' }}>
                   {(['facebook', 'instagram', 'story'] as const).map(platform => {
+                    const fw = platform === 'story' ? 200 : 320
                     const ph = platform === 'story' ? 1920 : 1080
-                    const platformProps = { ...baseProps, width: 1080, height: ph, imageUrl: productImageUrl, bgColor: productImageUrl ? '#000' : brandAccent, textPosition: 'center' as const }
+                    const platformProps = { ...baseProps, width: 1080, height: ph, imageUrl: productImageUrl, bgColor: productImageUrl ? '#000' : brandPrimary, textPosition: 'center' as const }
                     return (
-                      <div key={platform} className="flex flex-col items-center">
-                        <div className="label text-center mb-3">{platform === 'facebook' ? 'Facebook Feed' : platform === 'instagram' ? 'Instagram Feed' : 'Instagram Story'}</div>
-                        <div style={{ maxWidth: platform === 'story' ? 220 : 340, width: '100%' }}>
+                      <div key={platform} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' as const, color: '#888', marginBottom: 12, textAlign: 'center' }}>
+                          {platform === 'facebook' ? 'Facebook Feed' : platform === 'instagram' ? 'Instagram Feed' : 'Instagram Story'}
+                        </div>
+                        <div style={{ maxWidth: fw, width: '100%' }}>
                           <PlatformAdPreview
                             brand={brand}
                             creative={{ imageUrl: productImageUrl, headline: adVariation.headline, primaryText: adVariation.primary_text, ctaText: landingBrief?.hero?.cta_text || 'Shop Now' }}
@@ -422,10 +432,10 @@ export default function PreviewClient({
           </div>
           {landingBrief ? (
             <div className="max-w-3xl mx-auto border border-border rounded-card overflow-hidden">
-              <div className="p-8 text-white" style={{ background: brand.secondary_color ? `linear-gradient(135deg, ${brandAccent}, ${brand.secondary_color})` : brandAccent }}>
+              <div className="p-8" style={{ background: brandPrimary, color: textOnPrimary }}>
                 <div className="text-2xl font-black" style={headingStyle}>{landingBrief.hero.headline}</div>
-                <div className="text-sm mt-2" style={{ color: 'rgba(255,255,255,0.7)' }}>{landingBrief.hero.subheadline}</div>
-                <button className="text-sm font-bold mt-4 px-5 py-2 rounded-btn" style={{ background: brand.accent_color || '#fff', color: '#000' }}>{landingBrief.hero.cta_text}</button>
+                <div className="text-sm mt-2" style={{ opacity: 0.7 }}>{landingBrief.hero.subheadline}</div>
+                <button className="text-sm font-bold mt-4 px-5 py-2 rounded-btn" style={{ background: brandAccent, color: textOnAccent }}>{landingBrief.hero.cta_text}</button>
               </div>
               {landingBrief.benefits?.length > 0 && (
                 <div className="p-5 bg-paper border-b border-border">
@@ -457,9 +467,9 @@ export default function PreviewClient({
                   </div>
                 )}
               </div>
-              <div className="p-6 text-white text-center" style={{ background: brand.secondary_color ? `linear-gradient(135deg, ${brandAccent}, ${brand.secondary_color})` : brandAccent }}>
+              <div className="p-6 text-center" style={{ background: brandPrimary, color: textOnPrimary }}>
                 <div className="font-bold text-lg" style={headingStyle}>{landingBrief.final_cta.headline}</div>
-                <button className="text-sm font-bold mt-3 px-5 py-2 rounded-btn" style={{ background: brand.accent_color || '#fff', color: '#000' }}>{landingBrief.final_cta.cta_text}</button>
+                <button className="text-sm font-bold mt-3 px-5 py-2 rounded-btn" style={{ background: brandAccent, color: textOnAccent }}>{landingBrief.final_cta.cta_text}</button>
               </div>
             </div>
           ) : (

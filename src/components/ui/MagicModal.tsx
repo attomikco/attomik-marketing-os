@@ -8,7 +8,7 @@ interface MagicModalProps {
   mode: 'scan' | 'adcopy' | 'landing'
   isDone: boolean
   brandName?: string
-  onComplete: () => void
+  onComplete?: () => void
 }
 
 const COPY = {
@@ -88,11 +88,6 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
 
       <div style={{ position: 'absolute', top: 32, left: 32 }}><AttomikLogo height={22} color="rgba(255,255,255,0.25)" /></div>
 
-      {isDone && (
-        <button onClick={onComplete} style={{ position: 'absolute', top: 28, right: 32, background: '#00ff97', color: '#000', fontWeight: 800, fontSize: 14, padding: '10px 24px', borderRadius: 999, border: 'none', cursor: 'pointer', animation: 'fadeInUp 0.4s ease forwards' }}>
-          Continue →
-        </button>
-      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, width: '100%', maxWidth: 480, padding: '0 32px' }}>
         {/* SCAN: Radar */}
