@@ -1,6 +1,8 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { Brand } from '@/types'
+import PlatformAdPreview from './PlatformAdPreview'
+import OverlayTemplate from '@/components/creatives/templates/OverlayTemplate'
 
 interface AdVariation {
   primary_text: string
@@ -25,10 +27,11 @@ interface FunnelPreviewProps {
 }
 
 const skeleton = "animate-pulse bg-cream rounded"
+const APP_ACCENT = '#00ff97'
 
 export default function FunnelPreview({ adVariation, landingBrief, brand, onDismiss }: FunnelPreviewProps) {
   const router = useRouter()
-  const accent = brand.primary_color || '#00ff97'
+  const brandAccent = brand.primary_color || '#000'
   const fh = brand.font_heading
   const headingStyle: React.CSSProperties = {
     fontFamily: fh?.family || brand.font_primary?.split('|')[0] || undefined,
@@ -36,9 +39,39 @@ export default function FunnelPreview({ adVariation, landingBrief, brand, onDism
     letterSpacing: fh?.letterSpacing === 'wide' ? '0.12em' : fh?.letterSpacing === 'tight' ? '-0.02em' : 'normal',
   }
 
+  // Build template props for the creative preview
+  const templateProps = adVariation ? {
+    imageUrl: null,
+    headline: adVariation.headline,
+    bodyText: adVariation.primary_text.slice(0, 100),
+    ctaText: landingBrief?.hero?.cta_text || 'Shop Now',
+    brandColor: brandAccent,
+    brandName: brand.name,
+    headlineFont: brand.font_primary?.split('|')[0] || '',
+    headlineWeight: brand.font_heading?.weight || '800',
+    headlineTransform: brand.font_heading?.transform || 'none',
+    headlineColor: '#ffffff',
+    bodyFont: brand.font_primary?.split('|')[0] || '',
+    bodyWeight: '400',
+    bodyTransform: 'none',
+    bodyColor: 'rgba(255,255,255,0.85)',
+    bgColor: brandAccent,
+    headlineSizeMul: 1,
+    bodySizeMul: 1,
+    showOverlay: false,
+    overlayOpacity: 0,
+    textBanner: 'none' as const,
+    textBannerColor: '#000',
+    textPosition: 'center' as const,
+    showCta: true,
+    ctaColor: brand.accent_color || brandAccent,
+    ctaFontColor: '#ffffff',
+    imagePosition: 'center',
+  } : null
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Top banner */}
+      {/* Top banner — APP CHROME */}
       <div className="bg-ink rounded-card p-6 flex items-center justify-between gap-4" style={{ color: '#fff' }}>
         <div>
           <div className="font-bold text-xl">✦ Your funnel is ready.</div>
@@ -48,45 +81,28 @@ export default function FunnelPreview({ adVariation, landingBrief, brand, onDism
         </div>
         <button onClick={onDismiss}
           className="text-sm font-bold px-5 py-2.5 rounded-btn transition-opacity hover:opacity-90 flex-shrink-0"
-          style={{ background: accent, color: '#000' }}>
-          Edit & customize →
+          style={{ background: APP_ACCENT, color: '#000' }}>
+          Edit &amp; customize →
         </button>
       </div>
 
       {/* Two column grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Left: Ad Creative */}
+        {/* Left: Ad Creative with platform frames */}
         <div>
           <div className="label mb-3">Ad Creative</div>
-          {adVariation ? (
-            <div className="bg-paper border border-border rounded-card overflow-hidden">
-              {/* FB header */}
-              <div className="flex items-center gap-2.5 p-3 border-b border-border">
-                <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold" style={{ background: accent, color: '#000' }}>
-                  {brand.name?.[0] || 'B'}
-                </div>
-                <div>
-                  <div className="font-semibold text-sm">{brand.name}</div>
-                  <div className="text-muted text-xs">Sponsored</div>
-                </div>
-              </div>
-              {/* Image placeholder */}
-              <div className="aspect-square flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${accent}22, ${accent}44)` }}>
-                <span className="text-6xl font-black" style={{ color: accent, opacity: 0.15 }}>{brand.name?.[0] || 'B'}</span>
-              </div>
-              {/* Ad copy */}
-              <div className="p-4 space-y-2">
-                <p className="text-sm leading-relaxed">{adVariation.primary_text}</p>
-                <p className="font-bold" style={headingStyle}>{adVariation.headline}</p>
-                <p className="text-muted text-sm">{adVariation.description}</p>
-              </div>
-              {/* CTA */}
-              <div className="border-t border-border">
-                <div className="text-sm font-semibold py-2.5 text-center text-muted">
-                  {landingBrief?.hero?.cta_text || 'Shop Now'}
-                </div>
-              </div>
-            </div>
+          {adVariation && templateProps ? (
+            <PlatformAdPreview
+              brand={brand}
+              creative={{
+                imageUrl: null,
+                headline: adVariation.headline,
+                primaryText: adVariation.primary_text,
+                ctaText: landingBrief?.hero?.cta_text || 'Shop Now',
+              }}
+              TemplateComponent={OverlayTemplate}
+              templateProps={templateProps}
+            />
           ) : (
             <div className="bg-paper border border-border rounded-card p-6 space-y-4">
               <div className={skeleton + ' h-8 w-2/3'} />
@@ -104,11 +120,11 @@ export default function FunnelPreview({ adVariation, landingBrief, brand, onDism
           <div className="label mb-3">Landing Page</div>
           {landingBrief ? (
             <div className="border border-border rounded-card overflow-hidden" style={{ maxHeight: 520, overflowY: 'auto' }}>
-              {/* Hero */}
+              {/* Hero — uses brand colors inside preview */}
               <div className="p-6 bg-ink text-white">
                 <div className="text-xl font-black" style={headingStyle}>{landingBrief.hero.headline}</div>
                 <div className="text-sm mt-2" style={{ color: 'rgba(255,255,255,0.6)' }}>{landingBrief.hero.subheadline}</div>
-                <button className="text-sm font-bold mt-4 px-4 py-2 rounded-btn" style={{ background: accent, color: '#000' }}>
+                <button className="text-sm font-bold mt-4 px-4 py-2 rounded-btn" style={{ background: brandAccent, color: '#000' }}>
                   {landingBrief.hero.cta_text}
                 </button>
               </div>
@@ -134,7 +150,7 @@ export default function FunnelPreview({ adVariation, landingBrief, brand, onDism
                   <p className="text-xs text-muted mt-1">{landingBrief.social_proof.attribution}</p>
                 </div>
               )}
-              {/* Problem / Solution as FAQ-like sections */}
+              {/* Problem / Solution */}
               <div className="p-4 bg-paper">
                 {landingBrief.problem && (
                   <div className="mb-3">
@@ -150,10 +166,10 @@ export default function FunnelPreview({ adVariation, landingBrief, brand, onDism
                 )}
                 <p className="text-xs text-muted mt-3">+ 2 more sections</p>
               </div>
-              {/* Final CTA */}
+              {/* Final CTA — brand colors inside preview */}
               <div className="p-5 bg-ink text-white text-center">
                 <div className="font-bold" style={headingStyle}>{landingBrief.final_cta.headline}</div>
-                <button className="text-sm font-bold mt-3 px-4 py-2 rounded-btn" style={{ background: accent, color: '#000' }}>
+                <button className="text-sm font-bold mt-3 px-4 py-2 rounded-btn" style={{ background: brandAccent, color: '#000' }}>
                   {landingBrief.final_cta.cta_text}
                 </button>
               </div>
@@ -172,14 +188,14 @@ export default function FunnelPreview({ adVariation, landingBrief, brand, onDism
         </div>
       </div>
 
-      {/* Bottom CTA */}
+      {/* Bottom CTA — APP CHROME */}
       <div className="bg-paper border border-border rounded-card p-6 text-center">
         <div className="font-bold text-base mb-1">✦ This entire funnel was built from your brand context.</div>
         <p className="text-muted text-sm mb-4">Add more context, upload images, and refine the copy to make it perfectly on-brand.</p>
         <div className="flex items-center justify-center gap-3">
           <button onClick={onDismiss}
             className="text-sm font-bold px-5 py-2.5 rounded-btn transition-opacity hover:opacity-90"
-            style={{ background: accent, color: '#000' }}>
+            style={{ background: APP_ACCENT, color: '#000' }}>
             Edit campaign brief
           </button>
           <button onClick={() => router.push(`/brands/${brand.id}`)}
