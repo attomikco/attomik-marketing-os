@@ -99,8 +99,8 @@ export default function PreviewCanvas({
       </div>
 
       {/* Preview canvas + FB copy */}
-      <div className="flex gap-5 items-start" ref={previewRef}>
-        <div className="rounded-btn overflow-hidden border border-border shadow-sm flex-shrink-0" style={{ width: previewW, height: previewH }}>
+      <div className="flex flex-col sm:flex-row gap-4 items-start" ref={previewRef}>
+        <div className="rounded-btn overflow-hidden border border-border shadow-sm flex-shrink-0 mx-auto sm:mx-0" style={{ width: previewW, height: previewH }}>
           <div style={{ width: size.w, height: size.h, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
             <TemplateComponent {...templateProps} width={size.w} height={size.h} />
           </div>

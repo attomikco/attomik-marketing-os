@@ -402,7 +402,7 @@ export default function CreativeBuilder({
   })
 
   // ── Preview scaling ────────────────────────────────────────────────
-  const maxPreviewH = 420
+  const maxPreviewH = 380
   const scale = maxPreviewH / size.h
   const previewW = Math.round(size.w * scale)
   const previewH = maxPreviewH
@@ -433,7 +433,7 @@ export default function CreativeBuilder({
     <div className="space-y-4">
 
       {/* TOP BAR — Brand + Size + Actions */}
-      <div className="bg-paper border border-border rounded-card px-4 py-2.5 flex items-center gap-3">
+      <div className="bg-paper border border-border rounded-card px-4 py-2.5 flex flex-wrap items-center gap-3">
         <div className="relative flex-shrink-0">
           <select value={brandId} onChange={e => setBrandId(e.target.value)}
             className="text-sm font-semibold border border-border rounded-btn pl-3 pr-7 py-1.5 bg-cream appearance-none focus:outline-none focus:border-accent">
@@ -450,7 +450,7 @@ export default function CreativeBuilder({
       </div>
 
       {/* TEMPLATE SELECTOR — full width row, larger pills */}
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-1.5 overflow-x-auto">
         {TEMPLATES.map(t => (
           <button key={t.id}
             onClick={() => {
@@ -511,10 +511,10 @@ export default function CreativeBuilder({
         exportingAll={exportingAll}
       />
 
-      {/* MAIN AREA: Preview (left) + Controls (right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:items-start">
+      {/* MAIN AREA: Preview+Style (left) + Images+Copy (right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-        {/* LEFT: Preview — stretches to match right column */}
+        {/* LEFT: Preview + Style — stretches to match right column */}
         <div className="lg:col-span-7 flex flex-col gap-4">
           <PreviewCanvas
             templateLabel={template.label}
