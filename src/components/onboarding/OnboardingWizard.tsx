@@ -3,6 +3,7 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Upload, ArrowLeft } from 'lucide-react'
+import AttomikLogo from '@/components/ui/AttomikLogo'
 
 const inputCls = "w-full text-sm border border-border rounded-btn px-3 py-2.5 bg-cream focus:outline-none focus:border-accent transition-colors font-sans placeholder:text-[#bbb]"
 
@@ -125,13 +126,11 @@ export default function OnboardingWizard() {
       name: brandName.trim(),
       slug,
       website: website.trim() || null,
-      industry: category.trim() || null,
       primary_color: primaryColor || null,
       secondary_color: secondaryColor || null,
       accent_color: accentColor || null,
       font_primary: brandFont ? `${brandFont}|700|${fontTransform}` : null,
       font_heading: brandFont ? { family: brandFont, weight: '700', transform: fontTransform, letterSpacing: fontLetterSpacing } : null,
-      target_audience: targetAudience.trim() || null,
       products: productName.trim() ? [{ name: productName.trim(), description: productDesc.trim() || null, price_range: priceRange.trim() || null }] : null,
       status: 'active',
     }).select('id').single()
@@ -241,15 +240,16 @@ export default function OnboardingWizard() {
         <label className="text-xs font-semibold block mb-1">Website</label>
         <input className={inputCls} value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://yourbrand.com" />
       </div>
-      <div>
-        <label className="text-xs font-semibold block mb-1">Product category</label>
-        <input className={inputCls} value={category} onChange={e => setCategory(e.target.value)} placeholder="Coffee, Skincare, Wine…" />
-      </div>
       {brandFont && (
         <div className="space-y-3">
           <div>
             <label className="text-xs font-semibold block mb-1">Brand font</label>
             <input className={inputCls} value={brandFont} onChange={e => setBrandFont(e.target.value)} />
+            {brandFont && (
+              <p className="text-sm mt-2 text-muted" style={{ fontFamily: `${brandFont}, sans-serif`, fontWeight: 700, textTransform: fontTransform as any }}>
+                {brandName || 'The quick brown fox jumps over the lazy dog'}
+              </p>
+            )}
           </div>
           <div>
             <label className="text-xs font-semibold block mb-1.5">Font style</label>
@@ -374,11 +374,6 @@ export default function OnboardingWizard() {
           )}
 
           {/* Shared fields */}
-          <div>
-            <label className="text-xs font-semibold block mb-1">Target audience</label>
-            <textarea className={inputCls + ' resize-none'} rows={2} value={targetAudience} onChange={e => setTargetAudience(e.target.value)} placeholder="Women 28–45 who value premium quality and mindful living" />
-          </div>
-
           {/* Image uploads + detected product image */}
           <div>
             <label className="text-xs font-semibold block mb-1">Product images (optional)</label>
@@ -425,7 +420,7 @@ export default function OnboardingWizard() {
 
       {/* Logo above card */}
       <div className="flex justify-center mb-8">
-        <span style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 13, letterSpacing: '0.15em', color: '#00ff97' }}>ATTOMIK</span>
+        <AttomikLogo height={28} color="#00ff97" />
       </div>
 
       <div className="max-w-lg w-full bg-paper rounded-card p-8 mx-4 max-h-[90vh] overflow-y-auto">
