@@ -1,6 +1,8 @@
 'use client'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Brand } from '@/types'
+import { createClient } from '@/lib/supabase/client'
 import PlatformAdPreview from './PlatformAdPreview'
 import OverlayTemplate from '@/components/creatives/templates/OverlayTemplate'
 
@@ -31,35 +33,58 @@ const APP_ACCENT = '#00ff97'
 
 export default function FunnelPreview({ adVariation, landingBrief, brand, onDismiss }: FunnelPreviewProps) {
   const router = useRouter()
+  const supabase = createClient()
+  const [brandImageUrl, setBrandImageUrl] = useState<string | null>(null)
   const brandAccent = brand.primary_color || '#000'
   const fh = brand.font_heading
+  const fontFamily = fh?.family || brand.font_primary?.split('|')[0] || ''
+
+  // Load Google Font
+  useEffect(() => {
+    if (!fontFamily) return
+    const id = 'funnel-preview-font'
+    let link = document.getElementById(id) as HTMLLinkElement | null
+    if (!link) { link = document.createElement('link'); link.id = id; link.rel = 'stylesheet'; document.head.appendChild(link) }
+    link.href = `https://fonts.googleapis.com/css2?family=${fontFamily.replace(/ /g, '+')}:wght@400;500;600;700;800;900&display=swap`
+  }, [fontFamily])
+
+  // Fetch first brand image
+  useEffect(() => {
+    supabase.from('brand_images').select('storage_path').eq('brand_id', brand.id).limit(1)
+      .then(({ data }) => {
+        if (data?.[0]) {
+          const url = supabase.storage.from('brand-images').getPublicUrl(data[0].storage_path).data.publicUrl
+          setBrandImageUrl(url)
+        }
+      })
+  }, [brand.id])
   const headingStyle: React.CSSProperties = {
-    fontFamily: fh?.family || brand.font_primary?.split('|')[0] || undefined,
+    fontFamily: fontFamily ? `${fontFamily}, sans-serif` : undefined,
     textTransform: (fh?.transform || 'none') as any,
     letterSpacing: fh?.letterSpacing === 'wide' ? '0.12em' : fh?.letterSpacing === 'tight' ? '-0.02em' : 'normal',
   }
 
   // Build template props for the creative preview
   const templateProps = adVariation ? {
-    imageUrl: null,
+    imageUrl: brandImageUrl,
     headline: adVariation.headline,
     bodyText: adVariation.primary_text.slice(0, 100),
     ctaText: landingBrief?.hero?.cta_text || 'Shop Now',
     brandColor: brandAccent,
     brandName: brand.name,
-    headlineFont: brand.font_primary?.split('|')[0] || '',
+    headlineFont: fontFamily,
     headlineWeight: brand.font_heading?.weight || '800',
     headlineTransform: brand.font_heading?.transform || 'none',
     headlineColor: '#ffffff',
-    bodyFont: brand.font_primary?.split('|')[0] || '',
+    bodyFont: fontFamily,
     bodyWeight: '400',
     bodyTransform: 'none',
     bodyColor: 'rgba(255,255,255,0.85)',
-    bgColor: brandAccent,
+    bgColor: brandImageUrl ? '#000' : brandAccent,
     headlineSizeMul: 1,
     bodySizeMul: 1,
-    showOverlay: false,
-    overlayOpacity: 0,
+    showOverlay: !!brandImageUrl,
+    overlayOpacity: brandImageUrl ? 0.3 : 0,
     textBanner: 'none' as const,
     textBannerColor: '#000',
     textPosition: 'center' as const,
