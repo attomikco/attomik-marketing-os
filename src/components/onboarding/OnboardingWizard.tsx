@@ -131,7 +131,7 @@ export default function OnboardingWizard() {
       website: website.trim() || null,
       primary_color: primaryColor || null,
       secondary_color: secondaryColor || null,
-      accent_color: accentColor || null,
+      accent_color: secondaryColor || null,
       font_primary: brandFont ? `${brandFont}|700|${fontTransform}` : null,
       font_heading: brandFont ? { family: brandFont, weight: '700', transform: fontTransform, letterSpacing: fontLetterSpacing } : null,
       products: productName.trim() ? [{ name: productName.trim(), description: productDesc.trim() || null, price_range: priceRange.trim() || null }] : null,
@@ -329,8 +329,7 @@ export default function OnboardingWizard() {
         <div className="flex gap-4">
           {[
             { label: 'Primary', value: primaryColor, set: setPrimaryColor },
-            { label: 'Secondary', value: secondaryColor, set: setSecondaryColor },
-            { label: 'Accent', value: accentColor, set: setAccentColor },
+            { label: 'Secondary / Accent', value: secondaryColor, set: setSecondaryColor },
           ].map(c => (
             <div key={c.label} className="flex-1">
               <div style={{ width: 40, height: 40, borderRadius: 8, background: c.value || '#f2f2f2', border: '1px solid #ddd', marginBottom: 4 }} />
