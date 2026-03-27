@@ -126,34 +126,31 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
       return
     }
 
-    // Extended color columns — third call so it doesn't break older columns
-    console.log('[BrandVoiceEditor] Saving extended colors to brand:', brand.id)
-    const { error: err3, data: d3 } = await supabase.from('brands').update({
-      bg_base:           form.bg_base || null,
-      bg_dark:           form.bg_dark || null,
-      bg_secondary:      form.bg_secondary || null,
-      bg_accent:         form.bg_accent || null,
-      text_on_base:      form.text_on_base || null,
-      text_on_dark:      form.text_on_dark || null,
-      text_on_accent:    form.text_on_accent || null,
-      btn_primary:       form.btn_primary || null,
-      btn_primary_text:  form.btn_primary_text || null,
-      btn_secondary:     form.btn_secondary || null,
-      btn_secondary_text: form.btn_secondary_text || null,
-      btn_tertiary:      form.btn_tertiary || null,
-      btn_tertiary_text: form.btn_tertiary_text || null,
-    }).eq('id', brand.id)
-
-    console.log('[BrandVoiceEditor] Extended colors result:', JSON.stringify({ error: err3, data: d3 }))
-    if (err3) {
-      setError(`Extended colors failed: ${err3.message}. Run the migration to add these columns.`)
-      setSaving(false)
-      return
-    }
-
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
+
+    // Extended color columns — fire and forget, don't block the save
+    try {
+      const { error: err3 } = await supabase.from('brands').update({
+        bg_base:           form.bg_base || null,
+        bg_dark:           form.bg_dark || null,
+        bg_secondary:      form.bg_secondary || null,
+        bg_accent:         form.bg_accent || null,
+        text_on_base:      form.text_on_base || null,
+        text_on_dark:      form.text_on_dark || null,
+        text_on_accent:    form.text_on_accent || null,
+        btn_primary:       form.btn_primary || null,
+        btn_primary_text:  form.btn_primary_text || null,
+        btn_secondary:     form.btn_secondary || null,
+        btn_secondary_text: form.btn_secondary_text || null,
+        btn_tertiary:      form.btn_tertiary || null,
+        btn_tertiary_text: form.btn_tertiary_text || null,
+      }).eq('id', brand.id)
+      if (err3) console.warn('[BrandVoiceEditor] Extended colors not saved:', err3.message)
+    } catch (e) {
+      console.warn('[BrandVoiceEditor] Extended colors error:', e)
+    }
   }
 
   const inputCls = "w-full text-sm border border-border rounded-btn px-3 py-2.5 bg-cream focus:outline-none focus:border-accent transition-colors font-sans placeholder:text-[#bbb]"
