@@ -7,7 +7,7 @@ import type { Brand } from '../types'
 // Which features each template supports
 const FEATURES: Record<string, { position?: boolean; imagePos?: boolean; overlay?: boolean; textBanner?: boolean; cta?: boolean; bg?: boolean; fonts?: boolean }> = {
   overlay:      { position: true, overlay: true, cta: true, fonts: true },
-  stat:         { position: true, imagePos: true, overlay: true, cta: false, bg: true, fonts: true },
+  stat:         { position: true, imagePos: true, overlay: true, cta: false, fonts: true },
   mission:      { position: false, imagePos: true, overlay: true, cta: false, bg: true, fonts: true },
   split:        { position: false, imagePos: true, cta: true, bg: true, fonts: true },
   ugc:          { position: false, imagePos: true, cta: true, bg: true, fonts: true },

@@ -20,7 +20,6 @@ export default function StatTemplate({
 }: TemplateProps) {
   const p = px(EDGE_PAD, width)
   const pos = positionStyles(textPosition)
-  const statColor = (headlineColor === '#ffffff' || headlineColor === '#fff') ? brandColor : headlineColor
 
   return (
     <div style={{ position: 'relative', overflow: 'hidden', width, height, fontFamily: ff(bodyFont), background: bgColor }}>
@@ -55,7 +54,7 @@ export default function StatTemplate({
             fontSize: px(STAT_SIZE, width) * headlineSizeMul,
             fontWeight: parseInt(headlineWeight) || 800,
             letterSpacing: '-0.04em', lineHeight: 1,
-            color: statColor || brandColor,
+            color: headlineColor,
             fontFamily: ff(headlineFont), textTransform: headlineTransform as any,
           }}>
             {headline}
@@ -71,7 +70,7 @@ export default function StatTemplate({
         {bodyText && (
           <div style={{
             fontSize: autoSize(px(SUPPORT_SIZE, width), bodyText, 50) * bodySizeMul, fontWeight: 400,
-            lineHeight: 1.4, color: 'rgba(255,255,255,0.8)', fontFamily: ff(bodyFont),
+            lineHeight: 1.4, color: bodyColor, fontFamily: ff(bodyFont),
             textTransform: bodyTransform as any, maxWidth: '80%',
           }}>
             {bodyText}
