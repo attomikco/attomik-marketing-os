@@ -10,7 +10,7 @@ import SplitTemplate from '@/components/creatives/templates/SplitTemplate'
 import StatTemplate from '@/components/creatives/templates/StatTemplate'
 import TestimonialTemplate from '@/components/creatives/templates/TestimonialTemplate'
 import UGCTemplate from '@/components/creatives/templates/UGCTemplate'
-import GenerationModal, { ModalStep } from '@/components/ui/GenerationModal'
+import MagicModal from '@/components/ui/MagicModal'
 import CreativeReel from './CreativeReel'
 
 interface AdVariation {
@@ -88,13 +88,9 @@ export default function PreviewClient({
   const [adVariations, setAdVariations] = useState<AdVariation[]>(existingAdVariation ? [existingAdVariation] : [])
   const adVariation = adVariations[0] || null
   const [landingBrief, setLandingBrief] = useState<LandingBrief | null>(existingLandingBrief)
-  const [showModal, setShowModal] = useState(!hasContent)
+  const [magicModal, setMagicModal] = useState<{ mode: 'adcopy' | 'landing'; isDone: boolean } | null>(null)
+  const continueResolverRef = useRef<(() => void) | null>(null)
   const [showReel, setShowReel] = useState(false)
-  const [modalSteps, setModalSteps] = useState<ModalStep[]>([
-    { id: 'ad-copy', label: 'Ad copy', status: hasContent ? 'done' : 'pending' },
-    { id: 'landing', label: 'Landing page brief', status: hasContent ? 'done' : 'pending' },
-    { id: 'creative', label: 'Creative', status: hasContent ? 'done' : 'pending' },
-  ])
 
   // Brand image URLs
   const [productImageUrl, setProductImageUrl] = useState<string | null>(null)
@@ -152,58 +148,40 @@ export default function PreviewClient({
     }
   }, [brand.id, brandImages])
 
-  // Auto-generate if no content exists
+  // Auto-generate if no content exists — sequential with MagicModal
   useEffect(() => {
     if (hasContent) return
 
-    function updateStep(stepId: string, status: ModalStep['status']) {
-      setModalSteps(prev => prev.map(s => s.id === stepId ? { ...s, status } : s))
-    }
-
-    async function runSequential() {
-      // Step 1: Ad copy
-      updateStep('ad-copy', 'loading')
+    async function generate() {
+      // Ad copy
+      setMagicModal({ mode: 'adcopy', isDone: false })
       try {
         const res = await fetch(`/api/campaigns/${campaign.id}/ad-copy`, { method: 'POST' })
         const data = await res.json()
-        if (data?.variations?.length > 0) {
-          setAdVariations(data.variations)
-          updateStep('ad-copy', 'done')
-        } else {
-          updateStep('ad-copy', 'error')
-        }
-      } catch { updateStep('ad-copy', 'error') }
+        if (data?.variations) setAdVariations(data.variations)
+      } catch {}
+      setMagicModal({ mode: 'adcopy', isDone: true })
+      await new Promise<void>(resolve => { continueResolverRef.current = resolve })
+      setMagicModal(null)
+      await new Promise(r => setTimeout(r, 300))
 
-      // Step 2: Landing brief (only after ad copy finishes)
-      updateStep('landing', 'loading')
+      // Landing brief
+      setMagicModal({ mode: 'landing', isDone: false })
       try {
         const res = await fetch(`/api/campaigns/${campaign.id}/landing-brief`, { method: 'POST' })
         const data = await res.json()
-        if (data?.hero) {
-          setLandingBrief(data)
-          updateStep('landing', 'done')
-        } else {
-          updateStep('landing', 'error')
-        }
-      } catch { updateStep('landing', 'error') }
-    }
-    runSequential()
-  }, [])
+        if (data?.hero) setLandingBrief(data)
+      } catch {}
+      setMagicModal({ mode: 'landing', isDone: true })
+      await new Promise<void>(resolve => { continueResolverRef.current = resolve })
+      setMagicModal(null)
+      await new Promise(r => setTimeout(r, 300))
 
-  // Mark creative done once ad-copy and landing are done
-  const creativeTriggered = useRef(false)
-  useEffect(() => {
-    if (creativeTriggered.current) return
-    const adDone = modalSteps.find(s => s.id === 'ad-copy')?.status === 'done'
-    const landDone = modalSteps.find(s => s.id === 'landing')?.status === 'done'
-    if (adDone && landDone) {
-      creativeTriggered.current = true
-      setModalSteps(prev => prev.map(s => s.id === 'creative' ? { ...s, status: 'loading' } : s))
-      setTimeout(() => {
-        setModalSteps(prev => prev.map(s => s.id === 'creative' ? { ...s, status: 'done' } : s))
-      }, 1500)
+      // Reel
+      setShowReel(true)
     }
-  }, [modalSteps])
+    generate()
+  }, [])
 
   const headingStyle: React.CSSProperties = {
     fontFamily: fontFamily ? `${fontFamily}, sans-serif` : undefined,
@@ -245,12 +223,16 @@ export default function PreviewClient({
 
   return (
     <div className="min-h-screen bg-paper">
-      {/* Generation modal */}
-      <GenerationModal
-        isOpen={showModal}
-        steps={modalSteps}
+      {/* MagicModal */}
+      <MagicModal
+        isOpen={!!magicModal}
+        mode={magicModal?.mode || 'adcopy'}
+        isDone={magicModal?.isDone || false}
         brandName={brand.name}
-        onClose={() => { setShowModal(false); if (adVariation) setShowReel(true) }}
+        onComplete={() => {
+          continueResolverRef.current?.()
+          continueResolverRef.current = null
+        }}
       />
 
       {showReel && adVariation && (
