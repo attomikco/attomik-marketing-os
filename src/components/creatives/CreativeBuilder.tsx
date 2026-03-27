@@ -382,6 +382,11 @@ export default function CreativeBuilder({
               if (t.id === 'stat') { setTextPosition('center'); setShowOverlay(true); setOverlayOpacity(30) }
               if (t.id === 'ugc') { setImagePosition('bottom') }
               if (t.id === 'testimonial') { setImagePosition('bottom') }
+              // Auto-pick best image orientation for template
+              const portrait = images.find(img => img.width && img.height && img.height > img.width)
+              const landscape = images.find(img => img.width && img.height && img.width > img.height)
+              if (t.id === 'split' && portrait) setSelectedImageId(portrait.id)
+              if ((t.id === 'ugc' || t.id === 'testimonial') && landscape) setSelectedImageId(landscape.id)
             }}
             className="text-sm px-4 py-2 rounded-card border transition-all duration-150 font-semibold cursor-pointer"
             style={templateId === t.id
