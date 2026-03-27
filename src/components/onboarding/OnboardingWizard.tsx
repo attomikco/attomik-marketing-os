@@ -222,7 +222,7 @@ export default function OnboardingWizard() {
     sessionStorage.setItem('attomik_draft_brand_id', brand.id)
     sessionStorage.setItem('attomik_draft_campaign_id', campaign.id)
 
-    router.push(`/campaigns/${campaign.id}/preview`)
+    router.push(`/preview/${campaign.id}`)
   }
 
   // ── Step 1 content ──────────────────────────────────────────────

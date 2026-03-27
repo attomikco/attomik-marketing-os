@@ -10,29 +10,27 @@ export default async function PreviewPage({
   const { id } = await params
   const supabase = await createClient()
 
-  const [{ data: campaign }, { data: generatedContent }, { data: brandImages }] = await Promise.all([
+  const [{ data: campaign }, { data: generatedContent }] = await Promise.all([
     supabase.from('campaigns').select('*, brand:brands(*)').eq('id', id).single(),
     supabase.from('generated_content').select('*').eq('campaign_id', id).order('created_at', { ascending: false }),
-    supabase.from('brand_images').select('*').eq('brand_id', id).limit(3),
   ])
 
   if (!campaign) notFound()
 
   const brand = campaign.brand
 
-  // Re-fetch brand images with the correct brand_id (the join above used campaign id)
-  const { data: correctBrandImages } = await supabase
+  const { data: brandImages } = await supabase
     .from('brand_images')
     .select('*')
     .eq('brand_id', brand.id)
-    .limit(3)
+    .order('created_at')
 
   return (
     <PreviewClient
       campaign={campaign}
       brand={brand}
       generatedContent={generatedContent ?? []}
-      brandImages={correctBrandImages ?? []}
+      brandImages={brandImages ?? []}
     />
   )
 }

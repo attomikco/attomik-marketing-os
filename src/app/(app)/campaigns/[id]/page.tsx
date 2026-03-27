@@ -41,7 +41,7 @@ export default async function CampaignPage({
           <h1 className="mt-2">{campaign.name}</h1>
           {campaign.angle && <p className="text-muted mt-1">{campaign.angle}</p>}
         </div>
-        <Link href={`/campaigns/${campaign.id}/preview`}
+        <Link href={`/preview/${campaign.id}`}
           className="flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-btn transition-opacity hover:opacity-90 flex-shrink-0"
           style={{ background: '#00ff97', color: '#000' }}>
           <Eye size={14} /> Preview funnel

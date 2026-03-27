@@ -306,6 +306,9 @@ export default function PreviewClient({
           </div>
 
           {adVariation ? (() => {
+            console.log('[Preview] productImageUrl:', productImageUrl)
+            console.log('[Preview] lifestyleImageUrl:', lifestyleImageUrl)
+            const CARD_H = 360
             const baseProps = {
               headline: adVariation.headline,
               bodyText: adVariation.primary_text.slice(0, 100),
@@ -322,47 +325,52 @@ export default function PreviewClient({
               showCta: true, ctaColor: brand.accent_color || brandAccent,
               ctaFontColor: '#000', imagePosition: 'center',
             }
+            // All cards 360px tall, width varies by aspect ratio
             const cards = [
-              { label: 'Facebook Feed', w: 1080, h: 1080, displayW: 280, Comp: OverlayTemplate, img: productImageUrl, pos: 'center' as const, tp: 'center' as const },
-              { label: 'Instagram 4:5', w: 1080, h: 1350, displayW: 236, Comp: SplitTemplate, img: productImageUrl, pos: 'center' as const, tp: 'center' as const },
-              { label: 'Social Proof', w: 1080, h: 1080, displayW: 280, Comp: TestimonialTemplate, img: lifestyleImageUrl || productImageUrl, pos: 'bottom' as const, tp: 'center' as const },
-              { label: 'Statement', w: 1080, h: 1080, displayW: 280, Comp: StatTemplate, img: productImageUrl, pos: 'center' as const, tp: 'center' as const },
-              { label: 'Instagram Story', w: 1080, h: 1920, displayW: 158, Comp: OverlayTemplate, img: productImageUrl, pos: 'center' as const, tp: 'bottom-left' as const },
+              { label: 'Facebook Feed', srcW: 1080, srcH: 1080, Comp: OverlayTemplate, img: productImageUrl, pos: 'center' as const, tp: 'center' as const },
+              { label: 'Instagram 4:5', srcW: 1080, srcH: 1350, Comp: SplitTemplate, img: productImageUrl, pos: 'center' as const, tp: 'center' as const },
+              { label: 'Social Proof', srcW: 1080, srcH: 1080, Comp: TestimonialTemplate, img: lifestyleImageUrl || productImageUrl, pos: 'bottom' as const, tp: 'center' as const },
+              { label: 'Statement', srcW: 1080, srcH: 1080, Comp: StatTemplate, img: productImageUrl, pos: 'center' as const, tp: 'center' as const },
+              { label: 'Instagram Story', srcW: 1080, srcH: 1920, Comp: OverlayTemplate, img: productImageUrl, pos: 'center' as const, tp: 'bottom-left' as const },
             ]
             return (
               <>
-                {/* Gallery */}
-                <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 md:-mx-10 px-4 md:px-10" style={{ scrollSnapType: 'x mandatory' }}>
+                {/* Gallery — all cards same height */}
+                <div className="flex gap-5 overflow-x-auto pb-4 -mx-4 md:-mx-10 px-4 md:px-10" style={{ scrollSnapType: 'x mandatory' }}>
                   {cards.map((c, i) => {
-                    const scale = c.displayW / c.w
-                    const displayH = Math.round(c.h * scale)
+                    const scale = CARD_H / c.srcH
+                    const cardW = Math.round(c.srcW * scale)
                     return (
-                      <div key={i} className="flex-shrink-0" style={{ scrollSnapAlign: 'center', width: c.displayW }}>
-                        <div className="text-xs text-muted mb-2">{c.label}</div>
-                        <div className="border border-border rounded-card overflow-hidden shadow-sm" style={{ width: c.displayW, height: displayH }}>
-                          <div style={{ width: c.w, height: c.h, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
-                            <c.Comp {...baseProps} width={c.w} height={c.h} imageUrl={c.img} bgColor={brandAccent} textPosition={c.tp} imagePosition={c.pos} />
+                      <div key={i} className="flex-shrink-0 flex flex-col items-center" style={{ scrollSnapAlign: 'center' }}>
+                        <div className="text-xs text-muted mb-2 font-medium">{c.label}</div>
+                        <div className="border border-border overflow-hidden shadow-sm" style={{ width: cardW, height: CARD_H, borderRadius: 12, position: 'relative' }}>
+                          <div style={{ position: 'absolute', top: 0, left: 0, width: c.srcW, height: c.srcH, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+                            <c.Comp {...baseProps} width={c.srcW} height={c.srcH} imageUrl={c.img} bgColor={c.img ? '#000' : brandAccent} textPosition={c.tp} imagePosition={c.pos} />
                           </div>
                         </div>
-                        <div className="text-xs text-muted mt-2 text-center">{c.Comp.name?.replace('Template', '') || 'Creative'}</div>
                       </div>
                     )
                   })}
                 </div>
-                {/* All 3 platform mockups side by side */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+
+                {/* Platform mockups — side by side */}
+                <div className="text-center text-xs text-muted mb-4 font-medium mt-8">How your ad looks across platforms</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
                   {(['facebook', 'instagram', 'story'] as const).map(platform => {
-                    const platformProps = { ...baseProps, width: 1080, height: platform === 'story' ? 1920 : 1080, imageUrl: productImageUrl, bgColor: productImageUrl ? '#000' : brandAccent, textPosition: 'center' as const }
+                    const ph = platform === 'story' ? 1920 : 1080
+                    const platformProps = { ...baseProps, width: 1080, height: ph, imageUrl: productImageUrl, bgColor: productImageUrl ? '#000' : brandAccent, textPosition: 'center' as const }
                     return (
-                      <div key={platform}>
+                      <div key={platform} className="flex flex-col items-center">
                         <div className="label text-center mb-3">{platform === 'facebook' ? 'Facebook Feed' : platform === 'instagram' ? 'Instagram Feed' : 'Instagram Story'}</div>
-                        <PlatformAdPreview
-                          brand={brand}
-                          creative={{ imageUrl: productImageUrl, headline: adVariation.headline, primaryText: adVariation.primary_text, ctaText: landingBrief?.hero?.cta_text || 'Shop Now' }}
-                          TemplateComponent={OverlayTemplate}
-                          templateProps={platformProps}
-                          defaultPlatform={platform}
-                        />
+                        <div style={{ maxWidth: platform === 'story' ? 220 : 340, width: '100%' }}>
+                          <PlatformAdPreview
+                            brand={brand}
+                            creative={{ imageUrl: productImageUrl, headline: adVariation.headline, primaryText: adVariation.primary_text, ctaText: landingBrief?.hero?.cta_text || 'Shop Now' }}
+                            TemplateComponent={OverlayTemplate}
+                            templateProps={platformProps}
+                            defaultPlatform={platform}
+                          />
+                        </div>
                       </div>
                     )
                   })}
