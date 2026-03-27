@@ -29,6 +29,12 @@ const skeleton = "animate-pulse bg-cream rounded"
 export default function FunnelPreview({ adVariation, landingBrief, brand, onDismiss }: FunnelPreviewProps) {
   const router = useRouter()
   const accent = brand.primary_color || '#00ff97'
+  const fh = brand.font_heading
+  const headingStyle: React.CSSProperties = {
+    fontFamily: fh?.family || brand.font_primary?.split('|')[0] || undefined,
+    textTransform: (fh?.transform || 'none') as any,
+    letterSpacing: fh?.letterSpacing === 'wide' ? '0.12em' : fh?.letterSpacing === 'tight' ? '-0.02em' : 'normal',
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -71,7 +77,7 @@ export default function FunnelPreview({ adVariation, landingBrief, brand, onDism
               {/* Ad copy */}
               <div className="p-4 space-y-2">
                 <p className="text-sm leading-relaxed">{adVariation.primary_text}</p>
-                <p className="font-bold">{adVariation.headline}</p>
+                <p className="font-bold" style={headingStyle}>{adVariation.headline}</p>
                 <p className="text-muted text-sm">{adVariation.description}</p>
               </div>
               {/* CTA */}
@@ -100,7 +106,7 @@ export default function FunnelPreview({ adVariation, landingBrief, brand, onDism
             <div className="border border-border rounded-card overflow-hidden" style={{ maxHeight: 520, overflowY: 'auto' }}>
               {/* Hero */}
               <div className="p-6 bg-ink text-white">
-                <div className="text-xl font-black">{landingBrief.hero.headline}</div>
+                <div className="text-xl font-black" style={headingStyle}>{landingBrief.hero.headline}</div>
                 <div className="text-sm mt-2" style={{ color: 'rgba(255,255,255,0.6)' }}>{landingBrief.hero.subheadline}</div>
                 <button className="text-sm font-bold mt-4 px-4 py-2 rounded-btn" style={{ background: accent, color: '#000' }}>
                   {landingBrief.hero.cta_text}
@@ -132,13 +138,13 @@ export default function FunnelPreview({ adVariation, landingBrief, brand, onDism
               <div className="p-4 bg-paper">
                 {landingBrief.problem && (
                   <div className="mb-3">
-                    <div className="font-semibold text-sm">{landingBrief.problem.headline}</div>
+                    <div className="font-semibold text-sm" style={headingStyle}>{landingBrief.problem.headline}</div>
                     <div className="text-xs text-muted mt-1">{landingBrief.problem.body}</div>
                   </div>
                 )}
                 {landingBrief.solution && (
                   <div className="mb-3">
-                    <div className="font-semibold text-sm">{landingBrief.solution.headline}</div>
+                    <div className="font-semibold text-sm" style={headingStyle}>{landingBrief.solution.headline}</div>
                     <div className="text-xs text-muted mt-1">{landingBrief.solution.body}</div>
                   </div>
                 )}
@@ -146,7 +152,7 @@ export default function FunnelPreview({ adVariation, landingBrief, brand, onDism
               </div>
               {/* Final CTA */}
               <div className="p-5 bg-ink text-white text-center">
-                <div className="font-bold">{landingBrief.final_cta.headline}</div>
+                <div className="font-bold" style={headingStyle}>{landingBrief.final_cta.headline}</div>
                 <button className="text-sm font-bold mt-3 px-4 py-2 rounded-btn" style={{ background: accent, color: '#000' }}>
                   {landingBrief.final_cta.cta_text}
                 </button>

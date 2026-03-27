@@ -23,6 +23,8 @@ export default function OnboardingWizard() {
   const [website, setWebsite] = useState('')
   const [category, setCategory] = useState('')
   const [brandFont, setBrandFont] = useState('')
+  const [fontTransform, setFontTransform] = useState<'none' | 'uppercase' | 'lowercase' | 'capitalize'>('none')
+  const [fontLetterSpacing, setFontLetterSpacing] = useState<'wide' | 'tight' | 'normal'>('normal')
   const [primaryColor, setPrimaryColor] = useState('#000000')
   const [secondaryColor, setSecondaryColor] = useState('#ffffff')
   const [accentColor, setAccentColor] = useState('#00ff97')
@@ -59,6 +61,8 @@ export default function OnboardingWizard() {
       if (data.colors?.[1]) setSecondaryColor(data.colors[1])
       if (data.colors?.[2]) setAccentColor(data.colors[2])
       if (data.font) setBrandFont(data.font)
+      if (data.fontTransform && data.fontTransform !== 'none') setFontTransform(data.fontTransform)
+      if (data.letterSpacing && data.letterSpacing !== 'normal') setFontLetterSpacing(data.letterSpacing)
       if (data.ogImage) setDetectedImage(data.ogImage)
       if (data.products?.length > 0) setDetectedProducts(data.products)
       setDetected(true)
@@ -121,7 +125,8 @@ export default function OnboardingWizard() {
       primary_color: primaryColor || null,
       secondary_color: secondaryColor || null,
       accent_color: accentColor || null,
-      font_primary: brandFont ? `${brandFont}|700|none` : null,
+      font_primary: brandFont ? `${brandFont}|700|${fontTransform}` : null,
+      font_heading: brandFont ? { family: brandFont, weight: '700', transform: fontTransform, letterSpacing: fontLetterSpacing } : null,
       target_audience: targetAudience.trim() || null,
       products: productName.trim() ? [{ name: productName.trim(), description: productDesc.trim() || null, price_range: priceRange.trim() || null }] : null,
       status: 'active',
@@ -233,9 +238,48 @@ export default function OnboardingWizard() {
         <input className={inputCls} value={category} onChange={e => setCategory(e.target.value)} placeholder="Coffee, Skincare, Wine…" />
       </div>
       {brandFont && (
-        <div>
-          <label className="text-xs font-semibold block mb-1">Brand font</label>
-          <input className={inputCls} value={brandFont} onChange={e => setBrandFont(e.target.value)} />
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-semibold block mb-1">Brand font</label>
+            <input className={inputCls} value={brandFont} onChange={e => setBrandFont(e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs font-semibold block mb-1.5">Font style</label>
+            <div className="flex gap-2">
+              <div className="flex gap-1">
+                {([
+                  { label: 'Aa', value: 'capitalize' as const },
+                  { label: 'AA', value: 'uppercase' as const },
+                  { label: 'aa', value: 'lowercase' as const },
+                  { label: 'Ab', value: 'none' as const },
+                ]).map(t => (
+                  <button key={t.value} onClick={() => setFontTransform(t.value)}
+                    className="px-3 py-1.5 text-xs font-medium border rounded-btn transition-all"
+                    style={fontTransform === t.value
+                      ? { background: '#111', color: '#fff', borderColor: '#111' }
+                      : { borderColor: '#ddd', color: '#888' }}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              <span className="w-px bg-border" />
+              <div className="flex gap-1">
+                {([
+                  { label: 'Tight', value: 'tight' as const },
+                  { label: 'Normal', value: 'normal' as const },
+                  { label: 'Wide', value: 'wide' as const },
+                ]).map(s => (
+                  <button key={s.value} onClick={() => setFontLetterSpacing(s.value)}
+                    className="px-3 py-1.5 text-xs font-medium border rounded-btn transition-all"
+                    style={fontLetterSpacing === s.value
+                      ? { background: '#111', color: '#fff', borderColor: '#111' }
+                      : { borderColor: '#ddd', color: '#888' }}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
       <div>

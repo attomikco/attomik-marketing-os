@@ -8,6 +8,7 @@ export interface FontStyle {
   family: string
   weight: string
   transform: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
+  letterSpacing?: 'wide' | 'tight' | 'normal'
 }
 
 export interface Competitor {

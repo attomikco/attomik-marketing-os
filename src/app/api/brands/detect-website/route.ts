@@ -117,6 +117,47 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ── Font transform & letter-spacing ──────────────────────────
+    let fontTransform: 'uppercase' | 'lowercase' | 'capitalize' | 'none' = 'none'
+    let letterSpacing: 'wide' | 'tight' | 'normal' = 'normal'
+
+    const transformCounts: Record<string, number> = { uppercase: 0, lowercase: 0, capitalize: 0 }
+    // Check heading-level selectors for text-transform
+    const headingPatterns = /(?:h[1-3]|\.heading|header|nav|\[class\*="title"\]|\[class\*="heading"\]|\[class\*="hero"\]|\[class\*="brand"\]|\[class\*="logo"\]|\.title|\.hero|\.brand)[^{]*\{[^}]*text-transform\s*:\s*(uppercase|lowercase|capitalize)/gi
+    let ttMatch
+    while ((ttMatch = headingPatterns.exec(allCSS)) !== null) {
+      const val = ttMatch[1].toLowerCase()
+      if (val in transformCounts) transformCounts[val]++
+    }
+    // Also detect from brand name casing
+    const brandText = ogSiteName || name
+    if (brandText) {
+      if (brandText === brandText.toUpperCase() && brandText.length > 1) transformCounts.uppercase += 3
+      else if (brandText === brandText.toLowerCase()) transformCounts.lowercase += 2
+      else if (brandText === brandText.replace(/\b\w/g, c => c.toUpperCase())) transformCounts.capitalize += 1
+    }
+    const topTransform = Object.entries(transformCounts).sort((a, b) => b[1] - a[1])[0]
+    if (topTransform && topTransform[1] > 0) fontTransform = topTransform[0] as typeof fontTransform
+
+    // Check letter-spacing on headings
+    const lsMatch = allCSS.match(/(?:h[1-3]|\.heading|\.title|\.hero|header)[^{]*\{[^}]*letter-spacing\s*:\s*([^;}\s]+)/i)
+    if (lsMatch) {
+      const val = lsMatch[1]
+      const em = parseFloat(val)
+      if (val.includes('em')) {
+        if (em >= 0.1) letterSpacing = 'wide'
+        else if (em <= -0.02) letterSpacing = 'tight'
+      }
+    }
+    // Also check if any wide spacing found anywhere in heading context
+    if (letterSpacing === 'normal') {
+      const wideCheck = allCSS.match(/letter-spacing\s*:\s*([0-9.]+)em/gi) || []
+      for (const w of wideCheck) {
+        const v = parseFloat(w.replace(/letter-spacing\s*:\s*/i, ''))
+        if (v >= 0.1) { letterSpacing = 'wide'; break }
+      }
+    }
+
     // ── OG Image ────────────────────────────────────────────────────
     const ogImage = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)?.[1]
       || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)?.[1]
@@ -198,8 +239,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ name, colors, font, ogImage, logo, platform, products })
+    return NextResponse.json({ name, colors, font, fontTransform, letterSpacing, ogImage, logo, platform, products })
   } catch {
-    return NextResponse.json({ name: null, colors: [], font: null, ogImage: null, logo: null, platform: 'other', products: [] })
+    return NextResponse.json({ name: null, colors: [], font: null, fontTransform: 'none', letterSpacing: 'normal', ogImage: null, logo: null, platform: 'other', products: [] })
   }
 }
