@@ -101,6 +101,10 @@ export default function OnboardingWizard() {
 
   function next() {
     if (!validate()) return
+    // Auto-select first product when entering step 2
+    if (step === 0 && detectedProducts.length > 0 && selectedProductIdx === null) {
+      selectProduct(0)
+    }
     if (step === 1 && !campaignName) setCampaignName(`${brandName.trim()} — Launch Campaign`)
     setStep(s => Math.min(s + 1, 2))
   }

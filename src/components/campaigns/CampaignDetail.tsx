@@ -47,6 +47,7 @@ export default function CampaignDetail({
     fetch(`/api/campaigns/${campaign.id}/ad-copy`, { method: 'POST' })
       .then(res => res.json())
       .then(data => {
+        console.log('[AutoGenerate] Ad copy response:', data)
         if (data?.variations?.[0]) {
           setFreshAdVariation(data.variations[0])
         } else if (data?.content) {
@@ -63,13 +64,16 @@ export default function CampaignDetail({
     fetch(`/api/campaigns/${campaign.id}/landing-brief`, { method: 'POST' })
       .then(res => res.json())
       .then(data => {
-        if (data?.sections) {
+        console.log('[AutoGenerate] Landing brief response:', data)
+        // API returns the brief object directly: { hero, problem, solution, ... }
+        if (data?.hero) {
+          setFreshLandingBrief(data)
+        } else if (data?.sections) {
           setFreshLandingBrief(data.sections)
         } else if (data?.content) {
           try {
             const parsed = JSON.parse(data.content)
-            if (parsed?.sections) setFreshLandingBrief(parsed.sections)
-            else setFreshLandingBrief(parsed)
+            setFreshLandingBrief(parsed?.hero ? parsed : parsed?.sections || parsed)
           } catch {}
         }
       })
