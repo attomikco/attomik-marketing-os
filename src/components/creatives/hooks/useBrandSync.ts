@@ -97,9 +97,14 @@ export function useBrandSync(opts: UseBrandSyncOptions) {
     // Background: prefer bg_dark > bg_base > primary_color
     const nbBg = nb?.bg_dark || nb?.bg_base || nb?.primary_color || '#000000'
     const light = isLightColor(nbBg)
-    // Text: prefer new system > legacy > auto-detect
-    setHeadlineColor(nb?.text_on_dark || nb?.heading_color || (light ? '#000000' : '#ffffff'))
-    setBodyColor(nb?.text_on_dark || nb?.body_color || (light ? '#1a1a1a' : '#ffffff'))
+    // Text: match to bg brightness
+    if (light) {
+      setHeadlineColor(nb?.text_on_base || nb?.heading_color || '#000000')
+      setBodyColor(nb?.text_on_base || nb?.body_color || '#1a1a1a')
+    } else {
+      setHeadlineColor(nb?.text_on_dark || nb?.heading_color || '#ffffff')
+      setBodyColor(nb?.text_on_dark || nb?.body_color || '#ffffff')
+    }
     setBgColor(nbBg)
     setTextBannerColor(nb?.bg_accent || nb?.bg_secondary || nbBg)
     // Copy
