@@ -3,9 +3,9 @@ import { TemplateProps, ff, px, autoSize } from './types'
 const IMAGE_RATIO     = 0.58
 const PANEL_PAD_H     = 48
 const PANEL_PAD_V     = 36
-const HEADLINE_SIZE   = 48
-const BODY_SIZE       = 26
-const CTA_SIZE        = 24
+const HEADLINE_SIZE   = 67
+const BODY_SIZE       = 36
+const CTA_SIZE        = 34
 const CTA_PAD_V       = 16
 const CTA_PAD_H       = 40
 const GAP_HEAD_BODY   = 14
