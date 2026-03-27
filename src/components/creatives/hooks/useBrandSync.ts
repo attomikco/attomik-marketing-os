@@ -46,6 +46,7 @@ interface UseBrandSyncOptions {
   setImagePosition: (v: string) => void
   setActiveVariation: (v: number | null) => void
   setActiveDraft: (v: number | null) => void
+  setVariations: (v: any[]) => void
   setCtaColor: (v: string) => void
   setCtaFontColor: (v: string) => void
 }
@@ -60,7 +61,7 @@ export function useBrandSync(opts: UseBrandSyncOptions) {
     setHeadlineColor, setBodyColor, setBgColor, setTextBannerColor,
     setHeadlineSizeMul, setBodySizeMul,
     setShowOverlay, setOverlayOpacity, setTextBanner, setTextPosition, setImagePosition,
-    setActiveVariation, setActiveDraft,
+    setActiveVariation, setActiveDraft, setVariations,
     setCtaColor, setCtaFontColor,
   } = opts
 
@@ -120,7 +121,7 @@ export function useBrandSync(opts: UseBrandSyncOptions) {
     // CTA: prefer btn_primary > accent > primary
     setCtaColor(nb?.btn_primary || nb?.accent_color || nb?.primary_color || '#00ff97')
     setCtaFontColor(nb?.btn_primary_text || nb?.accent_font_color || '#000000')
-    setActiveVariation(null); setActiveDraft(null)
+    setVariations([]); setActiveVariation(null); setActiveDraft(null)
   }, [brandId, brands])
 
   // Fetch images + recent copy (with cache)

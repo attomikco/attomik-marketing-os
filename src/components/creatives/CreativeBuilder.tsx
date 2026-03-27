@@ -161,7 +161,7 @@ export default function CreativeBuilder({
     setHeadlineColor, setBodyColor, setBgColor, setTextBannerColor,
     setHeadlineSizeMul, setBodySizeMul,
     setShowOverlay, setOverlayOpacity, setTextBanner, setTextPosition, setImagePosition,
-    setActiveVariation, setActiveDraft,
+    setActiveVariation, setActiveDraft, setVariations,
     setCtaColor, setCtaFontColor,
   })
 
