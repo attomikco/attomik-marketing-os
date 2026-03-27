@@ -72,6 +72,9 @@ export type Variation = {
   imageId: string | null
   templateId: string
   style: StyleSnapshot
+  fbPrimaryText?: string
+  fbHeadline?: string
+  fbDescription?: string
 }
 
 export type Draft = Variation & { sizeId: string }

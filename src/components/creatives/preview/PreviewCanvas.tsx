@@ -15,6 +15,9 @@ interface PreviewCanvasProps {
   bodyText: string
   headline: string
   ctaText: string
+  fbPrimaryText: string
+  fbHeadline: string
+  fbDescription: string
   saveCurrentAsDraft: () => void
   // Batch controls
   batchGenerating: boolean
@@ -35,6 +38,7 @@ interface PreviewCanvasProps {
 export default function PreviewCanvas({
   templateLabel, size, previewW, previewH, scale,
   TemplateComponent, templateProps, bodyFont, bodyText, headline, ctaText,
+  fbPrimaryText, fbHeadline, fbDescription,
   saveCurrentAsDraft,
   batchGenerating, batchCount, setBatchCount, generateBatch, stopBatch, variationsCount, imagesCount,
   setExportToast,
@@ -104,9 +108,9 @@ export default function PreviewCanvas({
         {/* FB Ad copy preview */}
         <div className="flex-1 min-w-0 text-sm space-y-3 pt-1" style={{ fontFamily: ff(bodyFont) }}>
           {[
-            { label: 'Primary Text', value: bodyText || 'Body text goes here' },
-            { label: 'Headline', value: headline || 'Your headline here' },
-            { label: 'Description', value: ctaText || 'Shop Now' },
+            { label: 'Primary Text', value: fbPrimaryText || bodyText || 'Body text goes here' },
+            { label: 'Headline', value: fbHeadline || headline || 'Your headline here' },
+            { label: 'Description', value: fbDescription || ctaText || 'Shop Now' },
           ].map(({ label, value }) => (
             <div key={label} className={label !== 'Primary Text' ? 'border-t border-border pt-3' : ''}>
               <div className="flex items-center justify-between mb-1">

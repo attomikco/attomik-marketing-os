@@ -43,6 +43,10 @@ export default function CreativeBuilder({
   const [headline, setHeadline] = useState('')
   const [bodyText, setBodyText] = useState('')
   const [ctaText, setCtaText] = useState('Shop Now')
+  // FB ad copy — different from image copy
+  const [fbPrimaryText, setFbPrimaryText] = useState('')
+  const [fbHeadline, setFbHeadline] = useState('')
+  const [fbDescription, setFbDescription] = useState('')
   const [textPosition, setTextPosition] = useState<TextPosition>('bottom-left')
   const [showCta, setShowCta] = useState(true)
   const [headlineColor, setHeadlineColor] = useState<string>('#ffffff')
@@ -193,14 +197,16 @@ export default function CreativeBuilder({
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           brandId, tool: 'ad_copy', tone: 'on-brand', platform: 'creative', subtype: 'image ad',
-          brief: `Generate exactly one short headline (under 8 words) and one body line (under 20 words) for a visual ad creative.${campaignBrief ? `\n\nCAMPAIGN CONTEXT:\n${campaignBrief}` : ''}\n\nFormat as:\nHEADLINE: <headline text>\nBODY: <body text>\nCTA: <cta text>\nNothing else.`,
+          brief: `Generate copy for a visual ad creative AND separate Facebook ad copy. Same message, different wording.${campaignBrief ? `\n\nCAMPAIGN CONTEXT:\n${campaignBrief}` : ''}\n\nFormat as:\nHEADLINE: <short image headline, under 8 words>\nBODY: <image body line, under 20 words>\nCTA: <call to action, 2-3 words>\nFB_PRIMARY: <Facebook primary text, 1-2 sentences, conversational>\nFB_HEADLINE: <Facebook headline, under 10 words, punchy>\nFB_DESCRIPTION: <Facebook description, under 15 words>\nNothing else.`,
         }),
       })
       let full = ''
       const reader = res.body?.getReader(); const decoder = new TextDecoder()
       if (reader) { while (true) { const { done, value } = await reader.read(); if (done) break; const chunk = decoder.decode(value); for (const line of chunk.split('\n')) { if (line.startsWith('data: ') && line !== 'data: [DONE]') { try { full += JSON.parse(line.slice(6)).delta?.text || '' } catch {} } } } }
       const hm = full.match(/HEADLINE:\s*(.+)/i); const bm = full.match(/BODY:\s*(.+)/i); const cm = full.match(/CTA:\s*(.+)/i)
+      const fp = full.match(/FB_PRIMARY:\s*(.+)/i); const fh = full.match(/FB_HEADLINE:\s*(.+)/i); const fd = full.match(/FB_DESCRIPTION:\s*(.+)/i)
       if (hm) setHeadline(hm[1].trim()); if (bm) setBodyText(bm[1].trim()); if (cm) setCtaText(cm[1].trim())
+      if (fp) setFbPrimaryText(fp[1].trim()); if (fh) setFbHeadline(fh[1].trim()); if (fd) setFbDescription(fd[1].trim())
     } catch (err) { console.error('Generate failed:', err) }
     setGenerating(false)
   }
@@ -298,19 +304,20 @@ export default function CreativeBuilder({
           method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: abort.signal,
           body: JSON.stringify({
             brandId, tool: 'ad_copy', tone: 'on-brand', platform: 'creative', subtype: 'image ad',
-            brief: `Generate exactly one unique short headline (under 8 words) and one body line (under 20 words) for a visual ad creative. Variation ${i + 1} of ${batchCount} — make each one distinct.${campaignBrief ? `\n\nCAMPAIGN CONTEXT:\n${campaignBrief}` : ''}\n\nFormat as:\nHEADLINE: <headline text>\nBODY: <body text>\nCTA: <cta text>\nNothing else.`,
+            brief: `Generate unique copy for a visual ad creative AND separate Facebook ad copy. Variation ${i + 1} of ${batchCount} — make each distinct.${campaignBrief ? `\n\nCAMPAIGN CONTEXT:\n${campaignBrief}` : ''}\n\nFormat as:\nHEADLINE: <short image headline, under 8 words>\nBODY: <image body line, under 20 words>\nCTA: <call to action, 2-3 words>\nFB_PRIMARY: <Facebook primary text, 1-2 sentences, conversational>\nFB_HEADLINE: <Facebook headline, under 10 words, punchy>\nFB_DESCRIPTION: <Facebook description, under 15 words>\nNothing else.`,
           }),
         })
         let full = ''
         const reader = res.body?.getReader(); const decoder = new TextDecoder()
         if (reader) { while (true) { const { done, value } = await reader.read(); if (done) break; const chunk = decoder.decode(value); for (const line of chunk.split('\n')) { if (line.startsWith('data: ') && line !== 'data: [DONE]') { try { full += JSON.parse(line.slice(6)).delta?.text || '' } catch {} } } } }
         const hm = full.match(/HEADLINE:\s*(.+)/i); const bm = full.match(/BODY:\s*(.+)/i); const cm = full.match(/CTA:\s*(.+)/i)
-        console.log(`[Batch ${i+1}] AI response:`, full.substring(0, 200), { headline: hm?.[1], body: bm?.[1], cta: cm?.[1] })
+        const fp = full.match(/FB_PRIMARY:\s*(.+)/i); const fh = full.match(/FB_HEADLINE:\s*(.+)/i); const fd = full.match(/FB_DESCRIPTION:\s*(.+)/i)
+        console.log(`[Batch ${i+1}] AI response:`, full.substring(0, 300))
         const nb = brand
         const defH = nb?.default_headline || `Discover ${nb?.name || 'Our Brand'}`
         const defB = nb?.default_body_text || 'Premium quality crafted for you'
         const defC = nb?.default_cta || 'Shop Now'
-        results.push({ headline: hm?.[1]?.trim() || defH, body: bm?.[1]?.trim() || defB, cta: cm?.[1]?.trim() || defC, imageId: pickImageForTemplate(tid), templateId: tid, style: styleForTemplate(tid) })
+        results.push({ headline: hm?.[1]?.trim() || defH, body: bm?.[1]?.trim() || defB, cta: cm?.[1]?.trim() || defC, imageId: pickImageForTemplate(tid), templateId: tid, style: styleForTemplate(tid), fbPrimaryText: fp?.[1]?.trim() || '', fbHeadline: fh?.[1]?.trim() || '', fbDescription: fd?.[1]?.trim() || '' })
         setVariations([...results])
       } catch (err) {
         console.error(`[Batch ${i+1}] Failed:`, err)
@@ -326,7 +333,7 @@ export default function CreativeBuilder({
   }
 
   // ── Variation / Draft helpers ──────────────────────────────────────
-  function loadVariation(i: number) { const v = variations[i]; if (!v) return; setHeadline(v.headline); setBodyText(v.body); setCtaText(v.cta); setSelectedImageId(v.imageId); setTemplateId(v.templateId); applyStyle(v.style); setActiveVariation(i); setActiveDraft(null) }
+  function loadVariation(i: number) { const v = variations[i]; if (!v) return; setHeadline(v.headline); setBodyText(v.body); setCtaText(v.cta); setSelectedImageId(v.imageId); setTemplateId(v.templateId); applyStyle(v.style); setFbPrimaryText(v.fbPrimaryText || ''); setFbHeadline(v.fbHeadline || ''); setFbDescription(v.fbDescription || ''); setActiveVariation(i); setActiveDraft(null) }
   function saveVariationAsDraft(i: number) { const v = variations[i]; if (!v) return; setSavedDrafts(prev => [...prev, { ...v, sizeId }]) }
   function saveCurrentAsDraft() {
     setSavedDrafts(prev => [...prev, { headline, body: bodyText, cta: ctaText, imageId: selectedImageId, templateId, style: captureStyle(), sizeId }])
@@ -521,6 +528,9 @@ export default function CreativeBuilder({
             bodyText={bodyText}
             headline={headline}
             ctaText={ctaText}
+            fbPrimaryText={fbPrimaryText}
+            fbHeadline={fbHeadline}
+            fbDescription={fbDescription}
             saveCurrentAsDraft={saveCurrentAsDraft}
             batchGenerating={batchGenerating}
             batchCount={batchCount}
