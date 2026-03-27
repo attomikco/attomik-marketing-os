@@ -92,11 +92,13 @@ export default function PreviewClient({
   const [magicModal, setMagicModal] = useState<{ mode: 'adcopy' | 'landing'; isDone: boolean } | null>(null)
   const [showReel, setShowReel] = useState(false)
   const [showReadyModal, setShowReadyModal] = useState(false)
+  const [previewReady, setPreviewReady] = useState(hasContent)
 
   // Brand image URLs
   const [productImageUrl, setProductImageUrl] = useState<string | null>(null)
   const [lifestyleImageUrl, setLifestyleImageUrl] = useState<string | null>(null)
-  const brandImageUrl = productImageUrl // backward compat
+  const [allImageUrls, setAllImageUrls] = useState<string[]>([])
+  const brandImageUrl = productImageUrl
 
   // Brand colors
   const brandPrimary = brand.primary_color || '#000000'
@@ -142,6 +144,9 @@ export default function PreviewClient({
       if (lifestyle.length > 0) setLifestyleImageUrl(buildImageUrl(lifestyle[0].storage_path))
       else if (products.length > 0) setLifestyleImageUrl(buildImageUrl(products[0].storage_path))
       else if (images.length > 0) setLifestyleImageUrl(buildImageUrl(images[0].storage_path))
+      const allUrls = images.map(img => buildImageUrl(img.storage_path))
+      setAllImageUrls(allUrls)
+      console.log('[Preview] All image URLs:', allUrls.length)
     }
     if (brandImages.length > 0) {
       console.log('[Preview] Using server-provided brandImages:', brandImages.length)
@@ -202,13 +207,20 @@ export default function PreviewClient({
     letterSpacing: fh?.letterSpacing === 'wide' ? '0.12em' : fh?.letterSpacing === 'tight' ? '-0.02em' : 'normal',
   }
 
+  // Cycle images across creative cards
+  const img0 = allImageUrls[0] || productImageUrl || null
+  const img1 = allImageUrls[1] || productImageUrl || null
+  const img2 = allImageUrls[2] || lifestyleImageUrl || productImageUrl || null
+  const img3 = allImageUrls[3] || productImageUrl || null
+  const img4 = allImageUrls[4] || productImageUrl || null
+
   // Template props for ad creative
   const templateProps = adVariation ? {
     imageUrl: brandImageUrl,
     headline: adVariation.headline,
     bodyText: adVariation.primary_text.slice(0, 100),
     ctaText: landingBrief?.hero?.cta_text || 'Shop Now',
-    brandColor: brandAccent,
+    brandColor: brandPrimary,
     brandName: brand.name,
     headlineFont: fontFamily,
     headlineWeight: brand.font_heading?.weight || '800',
@@ -218,7 +230,7 @@ export default function PreviewClient({
     bodyWeight: '400',
     bodyTransform: 'none',
     bodyColor: 'rgba(255,255,255,0.85)',
-    bgColor: brandImageUrl ? '#000' : brandAccent,
+    bgColor: brandPrimary,
     headlineSizeMul: 1,
     bodySizeMul: 1,
     showOverlay: !!brandImageUrl,
@@ -227,7 +239,7 @@ export default function PreviewClient({
     textBannerColor: '#000',
     textPosition: 'center' as const,
     showCta: true,
-    ctaColor: brand.accent_color || brandAccent,
+    ctaColor: brandAccent,
     ctaFontColor: '#ffffff',
     imagePosition: 'center',
   } : null
@@ -235,7 +247,7 @@ export default function PreviewClient({
   const skeleton = 'animate-pulse bg-cream rounded'
 
   return (
-    <div className="min-h-screen bg-paper">
+    <div className="min-h-screen" style={{ background: previewReady ? 'var(--cream, #f8f7f4)' : '#000', transition: 'background 0.5s ease' }}>
       {/* MagicModal */}
       <MagicModal
         isOpen={!!magicModal}
@@ -256,8 +268,11 @@ export default function PreviewClient({
       <FunnelReadyModal
         isOpen={showReadyModal}
         brandName={brand.name}
-        onContinue={() => setShowReadyModal(false)}
+        onContinue={() => { setShowReadyModal(false); setPreviewReady(true) }}
       />
+
+      {/* Preview content — hidden until ready */}
+      <div style={{ visibility: previewReady ? 'visible' : 'hidden', opacity: previewReady ? 1 : 0, transition: 'opacity 0.5s ease' }}>
 
       {/* Top nav bar */}
       <div className="border-b border-border bg-paper sticky top-0 z-40">
@@ -332,11 +347,11 @@ export default function PreviewClient({
               bgColor: brandPrimary,
             }
             const cards = [
-              { label: 'Facebook Feed', srcW: 1080, srcH: 1080, Comp: OverlayTemplate, img: productImageUrl, pos: 'center' as const, tp: 'center' as const },
-              { label: 'Instagram 4:5', srcW: 1080, srcH: 1350, Comp: SplitTemplate, img: productImageUrl, pos: 'center' as const, tp: 'center' as const },
-              { label: 'Social Proof', srcW: 1080, srcH: 1080, Comp: TestimonialTemplate, img: lifestyleImageUrl || productImageUrl, pos: 'bottom' as const, tp: 'center' as const },
-              { label: 'Statement', srcW: 1080, srcH: 1080, Comp: StatTemplate, img: productImageUrl, pos: 'center' as const, tp: 'center' as const },
-              { label: 'Instagram Story', srcW: 1080, srcH: 1920, Comp: OverlayTemplate, img: productImageUrl, pos: 'center' as const, tp: 'bottom-left' as const },
+              { label: 'Facebook Feed', srcW: 1080, srcH: 1080, Comp: OverlayTemplate, img: img0, pos: 'center' as const, tp: 'bottom-left' as const },
+              { label: 'Instagram 4:5', srcW: 1080, srcH: 1350, Comp: SplitTemplate, img: img1, pos: 'center' as const, tp: 'center' as const },
+              { label: 'Social Proof', srcW: 1080, srcH: 1080, Comp: TestimonialTemplate, img: img2, pos: 'bottom' as const, tp: 'center' as const },
+              { label: 'Statement', srcW: 1080, srcH: 1080, Comp: StatTemplate, img: img3, pos: 'center' as const, tp: 'center' as const },
+              { label: 'Instagram Story', srcW: 1080, srcH: 1920, Comp: OverlayTemplate, img: img4, pos: 'center' as const, tp: 'bottom-left' as const },
             ]
             return (
               <>
@@ -351,7 +366,7 @@ export default function PreviewClient({
                           <div style={{ fontSize: 11, color: '#888', marginBottom: 8, textAlign: 'center', fontWeight: 500 }}>{c.label}</div>
                           <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 12, border: '1px solid #e0e0e0', width: cardW, height: CARD_H, flexShrink: 0 }}>
                             <div style={{ position: 'absolute', top: 0, left: 0, width: c.srcW, height: c.srcH, transform: `scale(${scale})`, transformOrigin: 'top left', pointerEvents: 'none' }}>
-                              <c.Comp {...baseProps} width={c.srcW} height={c.srcH} imageUrl={c.img} bgColor={c.img ? '#000' : brandPrimary} textPosition={c.tp} imagePosition={c.pos} />
+                              <c.Comp {...baseProps} width={c.srcW} height={c.srcH} imageUrl={c.img} bgColor={brandPrimary} textPosition={c.tp} imagePosition={c.pos} />
                             </div>
                           </div>
                         </div>
@@ -366,7 +381,7 @@ export default function PreviewClient({
                   {(['facebook', 'instagram', 'story'] as const).map(platform => {
                     const fw = platform === 'story' ? 200 : 320
                     const ph = platform === 'story' ? 1920 : 1080
-                    const platformProps = { ...baseProps, width: 1080, height: ph, imageUrl: productImageUrl, bgColor: productImageUrl ? '#000' : brandPrimary, textPosition: 'center' as const }
+                    const platformProps = { ...baseProps, width: 1080, height: ph, imageUrl: img0, bgColor: brandPrimary, textPosition: 'center' as const }
                     return (
                       <div key={platform} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' as const, color: '#888', marginBottom: 12, textAlign: 'center' }}>
@@ -375,7 +390,7 @@ export default function PreviewClient({
                         <div style={{ maxWidth: fw, width: '100%' }}>
                           <PlatformAdPreview
                             brand={brand}
-                            creative={{ imageUrl: productImageUrl, headline: adVariation.headline, primaryText: adVariation.primary_text, ctaText: landingBrief?.hero?.cta_text || 'Shop Now' }}
+                            creative={{ imageUrl: img0, headline: adVariation.headline, primaryText: adVariation.primary_text, ctaText: landingBrief?.hero?.cta_text || 'Shop Now' }}
                             TemplateComponent={OverlayTemplate}
                             templateProps={platformProps}
                             defaultPlatform={platform}
@@ -510,6 +525,7 @@ export default function PreviewClient({
           </div>
         </div>
       </div>
+      </div>{/* end preview gate */}
     </div>
   )
 }
