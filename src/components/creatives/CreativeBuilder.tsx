@@ -465,11 +465,11 @@ export default function CreativeBuilder({
         ))}
       </div>
 
-      {/* MAIN AREA: Preview (7 cols) + Sidebar (5 cols) */}
+      {/* MAIN AREA: Preview + Controls (7 cols) + Generated (5 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-        {/* LEFT: Preview */}
-        <div className="lg:col-span-7">
+        {/* LEFT: Preview + Images + Copy + Style */}
+        <div className="lg:col-span-7 space-y-4">
           <PreviewCanvas
             templateLabel={template.label}
             size={size}
@@ -497,37 +497,6 @@ export default function CreativeBuilder({
             exportingAll={exportingAll}
           />
 
-          <VariationStrip
-            variations={variations}
-            activeVariation={activeVariation}
-            loadVariation={loadVariation}
-            saveVariationAsDraft={saveVariationAsDraft}
-            savedDrafts={savedDrafts}
-            size={size}
-            images={images}
-            getPublicUrl={getPublicUrl}
-            thumbProps={thumbProps}
-            exportAllVariations={exportAllVariations}
-            exportingAll={exportingAll}
-            sizeId={sizeId}
-          />
-
-          <DraftStrip
-            savedDrafts={savedDrafts}
-            activeDraft={activeDraft}
-            loadDraft={loadDraft}
-            removeDraft={removeDraft}
-            size={size}
-            images={images}
-            getPublicUrl={getPublicUrl}
-            thumbProps={thumbProps}
-            exportAllDrafts={exportAllDrafts}
-            exportingAll={exportingAll}
-          />
-        </div>
-
-        {/* RIGHT SIDEBAR */}
-        <div className="lg:col-span-5 space-y-4">
           <ImagePicker
             images={images}
             selectedImageId={selectedImageId}
@@ -647,6 +616,37 @@ export default function CreativeBuilder({
             setCtaColor={setCtaColor}
             ctaFontColor={ctaFontColor}
             setCtaFontColor={setCtaFontColor}
+          />
+        </div>
+
+        {/* RIGHT: Generated + Saved */}
+        <div className="lg:col-span-5 space-y-4">
+          <VariationStrip
+            variations={variations}
+            activeVariation={activeVariation}
+            loadVariation={loadVariation}
+            saveVariationAsDraft={saveVariationAsDraft}
+            savedDrafts={savedDrafts}
+            size={size}
+            images={images}
+            getPublicUrl={getPublicUrl}
+            thumbProps={thumbProps}
+            exportAllVariations={exportAllVariations}
+            exportingAll={exportingAll}
+            sizeId={sizeId}
+          />
+
+          <DraftStrip
+            savedDrafts={savedDrafts}
+            activeDraft={activeDraft}
+            loadDraft={loadDraft}
+            removeDraft={removeDraft}
+            size={size}
+            images={images}
+            getPublicUrl={getPublicUrl}
+            thumbProps={thumbProps}
+            exportAllDrafts={exportAllDrafts}
+            exportingAll={exportingAll}
           />
         </div>
       </div>
