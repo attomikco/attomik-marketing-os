@@ -5,11 +5,11 @@ const NAMES = ['Alex S.', 'Jordan M.', 'Taylor R.', 'Morgan K.', 'Casey L.', 'Ri
 const IMAGE_RATIO     = 0.62
 const PANEL_PAD_H     = 56
 const PANEL_PAD_V     = 28
-const QUOTE_SIZE      = 42
-const NAME_SIZE       = 26
-const HANDLE_SIZE     = 20
-const STAR_SIZE       = 30
-const CTA_SIZE        = 24
+const QUOTE_SIZE      = 55
+const NAME_SIZE       = 36
+const HANDLE_SIZE     = 24
+const STAR_SIZE       = 34
+const CTA_SIZE        = 28
 const CTA_PAD_V       = 16
 const CTA_PAD_H       = 40
 

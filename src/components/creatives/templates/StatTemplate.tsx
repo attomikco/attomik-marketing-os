@@ -98,7 +98,7 @@ export default function StatTemplate({
         position: 'absolute', bottom: p, left: 0, right: 0,
         textAlign: 'center' as const, fontSize: px(BRAND_SIZE, width),
         fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const,
-        color: 'rgba(255,255,255,0.5)', fontFamily: ff(headlineFont),
+        color: bodyColor || 'rgba(255,255,255,0.5)', opacity: 0.5, fontFamily: ff(headlineFont),
       }}>
         {brandName}
       </div>
