@@ -44,7 +44,7 @@ export default function StatTemplate({
           <div style={{
             fontSize: px(LABEL_SIZE, width) * bodySizeMul, fontWeight: 600,
             letterSpacing: '0.15em', textTransform: 'uppercase' as const,
-            color: headlineColor, opacity: 0.5, fontFamily: ff(bodyFont),
+            color: bodyColor, fontFamily: ff(bodyFont),
             marginBottom: px(GAP_LABEL_STAT, width),
           }}>
             {brandName}

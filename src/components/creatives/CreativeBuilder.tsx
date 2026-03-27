@@ -264,14 +264,22 @@ export default function CreativeBuilder({
     if (images.length === 0) return null
     const portraits = images.filter(img => img.width && img.height && img.height > img.width)
     const landscapes = images.filter(img => img.width && img.height && img.width > img.height)
+    const squares = images.filter(img => img.width && img.height && Math.abs(img.width - img.height) < img.width * 0.15)
     const randomFrom = (arr: typeof images) => arr[Math.floor(Math.random() * arr.length)]?.id || null
 
     switch (tid) {
+      case 'overlay':
+      case 'stat':
+        return squares.length > 0 ? randomFrom(squares) : randomFrom(images)
       case 'split':
         return portraits.length > 0 ? randomFrom(portraits) : randomFrom(images)
       case 'ugc':
       case 'testimonial':
         return landscapes.length > 0 ? randomFrom(landscapes) : randomFrom(images)
+      case 'grid': {
+        const shuffled = [...images].sort(() => Math.random() - 0.5)
+        return shuffled[0]?.id || null
+      }
       default:
         return randomFrom(images)
     }
@@ -454,10 +462,18 @@ export default function CreativeBuilder({
               if (t.id === 'ugc') { setImagePosition('bottom') }
               if (t.id === 'testimonial') { setImagePosition('bottom') }
               // Auto-pick best image orientation for template
-              const portrait = images.find(img => img.width && img.height && img.height > img.width)
-              const landscape = images.find(img => img.width && img.height && img.width > img.height)
-              if (t.id === 'split' && portrait) setSelectedImageId(portrait.id)
-              if ((t.id === 'ugc' || t.id === 'testimonial') && landscape) setSelectedImageId(landscape.id)
+              const portrait = images.filter(img => img.width && img.height && img.height > img.width)
+              const landscape = images.filter(img => img.width && img.height && img.width > img.height)
+              const square = images.filter(img => img.width && img.height && Math.abs(img.width - img.height) < img.width * 0.15)
+              const randFrom = (arr: typeof images) => arr[Math.floor(Math.random() * arr.length)]
+              if (t.id === 'overlay' || t.id === 'stat') { const sq = square.length > 0 ? randFrom(square) : randFrom(images); if (sq) setSelectedImageId(sq.id) }
+              if (t.id === 'split' && portrait.length > 0) setSelectedImageId(randFrom(portrait).id)
+              if ((t.id === 'ugc' || t.id === 'testimonial') && landscape.length > 0) setSelectedImageId(randFrom(landscape).id)
+              if (t.id === 'grid' && images.length > 1) {
+                const shuffled = [...images].sort(() => Math.random() - 0.5)
+                setSelectedImageId(shuffled[0].id)
+                setSelectedProductImageId(shuffled[1].id)
+              }
             }}
             className="text-sm px-4 py-2 rounded-card border transition-all duration-150 font-semibold cursor-pointer"
             style={templateId === t.id

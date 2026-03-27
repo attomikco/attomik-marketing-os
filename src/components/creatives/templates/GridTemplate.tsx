@@ -4,7 +4,7 @@ const PAD = 48
 const GAP = 8
 const HEADLINE_SIZE = 104
 const BODY_SIZE = 48
-const CTA_SIZE = 44
+const CTA_SIZE = 24
 const CTA_PAD_V = 14
 const CTA_PAD_H = 36
 
@@ -85,7 +85,7 @@ export default function GridTemplate({
             <div style={{
               marginTop: px(16, width), display: 'inline-block', alignSelf: 'flex-start',
               background: ctaColor || brandColor, color: ctaFontColor || '#000',
-              fontSize: px(CTA_SIZE, width) * bodySizeMul, fontWeight: 700,
+              fontSize: px(CTA_SIZE, width), fontWeight: 700,
               padding: `${px(CTA_PAD_V, width)}px ${px(CTA_PAD_H, width)}px`,
               borderRadius: 6, fontFamily: ff(headlineFont),
             }}>
