@@ -14,13 +14,18 @@ export default function OnboardingWizard() {
   const [savingLabel, setSavingLabel] = useState('Creating…')
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // Step 1
+  // Step 1 — two states
+  const [detecting, setDetecting] = useState(false)
+  const [detected, setDetected] = useState(false)
+  const [detectedName, setDetectedName] = useState<string | null>(null)
+  const [detectedImage, setDetectedImage] = useState<string | null>(null)
   const [brandName, setBrandName] = useState('')
   const [website, setWebsite] = useState('')
   const [category, setCategory] = useState('')
+  const [brandFont, setBrandFont] = useState('')
   const [primaryColor, setPrimaryColor] = useState('#000000')
-  const [secondaryColor, setSecondaryColor] = useState('')
-  const [accentColor, setAccentColor] = useState('')
+  const [secondaryColor, setSecondaryColor] = useState('#ffffff')
+  const [accentColor, setAccentColor] = useState('#00ff97')
 
   // Step 2
   const [productName, setProductName] = useState('')
@@ -32,6 +37,34 @@ export default function OnboardingWizard() {
 
   // Step 3
   const [campaignName, setCampaignName] = useState('')
+
+  async function analyzeWebsite() {
+    if (!website.trim()) { setErrors({ website: 'Enter a URL' }); return }
+    setDetecting(true)
+    setErrors({})
+    try {
+      const res = await fetch('/api/brands/detect-website', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: website.trim() }),
+      })
+      const data = await res.json()
+      if (data.name) { setBrandName(data.name); setDetectedName(data.name) }
+      if (data.colors?.[0]) setPrimaryColor(data.colors[0])
+      if (data.colors?.[1]) setSecondaryColor(data.colors[1])
+      if (data.colors?.[2]) setAccentColor(data.colors[2])
+      if (data.font) setBrandFont(data.font)
+      if (data.ogImage) setDetectedImage(data.ogImage)
+      setDetected(true)
+    } catch {
+      setDetected(true) // show manual form even on failure
+    }
+    setDetecting(false)
+  }
+
+  function skipToManual() {
+    setDetected(true)
+  }
 
   function validate(): boolean {
     const errs: Record<string, string> = {}
@@ -60,15 +93,15 @@ export default function OnboardingWizard() {
 
     const slug = brandName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Math.random().toString(36).slice(2, 6)
 
-    // 1. Create brand
     const { data: brand, error: brandErr } = await supabase.from('brands').insert({
       name: brandName.trim(),
       slug,
       website: website.trim() || null,
       industry: category.trim() || null,
       primary_color: primaryColor || null,
-      secondary_color: secondaryColor.trim() || null,
-      accent_color: accentColor.trim() || null,
+      secondary_color: secondaryColor || null,
+      accent_color: accentColor || null,
+      font_primary: brandFont ? `${brandFont}|700|none` : null,
       target_audience: targetAudience.trim() || null,
       products: productName.trim() ? [{ name: productName.trim(), description: productDesc.trim() || null, price_range: priceRange.trim() || null }] : null,
       status: 'active',
@@ -80,7 +113,6 @@ export default function OnboardingWizard() {
       return
     }
 
-    // 2. Upload images
     if (imageFiles.length > 0) {
       setSavingLabel('Uploading images…')
       for (const file of imageFiles) {
@@ -90,24 +122,16 @@ export default function OnboardingWizard() {
         const { error: uploadErr } = await supabase.storage.from('brand-images').upload(storagePath, file, { contentType: file.type })
         if (!uploadErr) {
           await supabase.from('brand_images').insert({
-            brand_id: brand.id,
-            file_name: file.name,
-            storage_path: storagePath,
-            tag: 'product',
-            mime_type: file.type,
-            size_bytes: file.size,
+            brand_id: brand.id, file_name: file.name, storage_path: storagePath,
+            tag: 'product', mime_type: file.type, size_bytes: file.size,
           })
         }
       }
     }
 
-    // 3. Create campaign
     setSavingLabel('Creating campaign…')
     const { data: campaign, error: campErr } = await supabase.from('campaigns').insert({
-      brand_id: brand.id,
-      name: campaignName.trim(),
-      type: 'funnel',
-      status: 'draft',
+      brand_id: brand.id, name: campaignName.trim(), type: 'funnel', status: 'draft',
     }).select('id').single()
 
     if (campErr || !campaign) {
@@ -119,40 +143,85 @@ export default function OnboardingWizard() {
     router.push(`/campaigns/${campaign.id}?new=1`)
   }
 
-  const colorField = (label: string, value: string, onChange: (v: string) => void, placeholder: string) => (
-    <div>
-      <label className="text-xs font-semibold block mb-1">{label}</label>
-      <div className="flex items-center gap-3">
-        <div style={{ width: 36, height: 36, borderRadius: 6, background: value || '#f2f2f2', border: '1px solid #ddd', flexShrink: 0 }} />
-        <input className={inputCls + ' font-mono'} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} />
+  // ── Step 1 content ──────────────────────────────────────────────
+  const step1Content = !detected ? (
+    // STATE A: Enter website
+    <div className="space-y-4">
+      <div>
+        <input className={inputCls + ' !py-3 !text-base'} value={website}
+          onChange={e => setWebsite(e.target.value)}
+          placeholder="https://yourbrand.com"
+          onKeyDown={e => e.key === 'Enter' && analyzeWebsite()} />
+        {errors.website && <p className="text-danger text-xs mt-1">{errors.website}</p>}
+      </div>
+      <button onClick={analyzeWebsite} disabled={detecting}
+        className="w-full flex items-center justify-center gap-2 text-sm font-bold py-3 rounded-btn transition-opacity hover:opacity-90 disabled:opacity-50"
+        style={{ background: '#00ff97', color: '#000' }}>
+        {detecting ? <><Loader2 size={15} className="animate-spin" /> Analyzing...</> : 'Analyze my site →'}
+      </button>
+      <button onClick={skipToManual} className="text-xs text-muted hover:text-ink transition-colors cursor-pointer w-full text-center">
+        or set up manually →
+      </button>
+    </div>
+  ) : (
+    // STATE B: Review detected brand
+    <div key="review" className="space-y-4" style={{ animation: 'fadeInUp 0.2s ease-out' }}>
+      {detectedName ? (
+        <p className="text-xs font-medium mb-4" style={{ color: '#00cc6a' }}>✦ Found {detectedName}. Review and continue.</p>
+      ) : (
+        <p className="text-xs text-muted mb-4">Couldn&apos;t read the site — fill in manually.</p>
+      )}
+
+      {detectedImage && (
+        <div className="mb-3">
+          <span className="text-xs text-muted block mb-1">Detected image</span>
+          <img src={detectedImage} alt="" className="w-20 h-20 object-cover rounded-btn border border-border" />
+        </div>
+      )}
+
+      <div>
+        <label className="text-xs font-semibold block mb-1">Brand name *</label>
+        <input className={inputCls} value={brandName} onChange={e => setBrandName(e.target.value)} placeholder="e.g. Afterdream" />
+        {errors.brandName && <p className="text-danger text-xs mt-1">{errors.brandName}</p>}
+      </div>
+      <div>
+        <label className="text-xs font-semibold block mb-1">Website</label>
+        <input className={inputCls} value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://yourbrand.com" />
+      </div>
+      <div>
+        <label className="text-xs font-semibold block mb-1">Product category</label>
+        <input className={inputCls} value={category} onChange={e => setCategory(e.target.value)} placeholder="Coffee, Skincare, Wine…" />
+      </div>
+      {brandFont && (
+        <div>
+          <label className="text-xs font-semibold block mb-1">Brand font</label>
+          <input className={inputCls} value={brandFont} onChange={e => setBrandFont(e.target.value)} />
+        </div>
+      )}
+      <div>
+        <label className="text-xs font-semibold block mb-2">Brand colors</label>
+        <div className="flex gap-4">
+          {[
+            { label: 'Primary', value: primaryColor, set: setPrimaryColor },
+            { label: 'Secondary', value: secondaryColor, set: setSecondaryColor },
+            { label: 'Accent', value: accentColor, set: setAccentColor },
+          ].map(c => (
+            <div key={c.label} className="flex-1">
+              <div style={{ width: 40, height: 40, borderRadius: 8, background: c.value || '#f2f2f2', border: '1px solid #ddd', marginBottom: 4 }} />
+              <span className="text-[10px] text-muted block mb-1">{c.label}</span>
+              <input className={inputCls + ' font-mono !text-xs !py-1.5'} value={c.value} onChange={e => c.set(e.target.value)} placeholder="#000000" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
 
   const steps = [
     {
-      title: 'Set up your brand',
-      subtitle: 'Tell us about your brand so we can create on-brand content.',
-      content: (
-        <div className="space-y-4">
-          <div>
-            <label className="text-xs font-semibold block mb-1">Brand name *</label>
-            <input className={inputCls} value={brandName} onChange={e => setBrandName(e.target.value)} placeholder="e.g. Afterdream" />
-            {errors.brandName && <p className="text-danger text-xs mt-1">{errors.brandName}</p>}
-          </div>
-          <div>
-            <label className="text-xs font-semibold block mb-1">Website</label>
-            <input className={inputCls} value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://yourbrand.com" />
-          </div>
-          <div>
-            <label className="text-xs font-semibold block mb-1">Product category</label>
-            <input className={inputCls} value={category} onChange={e => setCategory(e.target.value)} placeholder="Coffee, Skincare, Wine…" />
-          </div>
-          {colorField('Primary color', primaryColor, setPrimaryColor, '#000000')}
-          {colorField('Secondary color', secondaryColor, setSecondaryColor, '#ffffff')}
-          {colorField('Accent color', accentColor, setAccentColor, '#00ff97')}
-        </div>
-      ),
+      title: detected ? 'Review your brand' : "Let's find your brand",
+      subtitle: detected ? 'Edit anything below before continuing.' : "Enter your website and we'll pull in your brand automatically.",
+      content: step1Content,
     },
     {
       title: 'Your product & audience',
@@ -191,7 +260,7 @@ export default function OnboardingWizard() {
     },
     {
       title: 'Almost there',
-      subtitle: 'We\'ll generate your full funnel automatically — ad copy, landing page brief, and creatives.',
+      subtitle: "We'll generate your full funnel automatically — ad copy, landing page brief, and creatives.",
       content: (
         <div className="space-y-4">
           <div>
@@ -206,9 +275,12 @@ export default function OnboardingWizard() {
   ]
 
   const current = steps[step]
+  // On step 0 STATE A, hide Next — the Analyze button handles progression
+  const showNext = step > 0 || detected
 
   return (
     <div className="fixed inset-0 bg-ink z-50 flex items-center justify-center">
+      <style>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
       <div className="max-w-lg w-full bg-paper rounded-card p-8 mx-4 max-h-[90vh] overflow-y-auto">
         {/* Step dots */}
         <div className="flex items-center justify-center gap-2 mb-6">
@@ -222,36 +294,34 @@ export default function OnboardingWizard() {
           ))}
         </div>
 
-        {/* Title */}
         <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>{current.title}</h2>
         <p className="text-muted text-sm mb-6">{current.subtitle}</p>
 
-        {/* Content */}
         {current.content}
 
         {/* Navigation */}
-        <div className="flex items-center justify-between mt-8">
-          {step > 0 ? (
-            <button onClick={back} className="text-sm text-muted hover:text-ink transition-colors font-semibold">
-              Back
-            </button>
-          ) : <div />}
+        {showNext && (
+          <div className="flex items-center justify-between mt-8">
+            {step > 0 ? (
+              <button onClick={back} className="text-sm text-muted hover:text-ink transition-colors font-semibold">Back</button>
+            ) : <div />}
 
-          {step < 2 ? (
-            <button onClick={next}
-              className="text-sm font-bold px-6 py-2.5 rounded-btn transition-opacity hover:opacity-90"
-              style={{ background: '#00ff97', color: '#000' }}>
-              Next
-            </button>
-          ) : (
-            <button onClick={submit} disabled={saving}
-              className="flex items-center gap-2 text-sm font-bold px-6 py-2.5 rounded-btn transition-opacity hover:opacity-90 disabled:opacity-50"
-              style={{ background: '#00ff97', color: '#000' }}>
-              {saving && <Loader2 size={14} className="animate-spin" />}
-              {saving ? savingLabel : 'Launch my funnel →'}
-            </button>
-          )}
-        </div>
+            {step < 2 ? (
+              <button onClick={next}
+                className="text-sm font-bold px-6 py-2.5 rounded-btn transition-opacity hover:opacity-90"
+                style={{ background: '#00ff97', color: '#000' }}>
+                Next
+              </button>
+            ) : (
+              <button onClick={submit} disabled={saving}
+                className="flex items-center gap-2 text-sm font-bold px-6 py-2.5 rounded-btn transition-opacity hover:opacity-90 disabled:opacity-50"
+                style={{ background: '#00ff97', color: '#000' }}>
+                {saving && <Loader2 size={14} className="animate-spin" />}
+                {saving ? savingLabel : 'Launch my funnel →'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
