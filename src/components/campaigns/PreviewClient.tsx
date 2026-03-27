@@ -135,10 +135,20 @@ export default function PreviewClient({
       else if (images.length > 0) setLifestyleImageUrl(buildImageUrl(images[0].storage_path))
     }
     if (brandImages.length > 0) {
+      console.log('[Preview] Using server-provided brandImages:', brandImages.length)
       loadImages(brandImages)
     } else {
-      supabase.from('brand_images').select('*').eq('brand_id', brand.id).order('created_at')
-        .then(({ data }) => { if (data?.length) loadImages(data as BrandImage[]) })
+      console.log('[Preview] No server images, fetching client-side for brand:', brand.id)
+      // Try immediately, then retry after 3s (images might still be uploading)
+      const fetchImages = () => {
+        supabase.from('brand_images').select('*').eq('brand_id', brand.id).order('created_at')
+          .then(({ data }) => {
+            console.log('[Preview] Client fetch got:', data?.length, 'images')
+            if (data?.length) loadImages(data as BrandImage[])
+          })
+      }
+      fetchImages()
+      setTimeout(fetchImages, 3000) // retry after 3s
     }
   }, [brand.id, brandImages])
 
