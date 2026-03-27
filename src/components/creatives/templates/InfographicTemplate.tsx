@@ -17,14 +17,26 @@ export default function InfographicTemplate({
 }: TemplateProps) {
   const p = px(EDGE_PAD, width)
   const items = callouts?.slice(0, 4) || []
-  const imgSize = Math.round(Math.min(width, height) * 0.32)
 
   return (
     <div style={{ position: 'relative', overflow: 'hidden', width, height, fontFamily: ff(bodyFont), background: bgColor || brandColor || '#000' }}>
+      {/* Background image — full bleed */}
+      {imageUrl && (
+        <img crossOrigin="anonymous" src={imageUrl} alt="" style={{
+          position: 'absolute', inset: 0, width: '100%', height: '100%',
+          objectFit: 'cover', objectPosition: `center ${imagePosition || 'center'}`,
+        }} />
+      )}
+
+      {/* Dark overlay for readability */}
+      {imageUrl && (
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)' }} />
+      )}
+
       {/* Headline */}
       {headline && (
         <div style={{
-          position: 'absolute', top: p, left: p, right: p,
+          position: 'absolute', top: p, left: p, right: p, zIndex: 1,
           fontSize: autoSize(px(HEADLINE_SIZE, width), headline, 25) * headlineSizeMul,
           fontWeight: parseInt(headlineWeight) || 800,
           lineHeight: 1.1, color: headlineColor,
@@ -35,30 +47,21 @@ export default function InfographicTemplate({
         </div>
       )}
 
-      {/* Background image — full bleed */}
-      {imageUrl && (
-        <img crossOrigin="anonymous" src={imageUrl} alt="" style={{
-          position: 'absolute', inset: 0, width: '100%', height: '100%',
-          objectFit: 'cover', objectPosition: `center ${imagePosition || 'center'}`,
-        }} />
-      )}
-
       {/* 4 callout boxes */}
       {items.length > 0 && (() => {
         const cw = Math.round(width * 0.36)
-        const ch = Math.round(height * 0.14)
         const positions = [
-          { top: '32%', left: p },
-          { top: '32%', right: p },
-          { top: '58%', left: p },
-          { top: '58%', right: p },
+          { top: '30%', left: p },
+          { top: '30%', right: p },
+          { top: '56%', left: p },
+          { top: '56%', right: p },
         ]
         return items.map((c, i) => (
           <div key={i} style={{
-            position: 'absolute', ...positions[i % 4] as any,
+            position: 'absolute', ...positions[i % 4] as any, zIndex: 1,
             width: cw, padding: px(CALLOUT_PAD, width),
-            background: 'rgba(255,255,255,0.12)', borderRadius: px(CALLOUT_RADIUS, width),
-            backdropFilter: 'blur(8px)',
+            background: 'rgba(0,0,0,0.5)', borderRadius: px(CALLOUT_RADIUS, width),
+            backdropFilter: 'blur(12px)',
           }}>
             <div style={{ fontSize: px(CALLOUT_ICON, width), marginBottom: px(6, width) }}>{c.icon || '+'}</div>
             <div style={{
@@ -70,7 +73,7 @@ export default function InfographicTemplate({
             {c.description && (
               <div style={{
                 fontSize: px(CALLOUT_DESC, width) * bodySizeMul, fontWeight: 400,
-                color: bodyColor, opacity: 0.8, marginTop: px(4, width), lineHeight: 1.3,
+                color: bodyColor, marginTop: px(4, width), lineHeight: 1.3,
               }}>
                 {c.description}
               </div>
@@ -82,8 +85,8 @@ export default function InfographicTemplate({
       {/* Stat strip */}
       {statStripText && (
         <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0,
-          background: 'rgba(0,0,0,0.3)', padding: `${px(20, width)}px ${p}px`,
+          position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 1,
+          background: 'rgba(0,0,0,0.5)', padding: `${px(20, width)}px ${p}px`,
           textAlign: 'center',
           fontSize: px(STAT_SIZE, width) * bodySizeMul, fontWeight: 700,
           color: headlineColor, fontFamily: ff(headlineFont),
@@ -96,7 +99,7 @@ export default function InfographicTemplate({
       {/* Brand watermark */}
       {!statStripText && (
         <div style={{
-          position: 'absolute', bottom: px(20, width), left: 0, right: 0,
+          position: 'absolute', bottom: px(20, width), left: 0, right: 0, zIndex: 1,
           textAlign: 'center', fontSize: px(16, width),
           fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
           color: bodyColor, fontFamily: ff(headlineFont),
