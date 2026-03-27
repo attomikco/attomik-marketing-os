@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { Brand } from '@/types'
+import AttomikLogo from '@/components/ui/AttomikLogo'
 import OverlayTemplate from '@/components/creatives/templates/OverlayTemplate'
 import SplitTemplate from '@/components/creatives/templates/SplitTemplate'
 import StatTemplate from '@/components/creatives/templates/StatTemplate'
@@ -20,6 +21,13 @@ export default function CreativeReel({ brand, adVariation, imageUrl, onComplete 
   const [isExiting, setIsExiting] = useState(false)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
   const TOTAL = 5
+  const phrases = [
+    'Your funnel is about to 100x.',
+    'Built from your brand. Ready to convert.',
+    'This is what scroll-stopping looks like.',
+    '5 creatives. 0 hours of design work.',
+    'Your brand, campaign-ready.',
+  ]
 
   const fontFamily = brand.font_heading?.family || brand.font_primary?.split('|')[0] || ''
   const base = {
@@ -96,8 +104,8 @@ export default function CreativeReel({ brand, adVariation, imageUrl, onComplete 
       }}
     >
       {/* Top */}
-      <div className="absolute top-8 left-0 right-0 flex justify-between items-center px-8">
-        <span style={{ color: '#00ff97', fontSize: 11, fontWeight: 900, letterSpacing: '0.2em' }}>ATTOMIK</span>
+      <div className="absolute top-8 left-0 right-0 flex flex-col items-center px-8">
+        <div className="mb-6"><AttomikLogo height={22} color="#ffffff" /></div>
         <div className="flex gap-1">
           {Array.from({ length: TOTAL }).map((_, i) => (
             <div key={i} style={{
@@ -129,15 +137,22 @@ export default function CreativeReel({ brand, adVariation, imageUrl, onComplete 
       {/* Bottom */}
       <div className="absolute bottom-8 left-0 right-0 text-center">
         <div style={{
-          color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 600,
+          color: '#fff', fontFamily: 'Barlow, sans-serif', fontWeight: 800,
+          fontSize: 20, transition: 'opacity 300ms',
+          opacity: isVisible ? 1 : 0, marginBottom: 4,
+        }}>
+          {phrases[currentIndex]}
+        </div>
+        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, marginBottom: 12 }}>
+          Attomik — AI-powered funnel builder
+        </div>
+        <div style={{
+          color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 600,
           letterSpacing: '0.15em', textTransform: 'uppercase',
           transition: 'opacity 250ms',
           opacity: isVisible ? 1 : 0,
         }}>
           {current.label}
-        </div>
-        <div style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11, marginTop: 8 }}>
-          Generating your creative variations...
         </div>
       </div>
     </div>

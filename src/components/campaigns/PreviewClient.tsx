@@ -85,7 +85,8 @@ export default function PreviewClient({
     : null
 
   // Generation state
-  const [adVariation, setAdVariation] = useState<AdVariation | null>(existingAdVariation)
+  const [adVariations, setAdVariations] = useState<AdVariation[]>(existingAdVariation ? [existingAdVariation] : [])
+  const adVariation = adVariations[0] || null
   const [landingBrief, setLandingBrief] = useState<LandingBrief | null>(existingLandingBrief)
   const [showModal, setShowModal] = useState(!hasContent)
   const [showReel, setShowReel] = useState(false)
@@ -155,8 +156,8 @@ export default function PreviewClient({
       try {
         const res = await fetch(`/api/campaigns/${campaign.id}/ad-copy`, { method: 'POST' })
         const data = await res.json()
-        if (data?.variations?.[0]) {
-          setAdVariation(data.variations[0])
+        if (data?.variations?.length > 0) {
+          setAdVariations(data.variations)
           updateStep('ad-copy', 'done')
         } else {
           updateStep('ad-copy', 'error')
@@ -348,14 +349,23 @@ export default function PreviewClient({
                     )
                   })}
                 </div>
-                {/* Platform mockup for hero creative */}
-                <div className="mt-8">
-                  <PlatformAdPreview
-                    brand={brand}
-                    creative={{ imageUrl: productImageUrl, headline: adVariation.headline, primaryText: adVariation.primary_text, ctaText: landingBrief?.hero?.cta_text || 'Shop Now' }}
-                    TemplateComponent={OverlayTemplate}
-                    templateProps={{ ...baseProps, width: 1080, height: 1080, imageUrl: productImageUrl, bgColor: productImageUrl ? '#000' : brandAccent, textPosition: 'center' as const }}
-                  />
+                {/* All 3 platform mockups side by side */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                  {(['facebook', 'instagram', 'story'] as const).map(platform => {
+                    const platformProps = { ...baseProps, width: 1080, height: platform === 'story' ? 1920 : 1080, imageUrl: productImageUrl, bgColor: productImageUrl ? '#000' : brandAccent, textPosition: 'center' as const }
+                    return (
+                      <div key={platform}>
+                        <div className="label text-center mb-3">{platform === 'facebook' ? 'Facebook Feed' : platform === 'instagram' ? 'Instagram Feed' : 'Instagram Story'}</div>
+                        <PlatformAdPreview
+                          brand={brand}
+                          creative={{ imageUrl: productImageUrl, headline: adVariation.headline, primaryText: adVariation.primary_text, ctaText: landingBrief?.hero?.cta_text || 'Shop Now' }}
+                          TemplateComponent={OverlayTemplate}
+                          templateProps={platformProps}
+                          defaultPlatform={platform}
+                        />
+                      </div>
+                    )
+                  })}
                 </div>
               </>
             )
@@ -377,22 +387,26 @@ export default function PreviewClient({
               Edit copy →
             </button>
           </div>
-          {adVariation ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[adVariation].map((v, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[0, 1, 2].map(i => {
+              const v = adVariations[i]
+              return v ? (
                 <div key={i} className="border border-border rounded-card p-5 bg-paper space-y-3">
                   <div className="text-xs font-semibold text-muted uppercase tracking-wide">Variation {i + 1}</div>
                   <div className="font-bold text-base" style={headingStyle}>{v.headline}</div>
-                  <p className="text-sm leading-relaxed">{v.primary_text}</p>
-                  {v.description && <p className="text-sm text-muted">{v.description}</p>}
+                  <p className="text-sm leading-relaxed bg-cream rounded-btn p-3">{v.primary_text}</p>
+                  {v.description && <p className="text-sm text-muted bg-cream rounded-btn p-3">{v.description}</p>}
+                  <div className="text-xs text-muted font-mono pt-2 border-t border-border">{v.primary_text.length} chars</div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-4">
-              {[1,2,3].map(i => <div key={i} className="bg-paper border border-border rounded-card p-5 space-y-3"><div className={skeleton + ' h-5 w-1/2'}/><div className={skeleton + ' h-4 w-full'}/><div className={skeleton + ' h-4 w-3/4'}/></div>)}
-            </div>
-          )}
+              ) : (
+                <div key={i} className="border border-dashed border-border rounded-card p-5 bg-paper flex flex-col items-center justify-center text-center" style={{ minHeight: 200 }}>
+                  <div className={skeleton + ' w-8 h-8 rounded-full mb-2'} />
+                  <div className="text-sm font-semibold text-muted">Variation {i + 1}</div>
+                  <div className="text-xs text-muted mt-1">Generating...</div>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
         {/* ═══ SECTION 3: Landing Page ═══ */}

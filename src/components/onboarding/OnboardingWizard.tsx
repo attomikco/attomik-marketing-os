@@ -32,6 +32,8 @@ export default function OnboardingWizard() {
 
   // Step 2
   type DetectedProduct = { name: string; description: string | null; price: string | null; image: string | null }
+  type ScrapedImage = { url: string; tag: 'product' | 'lifestyle' | 'background' | 'other'; score: number }
+  const [detectedImages, setDetectedImages] = useState<ScrapedImage[]>([])
   const [detectedProducts, setDetectedProducts] = useState<DetectedProduct[]>([])
   const [selectedProductIdx, setSelectedProductIdx] = useState<number | null>(null)
   const [showManualProduct, setShowManualProduct] = useState(false)
@@ -66,6 +68,7 @@ export default function OnboardingWizard() {
       if (data.letterSpacing && data.letterSpacing !== 'normal') setFontLetterSpacing(data.letterSpacing)
       if (data.ogImage) setDetectedImage(data.ogImage)
       if (data.products?.length > 0) setDetectedProducts(data.products)
+      if (data.images?.length > 0) setDetectedImages(data.images)
       setDetected(true)
     } catch {
       setDetected(true) // show manual form even on failure
@@ -175,6 +178,33 @@ export default function OnboardingWizard() {
             }
           }
         } catch {}
+      }
+    }
+
+    // Upload scraped images from website
+    if (detectedImages.length > 0) {
+      const toUpload = detectedImages.slice(0, 8)
+      for (let idx = 0; idx < toUpload.length; idx++) {
+        const img = toUpload[idx]
+        setSavingLabel(`Importing brand images… (${idx + 1}/${toUpload.length})`)
+        try {
+          const imgRes = await fetch('/api/brands/proxy-image', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: img.url }),
+          })
+          if (!imgRes.ok) continue
+          const blob = await imgRes.blob()
+          const ext = img.url.split('.').pop()?.split('?')[0]?.slice(0, 4) || 'jpg'
+          const filename = `scraped_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+          const path = `${brand.id}/${filename}`
+          const { error: upErr } = await supabase.storage.from('brand-images').upload(path, blob, { contentType: blob.type || 'image/jpeg' })
+          if (!upErr) {
+            await supabase.from('brand_images').insert({
+              brand_id: brand.id, file_name: filename, storage_path: path,
+              mime_type: blob.type || 'image/jpeg', tag: img.tag, size_bytes: blob.size,
+            })
+          }
+        } catch { continue }
       }
     }
 
@@ -424,7 +454,7 @@ export default function OnboardingWizard() {
 
       {/* Logo above card */}
       <div className="flex justify-center mb-8">
-        <AttomikLogo height={28} color="#00ff97" />
+        <AttomikLogo height={24} color="#ffffff" />
       </div>
 
       <div className="max-w-lg w-full bg-paper rounded-card p-8 mx-4 max-h-[90vh] overflow-y-auto">

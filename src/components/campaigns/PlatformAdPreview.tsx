@@ -14,6 +14,7 @@ interface PlatformAdPreviewProps {
   creative: Creative
   TemplateComponent: React.ComponentType<any>
   templateProps: Record<string, any>
+  defaultPlatform?: 'facebook' | 'instagram' | 'story'
 }
 
 const PLATFORMS = [
@@ -171,11 +172,13 @@ function StoryFrame({ brand, creative, TemplateComponent, templateProps }: Platf
 }
 
 export default function PlatformAdPreview(props: PlatformAdPreviewProps) {
-  const [platform, setPlatform] = useState<'facebook' | 'instagram' | 'story'>('facebook')
+  const [platform, setPlatform] = useState<'facebook' | 'instagram' | 'story'>(props.defaultPlatform || 'facebook')
+  const hideSwitch = !!props.defaultPlatform
 
   return (
     <div>
-      {/* Platform switcher — app chrome, uses app colors */}
+      {/* Platform switcher — hidden when defaultPlatform is set */}
+      {!hideSwitch && (
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, justifyContent: 'center' }}>
         {PLATFORMS.map(p => (
           <button key={p.id} onClick={() => setPlatform(p.id)}
@@ -187,6 +190,7 @@ export default function PlatformAdPreview(props: PlatformAdPreviewProps) {
           </button>
         ))}
       </div>
+      )}
 
       {/* Frame */}
       {platform === 'facebook' && <FacebookFrame {...props} />}

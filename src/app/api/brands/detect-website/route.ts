@@ -239,8 +239,112 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ name, colors, font, fontTransform, letterSpacing, ogImage, logo, platform, products })
+    // ── Image scraping ──────────────────────────────────────────
+    type ScrapedImage = { url: string; tag: 'product' | 'lifestyle' | 'background' | 'other'; score: number }
+    const imagePool: string[] = []
+
+    const resolveUrl = (src: string): string => {
+      try { return new URL(src, normalizedUrl).href } catch { return src }
+    }
+
+    // OG + meta images
+    if (ogImage) imagePool.push(ogImage)
+    const twitterImg = html.match(/<meta[^>]+(?:name|property)=["']twitter:image(?::src)?["'][^>]+content=["']([^"']+)["']/i)?.[1]
+    if (twitterImg) imagePool.push(resolveUrl(twitterImg))
+
+    // All <img> tags
+    const imgTags = html.match(/<img[^>]+src=["']([^"']+)["'][^>]*/gi) || []
+    const noisePatterns = /icon|favicon|sprite|pixel|1x1|badge|arrow|chevron|star|rating|_32x|_16x|thumb_small|\.svg/i
+    for (const tag of imgTags) {
+      const src = tag.match(/src=["']([^"']+)["']/i)?.[1]
+      if (!src || src.startsWith('data:')) continue
+      if (noisePatterns.test(src) && !/logo/i.test(src)) continue
+      if (/width=["']?1["']?|height=["']?1["']?/.test(tag)) continue
+      imagePool.push(resolveUrl(src))
+    }
+
+    // Shopify product images (all images, not just first)
+    if (isShopify && products.length > 0) {
+      for (const p of products) {
+        if (p.image) imagePool.push(p.image)
+      }
+      // Try to get more from products.json raw data
+      try {
+        const baseUrl = normalizedUrl.replace(/\/+$/, '')
+        const r = await fetch(`${baseUrl}/products.json?limit=6`, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(2000) })
+        if (r.ok) {
+          const d = await r.json()
+          for (const p of (d?.products || [])) {
+            for (const img of (p.images || []).slice(0, 3)) {
+              if (img.src) imagePool.push(img.src)
+            }
+          }
+        }
+      } catch {}
+    }
+
+    // JSON-LD images
+    const ldBlocks = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi) || []
+    for (const block of ldBlocks) {
+      try {
+        const parsed = JSON.parse(block.replace(/<\/?script[^>]*>/gi, ''))
+        const items = Array.isArray(parsed) ? parsed : [parsed]
+        for (const item of items) {
+          if (typeof item.image === 'string') imagePool.push(resolveUrl(item.image))
+          if (Array.isArray(item.image)) item.image.forEach((u: string) => typeof u === 'string' && imagePool.push(resolveUrl(u)))
+        }
+      } catch {}
+    }
+
+    // CSS background images
+    const bgImgs = allCSS.match(/url\(['"]?(https?:[^'")\s]+)['"]?\)/gi) || []
+    for (const bg of bgImgs) {
+      const u = bg.replace(/url\(['"]?/, '').replace(/['"]?\)/, '')
+      if (/\.(jpg|jpeg|png|webp)/i.test(u)) imagePool.push(u)
+    }
+
+    // Srcset — grab highest res
+    const srcsets = html.match(/srcset=["']([^"']+)["']/gi) || []
+    for (const ss of srcsets) {
+      const val = ss.replace(/srcset=["']/, '').replace(/["']$/, '')
+      const entries = val.split(',').map(s => s.trim())
+      if (entries.length > 0) {
+        const last = entries[entries.length - 1].split(/\s+/)[0]
+        if (last && !last.startsWith('data:')) imagePool.push(resolveUrl(last))
+      }
+    }
+
+    // Deduplicate + score
+    const seen = new Set<string>()
+    const uniqueImages: ScrapedImage[] = []
+    for (const url of imagePool) {
+      if (!url.startsWith('http')) continue
+      let pathname: string
+      try { pathname = new URL(url).pathname } catch { pathname = url }
+      if (seen.has(pathname)) continue
+      seen.add(pathname)
+
+      let score = 0
+      if (/\/products?\/|\/shop\/|\/catalog\//i.test(url)) score += 3
+      if (/\.(jpg|jpeg|webp)/i.test(url)) score += 3
+      if (url === ogImage || url === twitterImg) score += 2
+      if (/\/lifestyle|\/campaign|\/hero|\/banner/i.test(url)) score += 2
+      if (name && url.toLowerCase().includes(name.toLowerCase())) score += 1
+      if (/\/icon|\/logo|\/badge|\/button/i.test(url)) score -= 2
+      if (/thumb|thumbnail|_small|_mini|32x|16x/i.test(url)) score -= 3
+
+      let tag: ScrapedImage['tag'] = 'other'
+      if (/\/products?\/|\/shop\/|\/catalog\//i.test(url)) tag = 'product'
+      else if (/\/lifestyle|\/campaign|\/lookbook|\/editorial|\/hero|\/banner/i.test(url)) tag = 'lifestyle'
+      else if (bgImgs.some(b => b.includes(url))) tag = 'background'
+
+      uniqueImages.push({ url, tag, score })
+    }
+
+    const images = uniqueImages.sort((a, b) => b.score - a.score).slice(0, 12)
+
+    return NextResponse.json({ name, colors, font, fontTransform, letterSpacing, ogImage, logo, platform, products, images })
   } catch {
-    return NextResponse.json({ name: null, colors: [], font: null, fontTransform: 'none', letterSpacing: 'normal', ogImage: null, logo: null, platform: 'other', products: [] })
+    return NextResponse.json({ name: null, colors: [], font: null, fontTransform: 'none', letterSpacing: 'normal', ogImage: null, logo: null, platform: 'other', products: [], images: [] })
   }
 }
