@@ -28,9 +28,14 @@ export default function OnboardingWizard() {
   const [accentColor, setAccentColor] = useState('#00ff97')
 
   // Step 2
+  type DetectedProduct = { name: string; description: string | null; price: string | null; image: string | null }
+  const [detectedProducts, setDetectedProducts] = useState<DetectedProduct[]>([])
+  const [selectedProductIdx, setSelectedProductIdx] = useState<number | null>(null)
+  const [showManualProduct, setShowManualProduct] = useState(false)
   const [productName, setProductName] = useState('')
   const [priceRange, setPriceRange] = useState('')
   const [productDesc, setProductDesc] = useState('')
+  const [productImageUrl, setProductImageUrl] = useState<string | null>(null)
   const [targetAudience, setTargetAudience] = useState('')
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
@@ -55,6 +60,7 @@ export default function OnboardingWizard() {
       if (data.colors?.[2]) setAccentColor(data.colors[2])
       if (data.font) setBrandFont(data.font)
       if (data.ogImage) setDetectedImage(data.ogImage)
+      if (data.products?.length > 0) setDetectedProducts(data.products)
       setDetected(true)
     } catch {
       setDetected(true) // show manual form even on failure
@@ -64,6 +70,20 @@ export default function OnboardingWizard() {
 
   function skipToManual() {
     setDetected(true)
+  }
+
+  function selectProduct(idx: number) {
+    const p = detectedProducts[idx]
+    if (!p) return
+    setSelectedProductIdx(idx)
+    setProductName(p.name)
+    setProductDesc(p.description || '')
+    setPriceRange(p.price || '')
+    setProductImageUrl(p.image || null)
+  }
+
+  function switchToManualProduct() {
+    setShowManualProduct(true)
   }
 
   function validate(): boolean {
@@ -113,8 +133,9 @@ export default function OnboardingWizard() {
       return
     }
 
-    if (imageFiles.length > 0) {
+    if (imageFiles.length > 0 || productImageUrl) {
       setSavingLabel('Uploading images…')
+      // Upload manually selected files
       for (const file of imageFiles) {
         const ext = file.name.split('.').pop() || 'jpg'
         const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
@@ -126,6 +147,25 @@ export default function OnboardingWizard() {
             tag: 'product', mime_type: file.type, size_bytes: file.size,
           })
         }
+      }
+      // Download and upload detected product image
+      if (productImageUrl) {
+        try {
+          const imgRes = await fetch(productImageUrl)
+          if (imgRes.ok) {
+            const blob = await imgRes.blob()
+            const ext = productImageUrl.split('.').pop()?.split('?')[0] || 'jpg'
+            const fileName = `${Date.now()}-product.${ext}`
+            const storagePath = `${brand.id}/${fileName}`
+            const { error: uploadErr } = await supabase.storage.from('brand-images').upload(storagePath, blob, { contentType: blob.type || 'image/jpeg' })
+            if (!uploadErr) {
+              await supabase.from('brand_images').insert({
+                brand_id: brand.id, file_name: fileName, storage_path: storagePath,
+                tag: 'product', mime_type: blob.type || 'image/jpeg', size_bytes: blob.size,
+              })
+            }
+          }
+        } catch {}
       }
     }
 
@@ -225,28 +265,71 @@ export default function OnboardingWizard() {
     },
     {
       title: 'Your product & audience',
-      subtitle: 'Just add one product for now — you can add more later and change any of this anytime.',
+      subtitle: detectedProducts.length > 0 && !showManualProduct
+        ? 'Pick the product you want to market first.'
+        : 'Just add one product for now — you can add more later and change any of this anytime.',
       content: (
         <div className="space-y-4">
-          <div>
-            <label className="text-xs font-semibold block mb-1">Product name *</label>
-            <input className={inputCls} value={productName} onChange={e => setProductName(e.target.value)} placeholder="e.g. Dream Blend Coffee" />
-            {errors.productName && <p className="text-danger text-xs mt-1">{errors.productName}</p>}
-          </div>
-          <div>
-            <label className="text-xs font-semibold block mb-1">Single unit price</label>
-            <input className={inputCls} value={priceRange} onChange={e => setPriceRange(e.target.value)} placeholder="$24" />
-          </div>
-          <div>
-            <label className="text-xs font-semibold block mb-1">One-line description</label>
-            <input className={inputCls} value={productDesc} onChange={e => setProductDesc(e.target.value)} placeholder="Organic single-origin pour-over coffee" />
-          </div>
+          {/* Product picker — shown when products detected and not in manual mode */}
+          {detectedProducts.length > 0 && !showManualProduct ? (
+            <>
+              <div className="label mb-1">Select your hero product</div>
+              <div className="grid grid-cols-2 gap-3">
+                {detectedProducts.map((p, idx) => (
+                  <button key={idx} onClick={() => selectProduct(idx)}
+                    className="rounded-card p-3 text-left transition-all cursor-pointer"
+                    style={{ border: selectedProductIdx === idx ? '2px solid #00ff97' : '2px solid #e0e0e0', background: selectedProductIdx === idx ? 'rgba(0,255,151,0.05)' : 'transparent' }}>
+                    {p.image ? (
+                      <img src={p.image} alt={p.name} className="w-full aspect-square object-cover rounded-btn mb-2" />
+                    ) : (
+                      <div className="w-full aspect-square bg-cream rounded-btn mb-2 flex items-center justify-center text-2xl font-black text-muted">
+                        {p.name?.[0] || '?'}
+                      </div>
+                    )}
+                    <div className="font-semibold text-sm truncate">{p.name}</div>
+                    {p.price && <div className="text-xs text-muted">${p.price}</div>}
+                  </button>
+                ))}
+              </div>
+              {errors.productName && <p className="text-danger text-xs">{errors.productName}</p>}
+              <button onClick={switchToManualProduct} className="text-xs text-muted hover:text-ink transition-colors cursor-pointer w-full text-center mt-1">
+                or add a different product →
+              </button>
+            </>
+          ) : (
+            /* Manual product entry */
+            <>
+              <div>
+                <label className="text-xs font-semibold block mb-1">Product name *</label>
+                <input className={inputCls} value={productName} onChange={e => setProductName(e.target.value)} placeholder="e.g. Dream Blend Coffee" />
+                {errors.productName && <p className="text-danger text-xs mt-1">{errors.productName}</p>}
+              </div>
+              <div>
+                <label className="text-xs font-semibold block mb-1">Single unit price</label>
+                <input className={inputCls} value={priceRange} onChange={e => setPriceRange(e.target.value)} placeholder="$24" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold block mb-1">One-line description</label>
+                <input className={inputCls} value={productDesc} onChange={e => setProductDesc(e.target.value)} placeholder="Organic single-origin pour-over coffee" />
+              </div>
+            </>
+          )}
+
+          {/* Shared fields */}
           <div>
             <label className="text-xs font-semibold block mb-1">Target audience</label>
             <textarea className={inputCls + ' resize-none'} rows={2} value={targetAudience} onChange={e => setTargetAudience(e.target.value)} placeholder="Women 28–45 who value premium quality and mindful living" />
           </div>
+
+          {/* Image uploads + detected product image */}
           <div>
             <label className="text-xs font-semibold block mb-1">Product images (optional)</label>
+            {productImageUrl && (
+              <div className="flex items-center gap-2 mb-2">
+                <img src={productImageUrl} alt="" className="w-14 h-14 object-cover rounded-btn border border-border" />
+                <span className="text-xs text-muted">from site</span>
+              </div>
+            )}
             <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
               onChange={e => setImageFiles(Array.from(e.target.files || []))} />
             <button onClick={() => fileRef.current?.click()}

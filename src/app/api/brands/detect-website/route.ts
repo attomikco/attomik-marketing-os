@@ -144,8 +144,62 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ name, colors, font, ogImage, logo })
+    // ── Platform detection ────────────────────────────────────────
+    const isShopify = /Shopify\.shop|cdn\.shopify\.com|myshopify\.com/i.test(html)
+    const platform = isShopify ? 'shopify' : 'other'
+
+    // ── Product detection ──────────────────────────────────────────
+    type DetectedProduct = { name: string; description: string | null; price: string | null; image: string | null }
+    let products: DetectedProduct[] = []
+
+    // Try Shopify products.json
+    if (isShopify) {
+      try {
+        const baseUrl = normalizedUrl.replace(/\/+$/, '')
+        const prodRes = await fetch(`${baseUrl}/products.json?limit=6`, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' },
+          signal: AbortSignal.timeout(3000),
+        })
+        if (prodRes.ok) {
+          const prodData = await prodRes.json()
+          if (Array.isArray(prodData?.products)) {
+            products = prodData.products.slice(0, 6).map((p: any) => ({
+              name: p.title || '',
+              description: p.body_html ? p.body_html.replace(/<[^>]*>/g, ' ').trim().slice(0, 200) : null,
+              price: p.variants?.[0]?.price || null,
+              image: p.images?.[0]?.src || null,
+            }))
+          }
+        }
+      } catch {}
+    }
+
+    // Fallback: JSON-LD Product schema
+    if (products.length === 0) {
+      const ldJsonBlocks = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi) || []
+      for (const block of ldJsonBlocks) {
+        try {
+          const content = block.replace(/<\/?script[^>]*>/gi, '')
+          const parsed = JSON.parse(content)
+          const items = Array.isArray(parsed) ? parsed : [parsed]
+          for (const item of items) {
+            if (item?.['@type'] === 'Product' && item?.name) {
+              products.push({
+                name: item.name,
+                description: typeof item.description === 'string' ? item.description.replace(/<[^>]*>/g, ' ').trim().slice(0, 200) : null,
+                price: item.offers?.price?.toString() || item.offers?.lowPrice?.toString() || null,
+                image: typeof item.image === 'string' ? item.image : Array.isArray(item.image) ? item.image[0] : null,
+              })
+            }
+            if (products.length >= 4) break
+          }
+        } catch {}
+        if (products.length >= 4) break
+      }
+    }
+
+    return NextResponse.json({ name, colors, font, ogImage, logo, platform, products })
   } catch {
-    return NextResponse.json({ name: null, colors: [], font: null, ogImage: null, logo: null })
+    return NextResponse.json({ name: null, colors: [], font: null, ogImage: null, logo: null, platform: 'other', products: [] })
   }
 }
