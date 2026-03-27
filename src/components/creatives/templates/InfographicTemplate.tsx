@@ -35,14 +35,11 @@ export default function InfographicTemplate({
         </div>
       )}
 
-      {/* Product image centered */}
+      {/* Background image — full bleed */}
       {imageUrl && (
         <img crossOrigin="anonymous" src={imageUrl} alt="" style={{
-          position: 'absolute',
-          top: '50%', left: '50%',
-          transform: 'translate(-50%, -55%)',
-          width: imgSize, height: imgSize,
-          objectFit: 'contain', objectPosition: `center ${imagePosition || 'center'}`,
+          position: 'absolute', inset: 0, width: '100%', height: '100%',
+          objectFit: 'cover', objectPosition: `center ${imagePosition || 'center'}`,
         }} />
       )}
 
