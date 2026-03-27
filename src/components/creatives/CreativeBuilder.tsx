@@ -468,6 +468,7 @@ export default function CreativeBuilder({
           )}
 
           <StylePanel
+            templateId={templateId}
             brand={brand}
             textPosition={textPosition}
             setTextPosition={setTextPosition}
