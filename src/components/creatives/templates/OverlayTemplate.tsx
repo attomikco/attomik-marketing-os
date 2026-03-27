@@ -1,8 +1,8 @@
 import { TemplateProps, ff, px, autoSize, bannerStyle, positionStyles } from './types'
 
-const HEADLINE_SIZE   = 72
-const BODY_SIZE       = 36
-const CTA_SIZE        = 30
+const HEADLINE_SIZE   = 78
+const BODY_SIZE       = 38
+const CTA_SIZE        = 32
 const CTA_PAD_V       = 18
 const CTA_PAD_H       = 48
 const CTA_RADIUS      = 6
