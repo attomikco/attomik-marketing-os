@@ -39,31 +39,16 @@ export default function StatTemplate({
         padding: `${textPosition.startsWith('top') && height / width > 1.4 ? p * 3 : p}px ${p}px ${p}px`,
         textAlign: pos.textAlign,
       }}>
-        {ctaText && (() => {
-          const callouts = ctaText.split(/[|,]/).map(s => s.trim()).filter(Boolean)
-          return callouts.length > 1 ? (
-            <div style={{ display: 'flex', gap: px(24, width), marginBottom: px(GAP_LABEL_STAT, width) }}>
-              {callouts.map((c, i) => (
-                <div key={i} style={{
-                  fontSize: px(LABEL_SIZE, width) * bodySizeMul, fontWeight: 600,
-                  letterSpacing: '0.08em', textTransform: 'uppercase' as const,
-                  color: 'rgba(255,255,255,0.7)', fontFamily: ff(bodyFont),
-                }}>
-                  {c}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{
-              fontSize: px(LABEL_SIZE, width) * bodySizeMul, fontWeight: 600,
-              letterSpacing: '0.15em', textTransform: 'uppercase' as const,
-              color: 'rgba(255,255,255,0.7)', fontFamily: ff(bodyFont),
-              marginBottom: px(GAP_LABEL_STAT, width),
-            }}>
-              {ctaText}
-            </div>
-          )
-        })()}
+        {brandName && (
+          <div style={{
+            fontSize: px(LABEL_SIZE, width) * bodySizeMul, fontWeight: 600,
+            letterSpacing: '0.15em', textTransform: 'uppercase' as const,
+            color: bodyColor, opacity: 0.7, fontFamily: ff(bodyFont),
+            marginBottom: px(GAP_LABEL_STAT, width),
+          }}>
+            {brandName}
+          </div>
+        )}
 
         {headline && (
           <div style={{
