@@ -84,6 +84,7 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
   async function save() {
     setSaving(true)
     setError(null)
+    console.log('[BrandVoiceEditor] Saving extended colors:', { bg_base: form.bg_base, bg_dark: form.bg_dark, btn_primary: form.btn_primary })
 
     // Core fields (columns that always exist)
     const { error: err } = await supabase.from('brands').update({
@@ -126,7 +127,8 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
     }
 
     // Extended color columns — third call so it doesn't break older columns
-    const { error: err3 } = await supabase.from('brands').update({
+    console.log('[BrandVoiceEditor] Saving extended colors to brand:', brand.id)
+    const { error: err3, data: d3 } = await supabase.from('brands').update({
       bg_base:           form.bg_base || null,
       bg_dark:           form.bg_dark || null,
       bg_secondary:      form.bg_secondary || null,
@@ -142,6 +144,7 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
       btn_tertiary_text: form.btn_tertiary_text || null,
     }).eq('id', brand.id)
 
+    console.log('[BrandVoiceEditor] Extended colors result:', { error: err3, data: d3 })
     if (err3) {
       setError(`Extended colors failed: ${err3.message}. Run the migration to add these columns.`)
       setSaving(false)
