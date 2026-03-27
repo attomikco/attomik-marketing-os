@@ -1,10 +1,10 @@
 import { TemplateProps, ff, px, autoSize } from './types'
 
-const HEADLINE_SIZE = 64
-const CALLOUT_LABEL = 22
-const CALLOUT_DESC = 16
-const CALLOUT_ICON = 32
-const STAT_SIZE = 36
+const HEADLINE_SIZE = 115
+const CALLOUT_LABEL = 40
+const CALLOUT_DESC = 29
+const CALLOUT_ICON = 58
+const STAT_SIZE = 65
 const EDGE_PAD = 64
 const CALLOUT_PAD = 24
 const CALLOUT_RADIUS = 12
@@ -47,40 +47,43 @@ export default function InfographicTemplate({
         </div>
       )}
 
-      {/* 4 callout boxes */}
-      {items.length > 0 && (() => {
-        const cw = Math.round(width * 0.36)
-        const positions = [
-          { top: '30%', left: p },
-          { top: '30%', right: p },
-          { top: '56%', left: p },
-          { top: '56%', right: p },
-        ]
-        return items.map((c, i) => (
-          <div key={i} style={{
-            position: 'absolute', ...positions[i % 4] as any, zIndex: 1,
-            width: cw, padding: px(CALLOUT_PAD, width),
-            background: 'rgba(0,0,0,0.5)', borderRadius: px(CALLOUT_RADIUS, width),
-            backdropFilter: 'blur(12px)',
+      {/* 4 callout boxes — centered 2x2 grid */}
+      {items.length > 0 && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 1,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: `${p * 2}px ${p}px ${p}px`,
+        }}>
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1fr 1fr',
+            gap: px(12, width), width: '100%', maxWidth: '90%',
           }}>
-            <div style={{ fontSize: px(CALLOUT_ICON, width), marginBottom: px(6, width) }}>{c.icon || '+'}</div>
-            <div style={{
-              fontSize: px(CALLOUT_LABEL, width) * bodySizeMul, fontWeight: 700,
-              color: headlineColor, fontFamily: ff(headlineFont), lineHeight: 1.2,
-            }}>
-              {c.label}
-            </div>
-            {c.description && (
-              <div style={{
-                fontSize: px(CALLOUT_DESC, width) * bodySizeMul, fontWeight: 400,
-                color: bodyColor, marginTop: px(4, width), lineHeight: 1.3,
+            {items.map((c, i) => (
+              <div key={i} style={{
+                padding: px(CALLOUT_PAD, width),
+                background: 'rgba(0,0,0,0.5)', borderRadius: px(CALLOUT_RADIUS, width),
+                backdropFilter: 'blur(12px)', textAlign: 'center',
               }}>
-                {c.description}
+                <div style={{ fontSize: px(CALLOUT_ICON, width), marginBottom: px(6, width) }}>{c.icon || '+'}</div>
+                <div style={{
+                  fontSize: px(CALLOUT_LABEL, width) * bodySizeMul, fontWeight: 700,
+                  color: headlineColor, fontFamily: ff(headlineFont), lineHeight: 1.2,
+                }}>
+                  {c.label}
+                </div>
+                {c.description && (
+                  <div style={{
+                    fontSize: px(CALLOUT_DESC, width) * bodySizeMul, fontWeight: 400,
+                    color: bodyColor, marginTop: px(4, width), lineHeight: 1.3,
+                  }}>
+                    {c.description}
+                  </div>
+                )}
               </div>
-            )}
+            ))}
           </div>
-        ))
-      })()}
+        </div>
+      )}
 
       {/* Stat strip */}
       {statStripText && (
