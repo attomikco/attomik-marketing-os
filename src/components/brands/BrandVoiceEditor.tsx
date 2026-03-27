@@ -85,52 +85,51 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
     setSaving(true)
     setError(null)
 
-    // All fields in one call
-    const { error: err } = await supabase.from('brands').update({
-      brand_voice:     form.brand_voice || null,
-      target_audience: form.target_audience || null,
-      tone_keywords:   form.tone_keywords ? form.tone_keywords.split(',').map(s => s.trim()).filter(Boolean) : null,
-      avoid_words:     form.avoid_words ? form.avoid_words.split(',').map(s => s.trim()).filter(Boolean) : null,
-      website:         form.website || null,
-      primary_color:   form.primary_color || null,
-      secondary_color: form.secondary_color || null,
-      accent_color:    form.accent_color || null,
-      accent_font_color: form.accent_font_color || null,
-      heading_color:     form.heading_color || null,
-      body_color:        form.body_color || null,
-      logo_url:        form.logo_url || null,
-      font_primary:    fontHeading.family ? `${fontHeading.family}|${fontHeading.weight}|${fontHeading.transform}` : null,
-      font_secondary:  fontBody.family ? `${fontBody.family}|${fontBody.weight}|${fontBody.transform}` : null,
-      font_heading:      fontHeading.family ? fontHeading : null,
-      font_body:         fontBody.family ? fontBody : null,
-      custom_fonts_css:  customFontsCss || null,
-      default_headline:  defaultCopy.default_headline || null,
-      default_body_text: defaultCopy.default_body_text || null,
-      default_cta:       defaultCopy.default_cta || null,
-      bg_base:           form.bg_base || null,
-      bg_dark:           form.bg_dark || null,
-      bg_secondary:      form.bg_secondary || null,
-      bg_accent:         form.bg_accent || null,
-      text_on_base:      form.text_on_base || null,
-      text_on_dark:      form.text_on_dark || null,
-      text_on_accent:    form.text_on_accent || null,
-      btn_primary:       form.btn_primary || null,
-      btn_primary_text:  form.btn_primary_text || null,
-      btn_secondary:     form.btn_secondary || null,
-      btn_secondary_text: form.btn_secondary_text || null,
-      btn_tertiary:      form.btn_tertiary || null,
-      btn_tertiary_text: form.btn_tertiary_text || null,
-    }).eq('id', brand.id)
+    try {
+      // Save core fields first (guaranteed to work)
+      const { error: err } = await supabase.from('brands').update({
+        brand_voice:     form.brand_voice || null,
+        target_audience: form.target_audience || null,
+        tone_keywords:   form.tone_keywords ? form.tone_keywords.split(',').map(s => s.trim()).filter(Boolean) : null,
+        avoid_words:     form.avoid_words ? form.avoid_words.split(',').map(s => s.trim()).filter(Boolean) : null,
+        website:         form.website || null,
+        primary_color:   form.primary_color || null,
+        secondary_color: form.secondary_color || null,
+        accent_color:    form.accent_color || null,
+        accent_font_color: form.accent_font_color || null,
+        heading_color:     form.heading_color || null,
+        body_color:        form.body_color || null,
+        logo_url:        form.logo_url || null,
+        font_primary:    fontHeading.family ? `${fontHeading.family}|${fontHeading.weight}|${fontHeading.transform}` : null,
+        font_secondary:  fontBody.family ? `${fontBody.family}|${fontBody.weight}|${fontBody.transform}` : null,
+        font_heading:      fontHeading.family ? fontHeading : null,
+        font_body:         fontBody.family ? fontBody : null,
+        custom_fonts_css:  customFontsCss || null,
+        default_headline:  defaultCopy.default_headline || null,
+        default_body_text: defaultCopy.default_body_text || null,
+        default_cta:       defaultCopy.default_cta || null,
+      }).eq('id', brand.id)
 
-    if (err) {
-      setError(err.message)
+      if (err) { setError(err.message); setSaving(false); return }
+
+      // Extended colors — separate call, non-blocking
+      supabase.from('brands').update({
+        bg_base: form.bg_base || null, bg_dark: form.bg_dark || null,
+        bg_secondary: form.bg_secondary || null, bg_accent: form.bg_accent || null,
+        text_on_base: form.text_on_base || null, text_on_dark: form.text_on_dark || null,
+        text_on_accent: form.text_on_accent || null,
+        btn_primary: form.btn_primary || null, btn_primary_text: form.btn_primary_text || null,
+        btn_secondary: form.btn_secondary || null, btn_secondary_text: form.btn_secondary_text || null,
+        btn_tertiary: form.btn_tertiary || null, btn_tertiary_text: form.btn_tertiary_text || null,
+      }).eq('id', brand.id).then(({ error }) => {
+        if (error) console.warn('Extended colors not saved:', error.message)
+      })
+
+      setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2000)
+    } catch (e) {
+      setError(String(e))
       setSaving(false)
-      return
     }
-
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
   }
 
   const inputCls = "w-full text-sm border border-border rounded-btn px-3 py-2.5 bg-cream focus:outline-none focus:border-accent transition-colors font-sans placeholder:text-[#bbb]"
