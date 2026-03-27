@@ -2,9 +2,9 @@ import { TemplateProps, ff, px, autoSize } from './types'
 
 const PAD = 48
 const GAP = 8
-const HEADLINE_SIZE = 52
-const BODY_SIZE = 24
-const CTA_SIZE = 22
+const HEADLINE_SIZE = 104
+const BODY_SIZE = 48
+const CTA_SIZE = 44
 const CTA_PAD_V = 14
 const CTA_PAD_H = 36
 
@@ -12,7 +12,7 @@ export default function GridTemplate({
   imageUrl, headline, bodyText, ctaText, brandColor, brandName, width, height,
   showCta, headlineFont, headlineWeight, headlineTransform, headlineColor,
   bodyFont, bodyWeight, bodyTransform, bodyColor, headlineSizeMul, bodySizeMul,
-  ctaColor, ctaFontColor, bgColor, imagePosition,
+  ctaColor, ctaFontColor, bgColor, imagePosition, productImageUrl,
 }: TemplateProps) {
   const gap = px(GAP, width)
   const cellW = (width - gap) / 2
@@ -29,10 +29,10 @@ export default function GridTemplate({
     </div>
   )
 
-  const imgCell = (
+  const imgCell = (url: string | null | undefined) => (
     <div style={{ width: cellW, height: cellH, position: 'relative', overflow: 'hidden' }}>
-      {imageUrl ? (
-        <img crossOrigin="anonymous" src={imageUrl} alt="" style={{
+      {url ? (
+        <img crossOrigin="anonymous" src={url} alt="" style={{
           position: 'absolute', inset: 0, width: '100%', height: '100%',
           objectFit: 'cover', objectPosition: `center ${imagePosition || 'center'}`,
         }} />
@@ -62,11 +62,11 @@ export default function GridTemplate({
         bgColor || '#000',
       )}
 
-      {/* Top-right: image */}
-      {imgCell}
+      {/* Top-right: image 1 */}
+      {imgCell(imageUrl)}
 
-      {/* Bottom-left: image */}
-      {imgCell}
+      {/* Bottom-left: image 2 (falls back to image 1) */}
+      {imgCell(productImageUrl || imageUrl)}
 
       {/* Bottom-right: body + CTA on accent */}
       {textCell(

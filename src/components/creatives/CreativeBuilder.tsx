@@ -555,6 +555,21 @@ export default function CreativeBuilder({
             />
           )}
 
+          {templateId === 'grid' && images.length > 1 && (
+            <div className="bg-paper border border-border rounded-card p-4">
+              <label className="text-[10px] text-muted uppercase tracking-wide font-semibold block mb-1">Second image</label>
+              <div className="grid grid-cols-4 gap-1 max-h-[100px] overflow-y-auto">
+                {images.map(img => (
+                  <button key={img.id} onClick={() => setSelectedProductImageId(img.id === selectedProductImageId ? null : img.id)}
+                    className="aspect-square rounded-[3px] overflow-hidden border-2 transition-all"
+                    style={{ borderColor: selectedProductImageId === img.id ? '#4ade80' : '#e0e0e0' }}>
+                    <img src={getPublicUrl(img.storage_path)} alt="" className="w-full h-full object-cover" loading="lazy" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {templateId === 'mission' && (
             <MissionSidebar
               subtitle={subtitle}
