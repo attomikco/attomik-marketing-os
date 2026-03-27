@@ -117,7 +117,16 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
       default_headline:  defaultCopy.default_headline || null,
       default_body_text: defaultCopy.default_body_text || null,
       default_cta:       defaultCopy.default_cta || null,
-      // Extended colors
+    }).eq('id', brand.id)
+
+    if (err2) {
+      setError(`Newer columns failed: ${err2.message}`)
+      setSaving(false)
+      return
+    }
+
+    // Extended color columns — third call so it doesn't break older columns
+    const { error: err3 } = await supabase.from('brands').update({
       bg_base:           form.bg_base || null,
       bg_dark:           form.bg_dark || null,
       bg_secondary:      form.bg_secondary || null,
@@ -133,8 +142,8 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
       btn_tertiary_text: form.btn_tertiary_text || null,
     }).eq('id', brand.id)
 
-    if (err2) {
-      setError('Colors saved, but text color columns are missing — run the Supabase migration.')
+    if (err3) {
+      setError(`Extended colors failed: ${err3.message}. Run the migration to add these columns.`)
       setSaving(false)
       return
     }
