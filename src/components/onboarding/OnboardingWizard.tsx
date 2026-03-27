@@ -133,7 +133,7 @@ export default function OnboardingWizard() {
     },
     {
       title: 'Your product & audience',
-      subtitle: 'Help us understand who you sell to and what you offer.',
+      subtitle: 'Just add one product for now — you can add more later and change any of this anytime.',
       content: (
         <div className="space-y-4">
           <div>
@@ -152,10 +152,6 @@ export default function OnboardingWizard() {
           <div>
             <label className="text-xs font-semibold block mb-1">Target audience</label>
             <textarea className={inputCls + ' resize-none'} rows={2} value={targetAudience} onChange={e => setTargetAudience(e.target.value)} placeholder="Women 28–45 who value premium quality and mindful living" />
-          </div>
-          <div>
-            <label className="text-xs font-semibold block mb-1">Tone keywords</label>
-            <input className={inputCls} value={toneKeywords} onChange={e => setToneKeywords(e.target.value)} placeholder="playful, premium, approachable" />
           </div>
         </div>
       ),
