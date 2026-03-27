@@ -144,7 +144,7 @@ export default function BrandVoiceEditor({ brand }: { brand: Brand }) {
       btn_tertiary_text: form.btn_tertiary_text || null,
     }).eq('id', brand.id)
 
-    console.log('[BrandVoiceEditor] Extended colors result:', { error: err3, data: d3 })
+    console.log('[BrandVoiceEditor] Extended colors result:', JSON.stringify({ error: err3, data: d3 }))
     if (err3) {
       setError(`Extended colors failed: ${err3.message}. Run the migration to add these columns.`)
       setSaving(false)
