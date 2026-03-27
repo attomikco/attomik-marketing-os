@@ -58,7 +58,7 @@ export default function OnboardingWizard() {
     setSaving(true)
     setSavingLabel('Creating brand…')
 
-    const slug = brandName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    const slug = brandName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Math.random().toString(36).slice(2, 6)
 
     // 1. Create brand
     const { data: brand, error: brandErr } = await supabase.from('brands').insert({
