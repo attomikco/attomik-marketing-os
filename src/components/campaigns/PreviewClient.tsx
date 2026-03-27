@@ -12,6 +12,7 @@ import TestimonialTemplate from '@/components/creatives/templates/TestimonialTem
 import UGCTemplate from '@/components/creatives/templates/UGCTemplate'
 import MagicModal from '@/components/ui/MagicModal'
 import CreativeReel from './CreativeReel'
+import FunnelReadyModal from '@/components/ui/FunnelReadyModal'
 
 interface AdVariation {
   primary_text: string
@@ -90,6 +91,7 @@ export default function PreviewClient({
   const [landingBrief, setLandingBrief] = useState<LandingBrief | null>(existingLandingBrief)
   const [magicModal, setMagicModal] = useState<{ mode: 'adcopy' | 'landing'; isDone: boolean } | null>(null)
   const [showReel, setShowReel] = useState(false)
+  const [showReadyModal, setShowReadyModal] = useState(false)
 
   // Brand image URLs
   const [productImageUrl, setProductImageUrl] = useState<string | null>(null)
@@ -247,9 +249,15 @@ export default function PreviewClient({
           brand={brand}
           adVariation={adVariation}
           imageUrl={brandImageUrl}
-          onComplete={() => setShowReel(false)}
+          onComplete={() => { setShowReel(false); setShowReadyModal(true) }}
         />
       )}
+
+      <FunnelReadyModal
+        isOpen={showReadyModal}
+        brandName={brand.name}
+        onContinue={() => setShowReadyModal(false)}
+      />
 
       {/* Top nav bar */}
       <div className="border-b border-border bg-paper sticky top-0 z-40">

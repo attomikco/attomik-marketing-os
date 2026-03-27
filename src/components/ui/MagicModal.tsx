@@ -84,7 +84,7 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
     return () => { clearInterval(charInterval); clearTimeout(loopTimeout); setTypedText('') }
   }, [isOpen, isDone, mode, brandName])
 
-  useEffect(() => { if (!isOpen || isDone) setTypedText('') }, [isOpen, isDone])
+  useEffect(() => { if (isDone || !isOpen) setTypedText('') }, [isOpen, isDone])
 
   if (!isOpen) return null
 
