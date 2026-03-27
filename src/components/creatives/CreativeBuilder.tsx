@@ -402,7 +402,7 @@ export default function CreativeBuilder({
   })
 
   // ── Preview scaling ────────────────────────────────────────────────
-  const maxPreviewH = 380
+  const maxPreviewH = 460
   const scale = maxPreviewH / size.h
   const previewW = Math.round(size.w * scale)
   const previewH = maxPreviewH
@@ -514,8 +514,8 @@ export default function CreativeBuilder({
       {/* MAIN AREA: Preview+Style (left) + Images+Copy (right) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-        {/* LEFT: Preview + Style — stretches to match right column */}
-        <div className="lg:col-span-7 flex flex-col gap-4">
+        {/* LEFT: Preview + Style */}
+        <div className="lg:col-span-7 space-y-4">
           <PreviewCanvas
             templateLabel={template.label}
             size={size}
