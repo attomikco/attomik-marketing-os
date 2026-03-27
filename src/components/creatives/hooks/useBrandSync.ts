@@ -1,9 +1,13 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { BrandImage } from '@/types'
 import type { Brand, GeneratedCopy } from '../types'
 import type { TextPosition } from '../templates/types'
+
+// In-memory cache so switching back to a brand is instant
+const imageCache = new Map<string, BrandImage[]>()
+const copyCache = new Map<string, GeneratedCopy[]>()
 
 function isLightColor(hex: string) {
   const c = hex.replace('#', '')
@@ -105,15 +109,40 @@ export function useBrandSync(opts: UseBrandSyncOptions) {
     setActiveVariation(null); setActiveDraft(null)
   }, [brandId, brands])
 
-  // Fetch images + recent copy
+  // Fetch images + recent copy (with cache)
   useEffect(() => {
     if (!brandId) return
-    const supabase = createClient()
-    supabase.from('brand_images').select('*').eq('brand_id', brandId).order('created_at')
-      .then(({ data }) => { const imgs = data ?? []; setImages(imgs); setSelectedImageId(imgs.length > 0 ? imgs[Math.floor(Math.random() * imgs.length)].id : null) })
-    supabase.from('generated_content').select('id, content, type, created_at').eq('brand_id', brandId)
-      .order('created_at', { ascending: false }).limit(20)
-      .then(({ data }) => setRecentCopy((data as GeneratedCopy[]) ?? []))
+
+    // Images — serve from cache if available
+    const cachedImgs = imageCache.get(brandId)
+    if (cachedImgs) {
+      setImages(cachedImgs)
+      setSelectedImageId(cachedImgs.length > 0 ? cachedImgs[Math.floor(Math.random() * cachedImgs.length)].id : null)
+    } else {
+      const supabase = createClient()
+      supabase.from('brand_images').select('*').eq('brand_id', brandId).order('created_at')
+        .then(({ data }) => {
+          const imgs = data ?? []
+          imageCache.set(brandId, imgs)
+          setImages(imgs)
+          setSelectedImageId(imgs.length > 0 ? imgs[Math.floor(Math.random() * imgs.length)].id : null)
+        })
+    }
+
+    // Copy — serve from cache if available
+    const cachedCopy = copyCache.get(brandId)
+    if (cachedCopy) {
+      setRecentCopy(cachedCopy)
+    } else {
+      const supabase = createClient()
+      supabase.from('generated_content').select('id, content, type, created_at').eq('brand_id', brandId)
+        .order('created_at', { ascending: false }).limit(20)
+        .then(({ data }) => {
+          const copy = (data as GeneratedCopy[]) ?? []
+          copyCache.set(brandId, copy)
+          setRecentCopy(copy)
+        })
+    }
   }, [brandId])
 }
 
