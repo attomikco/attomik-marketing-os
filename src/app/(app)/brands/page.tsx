@@ -4,7 +4,7 @@ import { Plus, Globe, ArrowRight } from 'lucide-react'
 
 export default async function BrandsPage() {
   const supabase = await createClient()
-  const { data: brands } = await supabase.from('brands').select('*').order('name')
+  const { data: brands } = await supabase.from('brands').select('*').neq('status', 'draft').order('name')
 
   return (
     <div className="p-4 md:p-10 max-w-5xl">

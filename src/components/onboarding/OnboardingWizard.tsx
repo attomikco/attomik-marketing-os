@@ -132,7 +132,7 @@ export default function OnboardingWizard() {
       font_primary: brandFont ? `${brandFont}|700|${fontTransform}` : null,
       font_heading: brandFont ? { family: brandFont, weight: '700', transform: fontTransform, letterSpacing: fontLetterSpacing } : null,
       products: productName.trim() ? [{ name: productName.trim(), description: productDesc.trim() || null, price_range: priceRange.trim() || null }] : null,
-      status: 'active',
+      status: 'draft',
     }).select('id').single()
 
     if (brandErr || !brand) {
@@ -188,6 +188,9 @@ export default function OnboardingWizard() {
       setSaving(false)
       return
     }
+
+    sessionStorage.setItem('attomik_draft_brand_id', brand.id)
+    sessionStorage.setItem('attomik_draft_campaign_id', campaign.id)
 
     router.push(`/campaigns/${campaign.id}/preview`)
   }

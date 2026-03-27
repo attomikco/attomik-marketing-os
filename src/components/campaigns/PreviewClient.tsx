@@ -1,8 +1,7 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { ArrowLeft, Pencil, Plus } from 'lucide-react'
+import { ArrowLeft, Pencil, Plus, Info } from 'lucide-react'
 import { Brand, Campaign, GeneratedContent, BrandImage } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import PlatformAdPreview from './PlatformAdPreview'
@@ -44,6 +43,24 @@ export default function PreviewClient({
 }) {
   const router = useRouter()
   const supabase = createClient()
+  const [activating, setActivating] = useState(false)
+
+  async function activateBrand() {
+    setActivating(true)
+    await supabase.from('brands').update({ status: 'active' }).eq('id', brand.id)
+    sessionStorage.removeItem('attomik_draft_brand_id')
+    sessionStorage.removeItem('attomik_draft_campaign_id')
+    router.push(`/campaigns/${campaign.id}`)
+  }
+
+  async function navigateWithActivation(href: string) {
+    if (brand.status === 'draft') {
+      await supabase.from('brands').update({ status: 'active' }).eq('id', brand.id)
+      sessionStorage.removeItem('attomik_draft_brand_id')
+      sessionStorage.removeItem('attomik_draft_campaign_id')
+    }
+    router.push(href)
+  }
 
   // Derived content
   const adCopyContent = generatedContent.filter(c => c.type === 'fb_ad')
@@ -237,17 +254,32 @@ export default function PreviewClient({
       {/* Top nav bar */}
       <div className="border-b border-border bg-paper sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 md:px-10 flex items-center justify-between h-14">
-          <Link href={`/campaigns/${campaign.id}`}
+          <button onClick={() => navigateWithActivation(`/campaigns/${campaign.id}`)}
             className="flex items-center gap-1.5 text-sm text-muted hover:text-ink transition-colors">
             <ArrowLeft size={14} /> Back to campaign
-          </Link>
-          <Link href={`/campaigns/${campaign.id}`}
+          </button>
+          <button onClick={() => navigateWithActivation(`/campaigns/${campaign.id}`)}
             className="flex items-center gap-1.5 text-sm font-semibold hover:opacity-80 transition-opacity"
             style={{ color: APP_ACCENT }}>
             <Pencil size={13} /> Edit campaign
-          </Link>
+          </button>
         </div>
       </div>
+
+      {brand.status === 'draft' && (
+        <div className="max-w-5xl mx-auto px-4 md:px-10 mt-4">
+          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Info size={15} style={{ color: '#d97706' }} />
+              <span style={{ fontSize: 14, color: '#92400e' }}>This funnel is saved as a draft. Activate it to access full editing.</span>
+            </div>
+            <button onClick={activateBrand} disabled={activating}
+              style={{ background: '#f59e0b', color: '#fff', fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 6, border: 'none', cursor: 'pointer' }}>
+              {activating ? 'Activating...' : 'Activate & continue \u2192'}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-5xl mx-auto px-4 md:px-10 py-8 space-y-8">
         {/* Hero section */}
@@ -267,9 +299,9 @@ export default function PreviewClient({
               <span className="w-7 h-7 rounded-full bg-ink text-white flex items-center justify-center text-xs font-bold">1</span>
               <span className="font-bold text-xl">Ad Creatives</span>
             </div>
-            <Link href={`/campaigns/${campaign.id}`} className="text-sm text-muted hover:text-ink transition-colors">
+            <button onClick={() => navigateWithActivation(`/campaigns/${campaign.id}`)} className="text-sm text-muted hover:text-ink transition-colors">
               Edit in creative builder →
-            </Link>
+            </button>
           </div>
 
           {adVariation ? (() => {
@@ -341,9 +373,9 @@ export default function PreviewClient({
               <span className="w-7 h-7 rounded-full bg-ink text-white flex items-center justify-center text-xs font-bold">2</span>
               <span className="font-bold text-xl">Ad Copy</span>
             </div>
-            <Link href={`/campaigns/${campaign.id}`} className="text-sm text-muted hover:text-ink transition-colors">
+            <button onClick={() => navigateWithActivation(`/campaigns/${campaign.id}`)} className="text-sm text-muted hover:text-ink transition-colors">
               Edit copy →
-            </Link>
+            </button>
           </div>
           {adVariation ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -370,9 +402,9 @@ export default function PreviewClient({
               <span className="w-7 h-7 rounded-full bg-ink text-white flex items-center justify-center text-xs font-bold">3</span>
               <span className="font-bold text-xl">Landing Page</span>
             </div>
-            <Link href={`/campaigns/${campaign.id}`} className="text-sm text-muted hover:text-ink transition-colors">
+            <button onClick={() => navigateWithActivation(`/campaigns/${campaign.id}`)} className="text-sm text-muted hover:text-ink transition-colors">
               View full brief →
-            </Link>
+            </button>
           </div>
           {landingBrief ? (
             <div className="max-w-3xl mx-auto border border-border rounded-card overflow-hidden">
@@ -433,16 +465,16 @@ export default function PreviewClient({
             This entire funnel was built from your brand context. Customize the copy, upload images, and refine everything.
           </p>
           <div className="flex items-center justify-center gap-3">
-            <Link href={`/campaigns/${campaign.id}`}
+            <button onClick={() => navigateWithActivation(`/campaigns/${campaign.id}`)}
               className="text-sm font-bold px-5 py-2.5 rounded-btn transition-opacity hover:opacity-90 inline-flex items-center gap-1.5"
               style={{ background: APP_ACCENT, color: '#000' }}>
               <Pencil size={13} /> Edit campaign
-            </Link>
-            <Link href={`/brands/${brand.id}`}
+            </button>
+            <button onClick={() => navigateWithActivation(`/brands/${brand.id}`)}
               className="text-sm font-bold px-5 py-2.5 rounded-btn border transition-colors hover:border-white inline-flex items-center gap-1.5"
               style={{ borderColor: 'rgba(255,255,255,0.2)', color: '#fff' }}>
               <Plus size={13} /> Add context
-            </Link>
+            </button>
           </div>
         </div>
       </div>
