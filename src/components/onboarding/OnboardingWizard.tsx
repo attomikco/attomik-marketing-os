@@ -538,7 +538,7 @@ export default function OnboardingWizard() {
             </div>
 
             {/* Skip */}
-            <button onClick={skipToManual} style={{ background: 'none', border: 'none', fontSize: 13, color: 'rgba(255,255,255,0.25)', cursor: 'pointer', marginTop: 16, padding: 0 }}>
+            <button onClick={skipToManual} style={{ background: 'none', border: 'none', fontSize: 13, color: 'rgba(255,255,255,0.55)', cursor: 'pointer', marginTop: 16, padding: 0 }}>
               or set up manually →
             </button>
           </div>

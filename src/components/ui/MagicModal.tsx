@@ -239,14 +239,15 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
           </div>
         )}
 
-        {/* Phrases */}
-        <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 28, color: '#fff', transition: 'opacity 0.3s ease', marginBottom: 10 }}>
-            {isDone ? copy.donePhrase : copy.phrases[phraseIndex]}
-          </div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>
-            {isDone ? copy.doneSub : copy.sub(brandName)}
-          </div>
+      </div>
+
+      {/* Phrases — pinned to bottom */}
+      <div style={{ position: 'absolute', bottom: 48, left: 0, right: 0, textAlign: 'center', padding: '0 32px', pointerEvents: 'none' }}>
+        <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 28, color: '#fff', marginBottom: 10, transition: 'opacity 0.3s ease' }}>
+          {isDone ? copy.donePhrase : copy.phrases[phraseIndex]}
+        </div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>
+          {isDone ? copy.doneSub : copy.sub(brandName)}
         </div>
       </div>
     </div>
