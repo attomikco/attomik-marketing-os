@@ -371,7 +371,6 @@ export default function PreviewClient({
           ))}
         </div>
       </div>
-      <div style={{ height: 40, background: 'linear-gradient(to bottom, #000, var(--cream, #f8f7f4))' }} />
 
       {brand.status === 'draft' && (
         <div className="max-w-5xl mx-auto px-4 md:px-10 mt-4">
