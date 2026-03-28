@@ -100,8 +100,8 @@ export default function FunnelReadyModal({ isOpen, brandName, onContinue, images
           ))}
         </div>
 
-        <button onClick={onContinue} disabled={!imagesLoaded} style={{ width: '100%', padding: 15, background: '#00ff97', color: '#000', fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 15, border: 'none', borderRadius: 12, cursor: imagesLoaded ? 'pointer' : 'not-allowed', marginBottom: 10, opacity: imagesLoaded ? 1 : 0.5, transition: 'opacity 0.3s ease' }}>
-          {imagesLoaded ? 'Make it better \u2014 add your brand \u2192' : 'Importing images...'}
+        <button onClick={onContinue} style={{ width: '100%', padding: 15, background: '#00ff97', color: '#000', fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 15, border: 'none', borderRadius: 12, cursor: 'pointer', marginBottom: 10 }}>
+          Make it better &mdash; add your brand &rarr;
         </button>
         <button onClick={onContinue} style={{ width: '100%', padding: 12, background: 'transparent', color: 'rgba(255,255,255,0.25)', fontSize: 13, border: 'none', cursor: 'pointer' }}>
           Show me the preview first

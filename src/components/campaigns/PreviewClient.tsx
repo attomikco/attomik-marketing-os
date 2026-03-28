@@ -165,9 +165,37 @@ export default function PreviewClient({
           })
       }
       fetchImages()
-      setTimeout(() => { fetchImages(); setTimeout(() => setImagesLoaded(true), 500) }, 3000) // retry after 3s, mark loaded after
+      // Retry every 2s up to 5 times, then force-unlock
+      let retries = 0
+      const retryInterval = setInterval(async () => {
+        retries++
+        const { data } = await supabase
+          .from('brand_images')
+          .select('*')
+          .eq('brand_id', brand.id)
+          .order('created_at')
+        if (data && data.length > 0) {
+          loadImages(data as BrandImage[])
+          setImagesLoaded(true)
+          clearInterval(retryInterval)
+        } else if (retries >= 5) {
+          setImagesLoaded(true)
+          clearInterval(retryInterval)
+        }
+      }, 2000)
     }
   }, [brand.id, brandImages])
+
+  // Safety timeout — force-unlock preview if modal sequence breaks
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!previewReady) {
+        console.warn('[Preview] Safety timeout — forcing previewReady')
+        setPreviewReady(true)
+      }
+    }, 30000)
+    return () => clearTimeout(timeout)
+  }, [previewReady])
 
   // Auto-generate if no content exists — sequential with MagicModal
   useEffect(() => {
