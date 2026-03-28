@@ -301,13 +301,6 @@ export default function PreviewClient({
         <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 150, pointerEvents: 'none' }} />
       )}
 
-      {/* Branded logo in gaps between modals */}
-      {!previewReady && !magicModal && !showReel && !showReadyModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 160, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <AttomikLogo height={38} color="rgba(255,255,255,0.2)" />
-        </div>
-      )}
-
       {/* MagicModal */}
       <MagicModal
         isOpen={!!magicModal}
@@ -321,7 +314,7 @@ export default function PreviewClient({
       {/* CreativeReel — always mounted, controlled via style */}
       <CreativeReel
         brand={brand}
-        adVariation={adVariation || { headline: '', primary_text: '', description: '' }}
+        adVariation={adVariations[0] || adVariation || { headline: brand.name, primary_text: '', description: '' }}
         imageUrl={img0}
         allImageUrls={allImageUrls}
         adVariations={adVariations}

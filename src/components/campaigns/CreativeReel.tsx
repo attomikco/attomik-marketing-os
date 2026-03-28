@@ -127,9 +127,9 @@ export default function CreativeReel({ brand, adVariation, imageUrl, allImageUrl
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: 520, margin: '0 auto' }}>
         {/* Logo */}
-        <AttomikLogo height={38} color="#ffffff" />
-        {/* Divider */}
-        <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.15)', margin: '20px 0' }} />
+        <div style={{ marginBottom: 32 }}>
+          <AttomikLogo height={38} color="#ffffff" />
+        </div>
 
         {/* Progress dots */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 32 }}>

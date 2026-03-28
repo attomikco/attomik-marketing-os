@@ -156,9 +156,9 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: 520, margin: '0 auto' }}>
         {/* Logo */}
-        <AttomikLogo height={38} color="#ffffff" />
-        {/* Divider */}
-        <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.15)', margin: '20px 0' }} />
+        <div style={{ marginBottom: 32 }}>
+          <AttomikLogo height={38} color="#ffffff" />
+        </div>
 
         {/* SCAN: Radar */}
         {mode === 'scan' && !isDone && (
