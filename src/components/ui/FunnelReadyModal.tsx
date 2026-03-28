@@ -29,7 +29,7 @@ export default function FunnelReadyModal({ isOpen, brandName, onContinue }: { is
         }}>
           This is a basic preview.<br/>
           <span style={{ color: '#00ff97' }}>
-            It gets dramatically better.
+            It gets dramatically better once you add your images and styles.
           </span>
         </div>
 
