@@ -492,7 +492,7 @@ export default function OnboardingWizard() {
             </div>
 
             {/* Big headline */}
-            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 52, lineHeight: 1.05, letterSpacing: '-0.03em', color: '#fff', marginBottom: 20 }}>
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 52, lineHeight: 1.05, letterSpacing: '-0.03em', color: '#fff', marginBottom: 20, textTransform: 'uppercase' as const }}>
               How much revenue are{' '}
               <span style={{ color: '#00ff97' }}>you leaving on the table?</span>
             </div>
