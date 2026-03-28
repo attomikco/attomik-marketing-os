@@ -12,7 +12,6 @@ export default function OnboardingWizard() {
   const router = useRouter()
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
-  const [savingLabel, setSavingLabel] = useState('Creating…')
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   // Step 1 — two states
@@ -118,10 +117,67 @@ export default function OnboardingWizard() {
     setStep(s => Math.max(s - 1, 0))
   }
 
+  async function uploadImagesInBackground(brandId: string) {
+    // Upload manually selected files
+    for (const file of imageFiles) {
+      try {
+        const ext = file.name.split('.').pop() || 'jpg'
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+        const storagePath = `${brandId}/${fileName}`
+        const { error: uploadErr } = await supabase.storage.from('brand-images').upload(storagePath, file, { contentType: file.type })
+        if (!uploadErr) {
+          await supabase.from('brand_images').insert({
+            brand_id: brandId, file_name: file.name, storage_path: storagePath,
+            tag: 'product', mime_type: file.type, size_bytes: file.size,
+          })
+        }
+      } catch { continue }
+    }
+    // Download and upload detected product image
+    if (productImageUrl) {
+      try {
+        const imgRes = await fetch(productImageUrl)
+        if (imgRes.ok) {
+          const blob = await imgRes.blob()
+          const ext = productImageUrl.split('.').pop()?.split('?')[0] || 'jpg'
+          const fileName = `${Date.now()}-product.${ext}`
+          const storagePath = `${brandId}/${fileName}`
+          const { error: uploadErr } = await supabase.storage.from('brand-images').upload(storagePath, blob, { contentType: blob.type || 'image/jpeg' })
+          if (!uploadErr) {
+            await supabase.from('brand_images').insert({
+              brand_id: brandId, file_name: fileName, storage_path: storagePath,
+              tag: 'product', mime_type: blob.type || 'image/jpeg', size_bytes: blob.size,
+            })
+          }
+        }
+      } catch {}
+    }
+    // Upload scraped images from website
+    for (const img of detectedImages.slice(0, 8)) {
+      try {
+        const imgRes = await fetch('/api/brands/proxy-image', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: img.url }),
+        })
+        if (!imgRes.ok) continue
+        const blob = await imgRes.blob()
+        const ext = img.url.split('.').pop()?.split('?')[0]?.slice(0, 4) || 'jpg'
+        const filename = `scraped_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+        const path = `${brandId}/${filename}`
+        const { error: upErr } = await supabase.storage.from('brand-images').upload(path, blob, { contentType: blob.type || 'image/jpeg' })
+        if (!upErr) {
+          await supabase.from('brand_images').insert({
+            brand_id: brandId, file_name: filename, storage_path: path,
+            mime_type: blob.type || 'image/jpeg', tag: img.tag, size_bytes: blob.size,
+          })
+        }
+      } catch { continue }
+    }
+  }
+
   async function submit() {
     if (!validate()) return
     setSaving(true)
-    setSavingLabel('Creating brand…')
 
     const slug = brandName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Math.random().toString(36).slice(2, 6)
 
@@ -144,71 +200,6 @@ export default function OnboardingWizard() {
       return
     }
 
-    if (imageFiles.length > 0 || productImageUrl) {
-      setSavingLabel('Uploading images…')
-      // Upload manually selected files
-      for (const file of imageFiles) {
-        const ext = file.name.split('.').pop() || 'jpg'
-        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-        const storagePath = `${brand.id}/${fileName}`
-        console.log('[Upload] Storing path:', storagePath)
-        const { error: uploadErr } = await supabase.storage.from('brand-images').upload(storagePath, file, { contentType: file.type })
-        if (!uploadErr) {
-          await supabase.from('brand_images').insert({
-            brand_id: brand.id, file_name: file.name, storage_path: storagePath,
-            tag: 'product', mime_type: file.type, size_bytes: file.size,
-          })
-        }
-      }
-      // Download and upload detected product image
-      if (productImageUrl) {
-        try {
-          const imgRes = await fetch(productImageUrl)
-          if (imgRes.ok) {
-            const blob = await imgRes.blob()
-            const ext = productImageUrl.split('.').pop()?.split('?')[0] || 'jpg'
-            const fileName = `${Date.now()}-product.${ext}`
-            const storagePath = `${brand.id}/${fileName}`
-            const { error: uploadErr } = await supabase.storage.from('brand-images').upload(storagePath, blob, { contentType: blob.type || 'image/jpeg' })
-            if (!uploadErr) {
-              await supabase.from('brand_images').insert({
-                brand_id: brand.id, file_name: fileName, storage_path: storagePath,
-                tag: 'product', mime_type: blob.type || 'image/jpeg', size_bytes: blob.size,
-              })
-            }
-          }
-        } catch {}
-      }
-    }
-
-    // Upload scraped images from website
-    if (detectedImages.length > 0) {
-      const toUpload = detectedImages.slice(0, 8)
-      for (let idx = 0; idx < toUpload.length; idx++) {
-        const img = toUpload[idx]
-        setSavingLabel(`Importing brand images… (${idx + 1}/${toUpload.length})`)
-        try {
-          const imgRes = await fetch('/api/brands/proxy-image', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: img.url }),
-          })
-          if (!imgRes.ok) continue
-          const blob = await imgRes.blob()
-          const ext = img.url.split('.').pop()?.split('?')[0]?.slice(0, 4) || 'jpg'
-          const filename = `scraped_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
-          const path = `${brand.id}/${filename}`
-          const { error: upErr } = await supabase.storage.from('brand-images').upload(path, blob, { contentType: blob.type || 'image/jpeg' })
-          if (!upErr) {
-            await supabase.from('brand_images').insert({
-              brand_id: brand.id, file_name: filename, storage_path: path,
-              mime_type: blob.type || 'image/jpeg', tag: img.tag, size_bytes: blob.size,
-            })
-          }
-        } catch { continue }
-      }
-    }
-
-    setSavingLabel('Creating campaign…')
     const { data: campaign, error: campErr } = await supabase.from('campaigns').insert({
       brand_id: brand.id, name: campaignName.trim(), type: 'funnel', status: 'draft',
     }).select('id').single()
@@ -222,7 +213,11 @@ export default function OnboardingWizard() {
     sessionStorage.setItem('attomik_draft_brand_id', brand.id)
     sessionStorage.setItem('attomik_draft_campaign_id', campaign.id)
 
+    // Redirect immediately — images upload silently in background
     router.push(`/preview/${campaign.id}`)
+
+    // Fire and forget — user is already seeing MagicModal animations
+    uploadImagesInBackground(brand.id)
   }
 
   // ── Step 1 content ──────────────────────────────────────────────
@@ -492,11 +487,12 @@ export default function OnboardingWizard() {
                 className="flex items-center gap-2 text-sm font-bold px-6 py-2.5 rounded-btn transition-opacity hover:opacity-90 disabled:opacity-50"
                 style={{ background: '#00ff97', color: '#000' }}>
                 {saving && <Loader2 size={14} className="animate-spin" />}
-                {saving ? savingLabel : 'Launch my funnel →'}
+                {saving ? 'Creating your funnel...' : 'Launch my funnel →'}
               </button>
             )}
           </div>
         )}
+
       </div>
     </div>
   )

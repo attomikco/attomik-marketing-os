@@ -1,9 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Image, Palette, Type, FileText, Sparkles } from 'lucide-react'
+import { Image, Palette, Type, FileText, Sparkles, CheckCircle } from 'lucide-react'
 import AttomikLogo from '@/components/ui/AttomikLogo'
 
-export default function FunnelReadyModal({ isOpen, brandName, onContinue }: { isOpen: boolean; brandName: string; onContinue: () => void }) {
+export default function FunnelReadyModal({ isOpen, brandName, onContinue, imagesLoaded = true, imageCount = 0 }: { isOpen: boolean; brandName: string; onContinue: () => void; imagesLoaded?: boolean; imageCount?: number }) {
   const [visible, setVisible] = useState(false)
   useEffect(() => { if (isOpen) setTimeout(() => setVisible(true), 50); else setVisible(false) }, [isOpen])
   if (!isOpen) return null
@@ -17,7 +17,7 @@ export default function FunnelReadyModal({ isOpen, brandName, onContinue }: { is
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, opacity: visible ? 1 : 0, transition: 'opacity 0.4s ease' }}>
-      <style>{`@keyframes progressFill { from { width: 10%; } to { width: 85%; } }`}</style>
+      <style>{`@keyframes progressPulse { 0% { width: 20%; opacity: 1; } 50% { width: 75%; opacity: 0.8; } 100% { width: 20%; opacity: 1; } }`}</style>
       <div style={{ position: 'absolute', top: 32, left: 32 }}><AttomikLogo height={20} color="rgba(255,255,255,0.25)" /></div>
 
       <div style={{ maxWidth: 480, width: '100%', textAlign: 'center' }}>
@@ -31,11 +31,25 @@ export default function FunnelReadyModal({ isOpen, brandName, onContinue }: { is
         </div>
 
         <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '14px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Image size={16} color="#00ff97" /></div>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            {imagesLoaded ? <CheckCircle size={16} color="#00ff97" /> : <Image size={16} color="#00ff97" />}
+          </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 6 }}>Importing brand images</div>
-            <div style={{ height: 3, background: 'rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden' }}><div style={{ height: '100%', background: '#00ff97', borderRadius: 4, animation: 'progressFill 2.5s ease forwards' }} /></div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 5 }}>Scraping product images from your website...</div>
+            {imagesLoaded ? (
+              <>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 6 }}>
+                  {imageCount > 0 ? `${imageCount} brand image${imageCount !== 1 ? 's' : ''} imported` : 'Brand images imported'}
+                </div>
+                <div style={{ height: 3, background: 'rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden' }}><div style={{ height: '100%', width: '100%', background: '#00ff97', borderRadius: 4 }} /></div>
+                <div style={{ fontSize: 11, color: '#00ff97', marginTop: 5, fontWeight: 600 }}>Ready to use in your creatives</div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 6 }}>Importing brand images</div>
+                <div style={{ height: 3, background: 'rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden' }}><div style={{ height: '100%', width: '70%', background: '#00ff97', borderRadius: 4, animation: 'progressPulse 1.5s ease-in-out infinite' }} /></div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 5 }}>Fetching images from your website...</div>
+              </>
+            )}
           </div>
         </div>
 
@@ -51,8 +65,8 @@ export default function FunnelReadyModal({ isOpen, brandName, onContinue }: { is
           ))}
         </div>
 
-        <button onClick={onContinue} style={{ width: '100%', padding: 15, background: '#00ff97', color: '#000', fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 15, border: 'none', borderRadius: 12, cursor: 'pointer', marginBottom: 10 }}>
-          See my funnel — let&apos;s improve it →
+        <button onClick={onContinue} disabled={!imagesLoaded} style={{ width: '100%', padding: 15, background: '#00ff97', color: '#000', fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 15, border: 'none', borderRadius: 12, cursor: imagesLoaded ? 'pointer' : 'not-allowed', marginBottom: 10, opacity: imagesLoaded ? 1 : 0.5, transition: 'opacity 0.3s ease' }}>
+          {imagesLoaded ? 'See my funnel — let\u0027s improve it →' : 'Importing images...'}
         </button>
         <button onClick={onContinue} style={{ width: '100%', padding: 12, background: 'transparent', color: 'rgba(255,255,255,0.25)', fontSize: 13, border: 'none', cursor: 'pointer' }}>
           Looks good for now

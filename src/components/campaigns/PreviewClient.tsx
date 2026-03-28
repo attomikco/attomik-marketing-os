@@ -98,6 +98,7 @@ export default function PreviewClient({
   const [productImageUrl, setProductImageUrl] = useState<string | null>(null)
   const [lifestyleImageUrl, setLifestyleImageUrl] = useState<string | null>(null)
   const [allImageUrls, setAllImageUrls] = useState<string[]>([])
+  const [imagesLoaded, setImagesLoaded] = useState(brandImages.length > 0)
   const brandImageUrl = productImageUrl
 
   // Brand colors
@@ -151,6 +152,7 @@ export default function PreviewClient({
     if (brandImages.length > 0) {
       console.log('[Preview] Using server-provided brandImages:', brandImages.length)
       loadImages(brandImages)
+      setImagesLoaded(true)
     } else {
       console.log('[Preview] No server images, fetching client-side for brand:', brand.id)
       // Try immediately, then retry after 3s (images might still be uploading)
@@ -158,11 +160,11 @@ export default function PreviewClient({
         supabase.from('brand_images').select('*').eq('brand_id', brand.id).order('created_at')
           .then(({ data }) => {
             console.log('[Preview] Client fetch got:', data?.length, 'images')
-            if (data?.length) loadImages(data as BrandImage[])
+            if (data?.length) { loadImages(data as BrandImage[]); setImagesLoaded(true) }
           })
       }
       fetchImages()
-      setTimeout(fetchImages, 3000) // retry after 3s
+      setTimeout(() => { fetchImages(); setTimeout(() => setImagesLoaded(true), 500) }, 3000) // retry after 3s, mark loaded after
     }
   }, [brand.id, brandImages])
 
@@ -269,6 +271,8 @@ export default function PreviewClient({
       <FunnelReadyModal
         isOpen={showReadyModal}
         brandName={brand.name}
+        imagesLoaded={imagesLoaded}
+        imageCount={allImageUrls.length}
         onContinue={() => { setShowReadyModal(false); setPreviewReady(true) }}
       />
 
