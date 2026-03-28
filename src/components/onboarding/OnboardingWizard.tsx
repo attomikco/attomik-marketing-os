@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Upload, ArrowLeft } from 'lucide-react'
 import AttomikLogo from '@/components/ui/AttomikLogo'
@@ -10,6 +10,7 @@ const inputCls = "w-full text-sm border border-border rounded-btn px-3 py-2.5 bg
 export default function OnboardingWizard() {
   const supabase = createClient()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -20,7 +21,7 @@ export default function OnboardingWizard() {
   const [detectedName, setDetectedName] = useState<string | null>(null)
   const [detectedImage, setDetectedImage] = useState<string | null>(null)
   const [brandName, setBrandName] = useState('')
-  const [website, setWebsite] = useState('')
+  const [website, setWebsite] = useState(searchParams.get('url') || '')
   const [category, setCategory] = useState('')
   const [brandFont, setBrandFont] = useState('')
   const [fontTransform, setFontTransform] = useState<'none' | 'uppercase' | 'lowercase' | 'capitalize'>('none')
@@ -44,10 +45,19 @@ export default function OnboardingWizard() {
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const autoAnalyzed = useRef(false)
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
   }, [step, detected])
+
+  // Auto-analyze if URL param provided
+  useEffect(() => {
+    if (searchParams.get('url') && !autoAnalyzed.current && !detected && !detecting) {
+      autoAnalyzed.current = true
+      analyzeWebsite()
+    }
+  }, [])
 
   // Step 3
   const [campaignName, setCampaignName] = useState('')
