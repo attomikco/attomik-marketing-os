@@ -374,6 +374,16 @@ export default function OnboardingWizard() {
         </div>
       </div>
 
+      {/* Color inputs label */}
+      <div style={{ marginBottom: 10, marginTop: 4 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>
+          Pick your brand colors
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+          For a better preview — edit anything we detected.
+        </div>
+      </div>
+
       {/* Color inputs — 3 swatches */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 4 }}>
         {[
