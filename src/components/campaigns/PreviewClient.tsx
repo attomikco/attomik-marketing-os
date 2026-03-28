@@ -369,7 +369,7 @@ export default function PreviewClient({
           Ad creatives, copy, and landing page — generated from your brand. Refine below to make it perfect.
         </div>
         {/* Funnel explainer */}
-        <div style={{ maxWidth: 860, margin: '0 auto', padding: '48px 32px 56px' }}>
+        <div style={{ maxWidth: 960, margin: '0 auto', padding: '80px 48px 80px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 0, marginBottom: 40 }}>
             {([
               { num: '9', label: 'AD CREATIVES', desc: 'Multi-format visuals built from your brand colors, font and images. Ready to upload directly to Meta.', color: '#a78bfa' },
@@ -379,12 +379,12 @@ export default function PreviewClient({
               { num: '1', label: 'LANDING PAGE', desc: 'A full conversion page matched to your ad message. Same brand. Same promise. No bounce.', color: '#fbbf24' },
             ] as (null | { num: string; label: string; desc: string; color: string })[]).map((item, i) =>
               item === null ? (
-                <div key={i} style={{ alignSelf: 'flex-start', marginTop: 28, padding: '0 8px', color: 'rgba(255,255,255,0.2)', fontSize: 22, flexShrink: 0 }}>→</div>
+                <div key={i} style={{ alignSelf: 'flex-start', marginTop: 40, padding: '0 8px', color: 'rgba(255,255,255,0.3)', fontSize: 28, flexShrink: 0 }}>→</div>
               ) : (
                 <div key={i} style={{ textAlign: 'center', padding: '0 20px', flex: 1 }}>
-                  <div style={{ width: 56, height: 56, borderRadius: '50%', background: `${item.color}18`, border: `1.5px solid ${item.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, color: item.color }}>{item.num}</div>
-                  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', color: 'rgba(255,255,255,0.9)', marginBottom: 10, textTransform: 'uppercase' }}>{item.label}</div>
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6 }}>{item.desc}</div>
+                  <div style={{ width: 80, height: 80, borderRadius: '50%', background: `${item.color}18`, border: `1.5px solid ${item.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 32, color: item.color }}>{item.num}</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.9)', marginBottom: 14, textTransform: 'uppercase' }}>{item.label}</div>
+                  <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>{item.desc}</div>
                 </div>
               )
             )}
@@ -392,33 +392,33 @@ export default function PreviewClient({
 
           {/* Without vs With */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 0, alignItems: 'stretch', marginBottom: 40 }}>
-            <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '24px 28px' }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: 12 }}>Without this</div>
+            <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '32px 36px' }}>
+              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: 20 }}>Without this</div>
               {['Random creative with no system', 'Copy that doesn\'t match the ad', 'Generic page that loses the sale', 'Months wasted finding what works'].map((t, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10, fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
-                  <span style={{ color: 'rgba(255,100,100,0.9)', fontSize: 15, lineHeight: 1, flexShrink: 0, marginTop: 1 }}>✕</span>{t}
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 14, fontSize: 16, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
+                  <span style={{ color: 'rgba(255,100,100,0.9)', fontSize: 18, lineHeight: 1, flexShrink: 0, marginTop: 1 }}>✕</span>{t}
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px', fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 15, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em' }}>VS</div>
-            <div style={{ border: '1px solid rgba(0,255,151,0.2)', borderRadius: 14, padding: '24px 28px', background: 'rgba(0,255,151,0.03)' }}>
-              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#00ff97', marginBottom: 12 }}>With this</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px', fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 18, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em' }}>VS</div>
+            <div style={{ border: '1px solid rgba(0,255,151,0.2)', borderRadius: 14, padding: '32px 36px', background: 'rgba(0,255,151,0.03)' }}>
+              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#00ff97', marginBottom: 20 }}>With this</div>
               {['A complete funnel built in 30 seconds', 'Consistent message from ad to page', 'Landing page that closes the sale', 'Start testing today, find winners fast'].map((t, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10, fontSize: 14, color: 'rgba(255,255,255,0.9)', lineHeight: 1.5 }}>
-                  <span style={{ color: '#00ff97', fontSize: 15, lineHeight: 1, flexShrink: 0, marginTop: 1 }}>✓</span>{t}
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 14, fontSize: 16, color: 'rgba(255,255,255,0.9)', lineHeight: 1.5 }}>
+                  <span style={{ color: '#00ff97', fontSize: 18, lineHeight: 1, flexShrink: 0, marginTop: 1 }}>✓</span>{t}
                 </div>
               ))}
             </div>
           </div>
 
-          <div style={{ textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 32 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(0,255,151,0.06)', border: '1px solid rgba(0,255,151,0.15)', borderRadius: 999, padding: '6px 18px', marginBottom: 14 }}>
-              <span style={{ color: '#00ff97', fontSize: 12, fontWeight: 700 }}>THE POINT</span>
+          <div style={{ textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 48 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(0,255,151,0.06)', border: '1px solid rgba(0,255,151,0.15)', borderRadius: 999, padding: '8px 22px', marginBottom: 14 }}>
+              <span style={{ color: '#00ff97', fontSize: 13, fontWeight: 700 }}>THE POINT</span>
             </div>
-            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 20, color: '#fff', marginBottom: 8 }}>
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 28, color: '#fff', marginBottom: 12 }}>
               Same message, start to finish.
             </div>
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', maxWidth: 480, margin: '0 auto', lineHeight: 1.7 }}>
+            <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.55)', maxWidth: 560, margin: '0 auto', lineHeight: 1.7 }}>
               Most brands lose because their ad and landing page say different things. This funnel is consistent end-to-end — so you can test faster, learn faster, and find what actually converts.
             </div>
           </div>
