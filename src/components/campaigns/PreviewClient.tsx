@@ -368,13 +368,39 @@ export default function PreviewClient({
         <div style={{ fontSize: 17, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6, maxWidth: 480, margin: '0 auto 32px' }}>
           Ad creatives, copy, and landing page — generated from your brand. Refine below to make it perfect.
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
-          {[{ num: '12', label: 'Ad creatives' }, { num: '3', label: 'Copy variations' }, { num: '7', label: 'Landing sections' }].map(({ num, label }) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 999, padding: '8px 18px' }}>
-              <span style={{ fontSize: 18, fontWeight: 900, color: '#00ff97', fontFamily: 'Barlow, sans-serif' }}>{num}</span>
-              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>{label}</span>
+        {/* Funnel explainer */}
+        <div style={{ maxWidth: 860, margin: '0 auto', padding: '48px 32px 56px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 0, marginBottom: 40 }}>
+            {([
+              { num: '9', label: 'AD CREATIVES', desc: 'Multi-format visuals built from your brand colors, font and images. Ready to upload directly to Meta.', color: '#a78bfa' },
+              null,
+              { num: '3', label: 'COPY VARIATIONS', desc: 'Three distinct angles — different hooks, different audiences. Find the message that resonates.', color: '#34d399' },
+              null,
+              { num: '1', label: 'LANDING PAGE', desc: 'A full conversion page matched to your ad message. Same brand. Same promise. No bounce.', color: '#fbbf24' },
+            ] as (null | { num: string; label: string; desc: string; color: string })[]).map((item, i) =>
+              item === null ? (
+                <div key={i} style={{ alignSelf: 'flex-start', marginTop: 28, padding: '0 8px', color: 'rgba(255,255,255,0.2)', fontSize: 22, flexShrink: 0 }}>→</div>
+              ) : (
+                <div key={i} style={{ textAlign: 'center', padding: '0 20px', flex: 1 }}>
+                  <div style={{ width: 56, height: 56, borderRadius: '50%', background: `${item.color}18`, border: `1.5px solid ${item.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, color: item.color }}>{item.num}</div>
+                  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', color: 'rgba(255,255,255,0.9)', marginBottom: 10, textTransform: 'uppercase' }}>{item.label}</div>
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6 }}>{item.desc}</div>
+                </div>
+              )
+            )}
+          </div>
+
+          <div style={{ textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 32 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(0,255,151,0.06)', border: '1px solid rgba(0,255,151,0.15)', borderRadius: 999, padding: '6px 18px', marginBottom: 14 }}>
+              <span style={{ color: '#00ff97', fontSize: 12, fontWeight: 700 }}>THE POINT</span>
             </div>
-          ))}
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 20, color: '#fff', marginBottom: 8 }}>
+              Same message, start to finish.
+            </div>
+            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', maxWidth: 480, margin: '0 auto', lineHeight: 1.7 }}>
+              Most brands lose because their ad and landing page say different things. This funnel is consistent end-to-end — so you can test faster, learn faster, and find what actually converts.
+            </div>
+          </div>
         </div>
       </div>
 
