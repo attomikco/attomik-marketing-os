@@ -486,7 +486,7 @@ export default function OnboardingWizard() {
   const isHeroState = step === 0 && !detected
 
   return (
-    <div ref={scrollRef} className="fixed inset-0 bg-ink z-50 flex flex-col items-center wizard-scroll" style={{ padding: '40px 24px', overflowY: 'auto' }}>
+    <div ref={scrollRef} className="fixed inset-0 bg-ink z-50 flex flex-col items-center wizard-scroll" style={{ padding: 'clamp(16px, 4vw, 80px) 16px', overflowY: 'auto' }}>
       <style>{`
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -502,14 +502,14 @@ export default function OnboardingWizard() {
             <AttomikLogo height={28} color="#ffffff" />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', maxWidth: 560, margin: '0 auto', padding: '0 24px', paddingTop: 120, textAlign: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', maxWidth: '100%', margin: '0 auto', padding: '0 16px', paddingTop: 120, textAlign: 'center' }}>
             {/* Badge */}
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.25)', borderRadius: 999, padding: '5px 16px', fontSize: 11, fontWeight: 700, color: '#00ff97', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 24 }}>
               ✦ AI-Powered Funnel Builder
             </div>
 
             {/* Big headline */}
-            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 52, lineHeight: 1.05, letterSpacing: '-0.03em', color: '#fff', marginBottom: 20, textTransform: 'uppercase' as const }}>
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 'clamp(32px, 8vw, 52px)', lineHeight: 1.05, letterSpacing: '-0.03em', color: '#fff', marginBottom: 20, textTransform: 'uppercase' as const }}>
               How much revenue are{' '}
               <span style={{ color: '#00ff97' }}>you leaving on the table?</span>
             </div>
@@ -571,7 +571,7 @@ export default function OnboardingWizard() {
           </div>
 
           <div className="mx-4" style={{
-            maxWidth: 512, width: '100%', background: '#fff',
+            maxWidth: '100%', width: 'min(540px, calc(100vw - 32px))', background: '#fff',
             borderRadius: 16, padding: '32px',
             border: '1px solid var(--border)',
             boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
