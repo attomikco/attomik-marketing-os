@@ -346,10 +346,10 @@ export default function OnboardingWizard() {
           }}>
             Detected images ({Math.min(detectedImages.length, 8)})
           </div>
-          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
+          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, minHeight: 80 }}>
             {detectedImages.slice(0, 8).map((img, i) => (
               <img key={i} src={img.url} alt="" style={{
-                width: 64, height: 64, objectFit: 'cover', borderRadius: 8,
+                width: 80, height: 80, objectFit: 'cover', borderRadius: 8,
                 border: '1px solid var(--border)', flexShrink: 0,
               }} onError={e => { e.currentTarget.style.display = 'none' }} />
             ))}
