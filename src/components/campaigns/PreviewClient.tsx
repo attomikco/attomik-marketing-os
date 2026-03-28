@@ -292,14 +292,76 @@ export default function PreviewClient({
 
       {brand.status === 'draft' && (
         <div className="max-w-5xl mx-auto px-4 md:px-10 mt-4">
-          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+          <div style={{
+            background: '#000',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 12,
+            padding: '16px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 16,
+            marginBottom: 24,
+          }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <Info size={15} style={{ color: '#d97706' }} />
-              <span style={{ fontSize: 14, color: '#92400e' }}>This funnel is saved as a draft. Activate it to access full editing.</span>
+              <div style={{
+                width: 32, height: 32,
+                borderRadius: 8,
+                background: 'rgba(0,255,151,0.1)',
+                border: '1px solid rgba(0,255,151,0.2)',
+                display: 'flex', alignItems: 'center',
+                justifyContent: 'center', flexShrink: 0,
+              }}>
+                <Info size={15} color="#00ff97" />
+              </div>
+              <div>
+                <div style={{
+                  fontSize: 13, fontWeight: 700, color: '#fff',
+                  marginBottom: 2,
+                }}>
+                  This funnel is saved as a draft
+                </div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+                  Activate it to unlock full editing, brand settings and export.
+                </div>
+              </div>
             </div>
-            <button onClick={activateBrand} disabled={activating}
-              style={{ background: '#f59e0b', color: '#fff', fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 6, border: 'none', cursor: 'pointer' }}>
-              {activating ? 'Activating...' : 'Activate & continue \u2192'}
+
+            <button
+              onClick={activateBrand}
+              disabled={activating}
+              style={{
+                background: '#00ff97',
+                color: '#000',
+                fontFamily: 'Barlow, sans-serif',
+                fontWeight: 800,
+                fontSize: 13,
+                padding: '10px 20px',
+                borderRadius: 999,
+                border: 'none',
+                cursor: activating ? 'not-allowed' : 'pointer',
+                opacity: activating ? 0.7 : 1,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              {activating ? (
+                <>
+                  <span style={{
+                    width: 12, height: 12, borderRadius: '50%',
+                    border: '2px solid rgba(0,0,0,0.3)',
+                    borderTopColor: '#000',
+                    animation: 'spin 0.8s linear infinite',
+                    display: 'inline-block',
+                  }} />
+                  Activating...
+                </>
+              ) : (
+                'Activate & continue \u2192'
+              )}
             </button>
           </div>
         </div>

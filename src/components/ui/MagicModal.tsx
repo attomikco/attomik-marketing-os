@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CheckCircle } from 'lucide-react'
 import AttomikLogo from '@/components/ui/AttomikLogo'
 
@@ -68,24 +68,44 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
     return () => clearInterval(interval)
   }, [isOpen, isDone, mode])
 
-  useEffect(() => {
-    if (!isOpen || isDone || mode !== 'adcopy') return
-    const target = headline || `Discover ${brandName}.`
-    let i = 0
-    let loopTimeout: ReturnType<typeof setTimeout>
-    let charInterval: ReturnType<typeof setInterval>
-    function startTyping() {
-      i = 0; setTypedText('')
-      charInterval = setInterval(() => {
-        i++; setTypedText(target.slice(0, i))
-        if (i >= target.length) { clearInterval(charInterval); loopTimeout = setTimeout(startTyping, 2000) }
-      }, 60)
-    }
-    startTyping()
-    return () => { clearInterval(charInterval); clearTimeout(loopTimeout); setTypedText('') }
-  }, [isOpen, isDone, mode, brandName])
+  const charIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const loopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => { if (isDone || !isOpen) setTypedText('') }, [isOpen, isDone])
+  useEffect(() => {
+    // Always clear on any change
+    if (charIntervalRef.current) clearInterval(charIntervalRef.current)
+    if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current)
+    setTypedText('')
+
+    if (!isOpen || isDone || mode !== 'adcopy') return
+
+    const target = headline || 'Built Different.'
+    let i = 0
+
+    function startTyping() {
+      i = 0
+      setTypedText('')
+      charIntervalRef.current = setInterval(() => {
+        i++
+        setTypedText(target.slice(0, i))
+        if (i >= target.length) {
+          clearInterval(charIntervalRef.current!)
+          charIntervalRef.current = null
+          loopTimeoutRef.current = setTimeout(startTyping, 2000)
+        }
+      }, 55)
+    }
+
+    startTyping()
+
+    return () => {
+      if (charIntervalRef.current) clearInterval(charIntervalRef.current)
+      if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current)
+      charIntervalRef.current = null
+      loopTimeoutRef.current = null
+      setTypedText('')
+    }
+  }, [isOpen, isDone, mode, headline])
 
   if (!isOpen) return null
 

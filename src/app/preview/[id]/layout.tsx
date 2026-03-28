@@ -4,21 +4,21 @@ export default function PreviewLayout({ children }: { children: React.ReactNode 
   return (
     <div className="min-h-screen bg-cream">
       {/* Attomik Header */}
-      <header style={{ background: '#000', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <AttomikLogo height={36} color="#ffffff" />
-            <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.12)' }} />
-            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: 600, letterSpacing: '0.05em' }}>
+      <header style={{ background: '#000', minHeight: 72, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="max-w-7xl mx-auto flex items-center justify-between" style={{ padding: '20px 48px' }}>
+          <div className="flex items-center">
+            <AttomikLogo height={44} color="#ffffff" />
+            <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.12)', margin: '0 20px' }} />
+            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 15, fontWeight: 700, letterSpacing: '0.02em' }}>
               AI-Powered Funnel Builder
             </span>
           </div>
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center" style={{ gap: 40 }}>
             {['✦ Brand-aware copy', '✦ Multi-platform creatives', '✦ Conversion-optimized pages'].map(label => (
-              <span key={label} style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>{label}</span>
+              <span key={label} style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>{label}</span>
             ))}
           </div>
-          <button style={{ background: '#00ff97', color: '#000', fontSize: 14, fontWeight: 800, padding: '10px 24px', borderRadius: 999 }}>
+          <button style={{ background: '#00ff97', color: '#000', fontSize: 15, fontWeight: 900, padding: '13px 28px', borderRadius: 999, letterSpacing: '0.01em' }}>
             Get full access →
           </button>
         </div>
