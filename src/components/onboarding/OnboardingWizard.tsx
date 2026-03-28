@@ -471,7 +471,7 @@ export default function OnboardingWizard() {
   const isHeroState = step === 0 && !detected
 
   return (
-    <div className="fixed inset-0 bg-ink z-50 flex flex-col items-center justify-center">
+    <div className="fixed inset-0 bg-ink z-50 flex flex-col items-center justify-center" style={{ padding: '80px 24px', overflowY: 'auto' }}>
       <style>{`
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -555,9 +555,10 @@ export default function OnboardingWizard() {
 
           <div className="mx-4 max-h-[90vh] overflow-y-auto" style={{
             maxWidth: 512, width: '100%', background: '#fff',
-            borderRadius: 16, padding: '32px',
+            borderRadius: 16, padding: '32px', paddingBottom: 60,
             border: '1px solid var(--border)',
             boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+            marginBottom: 40,
           }}>
         {/* Step dots */}
         <div className="flex items-center justify-center gap-2 mb-6">
