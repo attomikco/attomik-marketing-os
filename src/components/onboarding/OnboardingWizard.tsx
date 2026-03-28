@@ -266,76 +266,75 @@ export default function OnboardingWizard() {
         minHeight: 140,
         background: primaryColor || '#111',
       }}>
-        <div style={{ position: 'relative', zIndex: 1, padding: '20px 20px 16px' }}>
-          <div style={{
-            fontFamily: 'Barlow, sans-serif',
-            fontWeight: 900,
-            fontSize: 32,
-            color: '#fff',
-            letterSpacing: '-0.02em',
-            marginBottom: 16,
-            lineHeight: 1.1,
-            textTransform: (fontTransform || 'none') as React.CSSProperties['textTransform'],
-          }}>
-            {brandName || 'Your Brand'}
-          </div>
-          {/* Colors row */}
-          <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
-            {[
-              { label: 'Primary', value: primaryColor },
-              { label: 'Secondary', value: secondaryColor },
-              { label: 'Accent', value: accentColor },
-            ].filter(c => c.value).map(({ label, value }) => (
-              <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: 10,
-                  background: value!, border: '3px solid rgba(255,255,255,0.4)',
-                  boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.3)',
-                  outline: '2px solid rgba(255,255,255,0.15)', outlineOffset: '2px',
-                  flexShrink: 0,
-                }} />
-                <span style={{
-                  fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.6)',
-                  letterSpacing: '0.08em', textTransform: 'uppercase' as const,
-                }}>{label}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Font + detected row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            {brandFont && (
-              <div style={{
-                background: 'rgba(255,255,255,0.15)', borderRadius: 20,
-                padding: '5px 14px', fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.9)',
-              }}>{brandFont}</div>
-            )}
+        <div style={{ position: 'relative', zIndex: 1, padding: '16px 18px', display: 'flex', alignItems: 'stretch', gap: 16 }}>
+          {/* Left: brand info */}
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
-              background: 'rgba(0,255,151,0.15)', border: '1px solid rgba(0,255,151,0.4)',
-              borderRadius: 20, padding: '5px 14px', fontSize: 11, color: '#00ff97', fontWeight: 700,
-              marginLeft: 'auto',
+              fontFamily: 'Barlow, sans-serif',
+              fontWeight: 900,
+              fontSize: 32,
+              color: '#fff',
+              letterSpacing: '-0.02em',
+              marginBottom: 16,
+              lineHeight: 1.1,
+              textTransform: (fontTransform || 'none') as React.CSSProperties['textTransform'],
             }}>
-              {detectedName ? '✦ Detected' : '✦ Manual'}
+              {brandName || 'Your Brand'}
+            </div>
+            {/* Colors row */}
+            <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+              {[
+                { label: 'Primary', value: primaryColor },
+                { label: 'Secondary', value: secondaryColor },
+                { label: 'Accent', value: accentColor },
+              ].filter(c => c.value).map(({ label, value }) => (
+                <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 10,
+                    background: value!, border: '3px solid rgba(255,255,255,0.4)',
+                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.3)',
+                    outline: '2px solid rgba(255,255,255,0.15)', outlineOffset: '2px',
+                    flexShrink: 0,
+                  }} />
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.6)',
+                    letterSpacing: '0.08em', textTransform: 'uppercase' as const,
+                  }}>{label}</span>
+                </div>
+              ))}
+            </div>
+            {/* Font + detected row */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              {brandFont && (
+                <div style={{
+                  background: 'rgba(255,255,255,0.15)', borderRadius: 20,
+                  padding: '5px 14px', fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.9)',
+                }}>{brandFont}</div>
+              )}
+              <div style={{
+                background: 'rgba(0,255,151,0.15)', border: '1px solid rgba(0,255,151,0.4)',
+                borderRadius: 20, padding: '5px 14px', fontSize: 11, color: '#00ff97', fontWeight: 700,
+                marginLeft: 'auto',
+              }}>
+                {detectedName ? '✦ Detected' : '✦ Manual'}
+              </div>
             </div>
           </div>
+
+          {/* Right: detected image */}
+          {detectedImage && (
+            <div style={{
+              width: 100, height: 100, flexShrink: 0,
+              borderRadius: 10, overflow: 'hidden',
+              border: '2px solid rgba(255,255,255,0.2)',
+              alignSelf: 'center',
+            }}>
+              <img src={detectedImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                onError={e => { e.currentTarget.parentElement!.style.display = 'none' }} />
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Main brand image */}
-      {detectedImage && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{
-            fontSize: 10, fontWeight: 700, color: '#999',
-            letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8,
-          }}>
-            Main brand image
-          </div>
-          <img src={detectedImage} alt="Brand image" style={{
-            width: '100%', height: 180, objectFit: 'cover',
-            borderRadius: 12, border: '1px solid var(--border)', display: 'block',
-          }} onError={e => { e.currentTarget.style.display = 'none' }} />
-        </div>
-      )}
 
       {/* Detected images strip */}
       {detectedImages.length > 0 && (
