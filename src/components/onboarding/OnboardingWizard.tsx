@@ -226,66 +226,8 @@ export default function OnboardingWizard() {
 
   // ── Step 1 content ──────────────────────────────────────────────
   const step1Content = !detected ? (
-    // STATE A: Enter website — hero style
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-
-      {/* Badge */}
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.3)', borderRadius: 999, padding: '5px 14px', fontSize: 11, fontWeight: 700, color: '#00ff97', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20 }}>
-        ✦ AI-Powered Funnel Builder
-      </div>
-
-      {/* Main headline */}
-      <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 32, lineHeight: 1.1, letterSpacing: '-0.02em', color: '#000', marginBottom: 12, textAlign: 'center' }}>
-        How much revenue are<br/>
-        <span style={{ color: '#00ff97' }}>you leaving on the table?</span>
-      </div>
-
-      {/* Subtext */}
-      <div style={{ fontSize: 15, color: '#666', lineHeight: 1.6, textAlign: 'center', maxWidth: 380, margin: '0 auto 28px' }}>
-        Enter your website. We&apos;ll build you a complete ad funnel in 30 seconds — creatives, copy, and landing page.
-      </div>
-
-      {/* URL input + button */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
-        <input
-          className={inputCls}
-          style={{ fontSize: 15, padding: '14px 18px', borderRadius: 12, border: '2px solid #e0e0e0', width: '100%', fontWeight: 500 }}
-          value={website}
-          onChange={e => setWebsite(e.target.value)}
-          placeholder="https://yourbrand.com"
-          onKeyDown={e => e.key === 'Enter' && analyzeWebsite()}
-          autoFocus
-        />
-        {errors.website && <p className="text-danger text-xs mt-1">{errors.website}</p>}
-        <button
-          onClick={analyzeWebsite}
-          disabled={detecting || !website.trim()}
-          style={{
-            width: '100%', padding: 15,
-            background: detecting ? '#e0e0e0' : '#000',
-            color: detecting ? '#666' : '#00ff97',
-            fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 16,
-            border: 'none', borderRadius: 12,
-            cursor: detecting || !website.trim() ? 'not-allowed' : 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            transition: 'all 0.2s ease', letterSpacing: '0.01em',
-          }}
-        >
-          {detecting ? (
-            <>
-              <span style={{ width: 16, height: 16, border: '2px solid #999', borderTopColor: '#333', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
-              Analyzing your site...
-            </>
-          ) : 'Build my funnel →'}
-        </button>
-      </div>
-
-      {/* Skip link */}
-      <button onClick={skipToManual} style={{ background: 'none', border: 'none', fontSize: 12, color: '#bbb', cursor: 'pointer', marginTop: 12, padding: 0 }}>
-        or set up manually →
-      </button>
-    </div>
+    // STATE A: rendered in the hero layout above, not inside the card
+    null
   ) : (
     // STATE B: Brand reveal
     <div key="review" style={{ animation: 'fadeInUp 0.2s ease-out' }}>
@@ -526,24 +468,97 @@ export default function OnboardingWizard() {
   // On step 0 STATE A, hide Next — the Analyze button handles progression
   const showNext = step > 0 || detected
 
+  const isHeroState = step === 0 && !detected
+
   return (
     <div className="fixed inset-0 bg-ink z-50 flex flex-col items-center justify-center">
-      <style>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+      <style>{`
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
 
-      {/* Logo above card */}
-      <div className="flex justify-center mb-8">
-        <AttomikLogo height={38} color="#ffffff" />
-      </div>
+      {/* STATE A: Full-screen hero on black */}
+      {isHeroState && (
+        <>
+          {/* Logo */}
+          <div style={{ position: 'absolute', top: 40, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
+            <AttomikLogo height={36} color="#ffffff" />
+          </div>
 
-      <div className="mx-4 max-h-[90vh] overflow-y-auto" style={{
-        maxWidth: step === 0 && !detected ? 480 : 512,
-        width: '100%',
-        background: '#fff',
-        borderRadius: step === 0 && !detected ? 20 : 16,
-        padding: step === 0 && !detected ? '36px 32px' : '32px',
-        border: step === 0 && !detected ? 'none' : '1px solid var(--border)',
-        boxShadow: step === 0 && !detected ? '0 8px 40px rgba(0,0,0,0.12)' : '0 2px 12px rgba(0,0,0,0.06)',
-      }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', maxWidth: 560, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
+            {/* Badge */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.25)', borderRadius: 999, padding: '5px 16px', fontSize: 11, fontWeight: 700, color: '#00ff97', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 24 }}>
+              ✦ AI-Powered Funnel Builder
+            </div>
+
+            {/* Big headline */}
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 52, lineHeight: 1.05, letterSpacing: '-0.03em', color: '#fff', marginBottom: 20 }}>
+              How much revenue are{' '}
+              <span style={{ color: '#00ff97' }}>you leaving on the table?</span>
+            </div>
+
+            {/* Subtext */}
+            <div style={{ fontSize: 17, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6, marginBottom: 36, maxWidth: 420 }}>
+              Enter your website. We&apos;ll build a complete ad funnel in 30 seconds — creatives, copy, and landing page.
+            </div>
+
+            {/* Input + button */}
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <input
+                value={website}
+                onChange={e => setWebsite(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && analyzeWebsite()}
+                placeholder="https://yourbrand.com"
+                autoFocus
+                style={{ width: '100%', padding: '16px 20px', fontSize: 16, fontWeight: 500, background: 'rgba(255,255,255,0.08)', border: '1.5px solid rgba(255,255,255,0.15)', borderRadius: 14, color: '#fff', outline: 'none', textAlign: 'center' }}
+                onFocus={e => { e.target.style.borderColor = '#00ff97'; e.target.style.background = 'rgba(255,255,255,0.1)' }}
+                onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.15)'; e.target.style.background = 'rgba(255,255,255,0.08)' }}
+              />
+              {errors.website && <p style={{ color: '#ff4444', fontSize: 13, margin: 0 }}>{errors.website}</p>}
+              <button
+                onClick={analyzeWebsite}
+                disabled={detecting || !website.trim()}
+                style={{
+                  width: '100%', padding: 17,
+                  background: detecting || !website.trim() ? 'rgba(0,255,151,0.3)' : '#00ff97',
+                  color: '#000', fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 17,
+                  border: 'none', borderRadius: 14,
+                  cursor: detecting || !website.trim() ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  letterSpacing: '-0.01em', transition: 'background 0.2s ease',
+                }}
+              >
+                {detecting ? (
+                  <>
+                    <span style={{ width: 16, height: 16, border: '2px solid rgba(0,0,0,0.3)', borderTopColor: '#000', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
+                    Analyzing your site...
+                  </>
+                ) : 'Build my funnel →'}
+              </button>
+            </div>
+
+            {/* Skip */}
+            <button onClick={skipToManual} style={{ background: 'none', border: 'none', fontSize: 13, color: 'rgba(255,255,255,0.25)', cursor: 'pointer', marginTop: 16, padding: 0 }}>
+              or set up manually →
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* STATE B + Steps 1-2: White card */}
+      {!isHeroState && (
+        <>
+          {/* Logo above card */}
+          <div className="flex justify-center mb-8">
+            <AttomikLogo height={38} color="#ffffff" />
+          </div>
+
+          <div className="mx-4 max-h-[90vh] overflow-y-auto" style={{
+            maxWidth: 512, width: '100%', background: '#fff',
+            borderRadius: 16, padding: '32px',
+            border: '1px solid var(--border)',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+          }}>
         {/* Step dots */}
         <div className="flex items-center justify-center gap-2 mb-6">
           {steps.map((_, i) => (
@@ -585,7 +600,9 @@ export default function OnboardingWizard() {
           </div>
         )}
 
-      </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
