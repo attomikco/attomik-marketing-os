@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Pencil, Plus, Info } from 'lucide-react'
 import { Brand, Campaign, GeneratedContent, BrandImage } from '@/types'
 import { createClient } from '@/lib/supabase/client'
-import PlatformAdPreview from './PlatformAdPreview'
 import OverlayTemplate from '@/components/creatives/templates/OverlayTemplate'
 import SplitTemplate from '@/components/creatives/templates/SplitTemplate'
 import StatTemplate from '@/components/creatives/templates/StatTemplate'
@@ -442,30 +441,212 @@ export default function PreviewClient({
                   </div>
                 </div>
 
-                {/* Platform mockups — 3 columns */}
-                <div style={{ fontSize: 11, color: '#888', textAlign: 'center', marginBottom: 16, marginTop: 24, fontWeight: 500 }}>How your ad looks across platforms</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24, alignItems: 'flex-start', width: '100%' }}>
-                  {(['facebook', 'instagram', 'story'] as const).map(platform => {
-                    const fw = platform === 'story' ? 200 : 320
-                    const ph = platform === 'story' ? 1920 : 1080
-                    const platformProps = { ...baseProps, width: 1080, height: ph, imageUrl: img0, bgColor: brandPrimary, textPosition: 'center' as const }
-                    return (
-                      <div key={platform} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' as const, color: '#888', marginBottom: 12, textAlign: 'center' }}>
-                          {platform === 'facebook' ? 'Facebook Feed' : platform === 'instagram' ? 'Instagram Feed' : 'Instagram Story'}
+                {/* Platform showcase */}
+                <div style={{
+                  background: '#f2f2f2',
+                  borderRadius: 16,
+                  padding: '28px 32px',
+                  marginTop: 8,
+                }}>
+                  <div style={{
+                    textAlign: 'center',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    color: '#888',
+                    marginBottom: 24,
+                  }}>
+                    How your ad looks across platforms
+                  </div>
+
+                  <div style={{
+                    display: 'flex',
+                    gap: 20,
+                    alignItems: 'flex-end',
+                    justifyContent: 'center',
+                    flexWrap: 'wrap',
+                  }}>
+                    {([
+                      { label: 'Facebook Feed', platform: 'facebook', w: 400, srcH: 1080 },
+                      { label: 'Instagram', platform: 'instagram', w: 400, srcH: 1080 },
+                      { label: 'Story', platform: 'story', w: 225, srcH: 1920 },
+                    ] as const).map(({ label, platform, w, srcH }) => {
+                      const scale = w / 1080
+                      const platformTemplateProps = {
+                        ...baseProps,
+                        width: 1080,
+                        height: srcH,
+                        imageUrl: img0,
+                        bgColor: brandPrimary,
+                        textPosition: 'center' as const,
+                      }
+
+                      return (
+                        <div key={platform} style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: 10,
+                        }}>
+                          {/* Platform label pill */}
+                          <div style={{
+                            background: '#000',
+                            color: '#fff',
+                            fontSize: 10,
+                            fontWeight: 700,
+                            padding: '4px 14px',
+                            borderRadius: 999,
+                            letterSpacing: '0.04em',
+                          }}>
+                            {label}
+                          </div>
+
+                          {/* Creative frame */}
+                          <div style={{
+                            width: w,
+                            height: 400,
+                            borderRadius: 12,
+                            overflow: 'hidden',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                            position: 'relative',
+                            flexShrink: 0,
+                          }}>
+                            {/* Scaled template */}
+                            <div style={{
+                              position: 'absolute',
+                              top: 0, left: 0,
+                              width: 1080,
+                              height: srcH,
+                              transform: `scale(${scale})`,
+                              transformOrigin: 'top left',
+                              pointerEvents: 'none',
+                            }}>
+                              <OverlayTemplate {...platformTemplateProps} />
+                            </div>
+
+                            {/* Top chrome overlay */}
+                            <div style={{
+                              position: 'absolute',
+                              top: 0, left: 0, right: 0,
+                              padding: '10px 10px 30px',
+                              background: 'linear-gradient(to bottom, rgba(0,0,0,0.55), transparent)',
+                              zIndex: 10,
+                            }}>
+                              {platform === 'story' && (
+                                <div style={{
+                                  width: '100%', height: 2,
+                                  background: 'rgba(255,255,255,0.3)',
+                                  borderRadius: 1, marginBottom: 6,
+                                }}>
+                                  <div style={{
+                                    width: '33%', height: '100%',
+                                    background: '#fff', borderRadius: 1,
+                                  }} />
+                                </div>
+                              )}
+                              <div style={{
+                                display: 'flex', alignItems: 'center', gap: 5,
+                              }}>
+                                <div style={{
+                                  width: 18, height: 18,
+                                  borderRadius: '50%',
+                                  background: brandPrimary,
+                                  display: 'flex', alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: '#fff', fontSize: 8, fontWeight: 700,
+                                  flexShrink: 0,
+                                }}>
+                                  {brand.name?.[0] || 'B'}
+                                </div>
+                                <span style={{
+                                  color: '#fff', fontSize: 10, fontWeight: 600,
+                                }}>
+                                  {brand.name}
+                                </span>
+                                <span style={{
+                                  color: 'rgba(255,255,255,0.6)', fontSize: 9,
+                                }}>
+                                  Sponsored
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Bottom CTA overlay */}
+                            <div style={{
+                              position: 'absolute',
+                              bottom: 0, left: 0, right: 0,
+                              padding: platform === 'story' ? '30px 10px 10px' : '20px 10px 10px',
+                              background: 'linear-gradient(to top, rgba(0,0,0,0.65), transparent)',
+                              zIndex: 10,
+                            }}>
+                              {platform === 'story' ? (
+                                <>
+                                  <div style={{
+                                    width: '100%',
+                                    padding: '7px 0',
+                                    borderRadius: 999,
+                                    background: '#fff',
+                                    textAlign: 'center',
+                                    fontWeight: 700,
+                                    fontSize: 10,
+                                    color: '#000',
+                                    marginBottom: 3,
+                                  }}>
+                                    {'↑ '}{adVariation?.headline || 'Shop Now'}
+                                  </div>
+                                  <div style={{
+                                    textAlign: 'center',
+                                    color: 'rgba(255,255,255,0.5)',
+                                    fontSize: 8,
+                                  }}>
+                                    Swipe up
+                                  </div>
+                                </>
+                              ) : (
+                                <div style={{
+                                  display: 'inline-block',
+                                  background: '#fff',
+                                  color: '#000',
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  padding: '5px 12px',
+                                  borderRadius: 999,
+                                }}>
+                                  {adVariation?.description || 'Shop Now'}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Copy snippet below */}
+                          <div style={{ width: w, maxWidth: w }}>
+                            <div style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: '#111',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}>
+                              {adVariation?.headline}
+                            </div>
+                            <div style={{
+                              fontSize: 11,
+                              color: '#888',
+                              marginTop: 2,
+                              overflow: 'hidden',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                            }}>
+                              {adVariation?.primary_text?.slice(0, 80)}
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ maxWidth: fw, width: '100%' }}>
-                          <PlatformAdPreview
-                            brand={brand}
-                            creative={{ imageUrl: img0, headline: adVariation.headline, primaryText: adVariation.primary_text, ctaText: landingBrief?.hero?.cta_text || 'Shop Now' }}
-                            TemplateComponent={OverlayTemplate}
-                            templateProps={platformProps}
-                            defaultPlatform={platform}
-                          />
-                        </div>
-                      </div>
-                    )
-                  })}
+                      )
+                    })}
+                  </div>
                 </div>
               </>
             )
