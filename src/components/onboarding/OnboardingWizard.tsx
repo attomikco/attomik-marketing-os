@@ -241,98 +241,154 @@ export default function OnboardingWizard() {
       </button>
     </div>
   ) : (
-    // STATE B: Review detected brand
-    <div key="review" className="space-y-4" style={{ animation: 'fadeInUp 0.2s ease-out' }}>
-      <button onClick={() => { setDetected(false); setDetectedName(null) }}
-        className="flex items-center gap-1.5 text-sm text-muted hover:text-ink transition-colors mb-2">
-        <ArrowLeft size={14} /> Back to website detection
+    // STATE B: Brand reveal
+    <div key="review" style={{ animation: 'fadeInUp 0.2s ease-out' }}>
+      {/* Tiny back link */}
+      <button onClick={() => { setDetected(false); setDetectedName(null) }} style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        fontSize: 11, color: '#999', background: 'none',
+        border: 'none', cursor: 'pointer', marginBottom: 16,
+        padding: 0,
+      }}>
+        <ArrowLeft size={12} /> Back to website detection
       </button>
-      {detectedName ? (
-        <p className="text-xs font-medium mb-4" style={{ color: '#00cc6a' }}>✦ Found {detectedName}. Review and continue.</p>
-      ) : (
-        <p className="text-xs text-muted mb-4">Couldn&apos;t read the site — fill in manually.</p>
-      )}
 
-      {detectedImage && (
-        <div className="mb-3">
-          <span className="text-xs text-muted block mb-1">Detected image</span>
-          <img src={detectedImage} alt="" className="w-20 h-20 object-cover rounded-btn border border-border" />
-        </div>
-      )}
-
-      <div>
-        <label className="text-xs font-semibold block mb-1">Brand name *</label>
-        <input className={inputCls} value={brandName} onChange={e => setBrandName(e.target.value)} placeholder="e.g. Afterdream" />
-        {errors.brandName && <p className="text-danger text-xs mt-1">{errors.brandName}</p>}
-      </div>
-      <div>
-        <label className="text-xs font-semibold block mb-1">Website</label>
-        <input className={inputCls} value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://yourbrand.com" />
-      </div>
-      {brandFont && (
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-semibold block mb-1">Brand font</label>
-            <input className={inputCls} value={brandFont} onChange={e => setBrandFont(e.target.value)} />
+      {/* Brand identity card */}
+      <div style={{
+        borderRadius: 16,
+        overflow: 'hidden',
+        marginBottom: 20,
+        position: 'relative',
+        minHeight: 140,
+        background: primaryColor || '#111',
+      }}>
+        {detectedImage && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            backgroundImage: `url(${detectedImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: 0.25,
+          }} />
+        )}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: `linear-gradient(135deg, ${primaryColor || '#111'}ee, ${secondaryColor || primaryColor || '#333'}99)`,
+        }} />
+        <div style={{ position: 'relative', zIndex: 1, padding: '20px 20px 16px' }}>
+          <div style={{
+            fontFamily: 'Barlow, sans-serif',
+            fontWeight: 900,
+            fontSize: 26,
+            color: '#fff',
+            letterSpacing: '-0.02em',
+            marginBottom: 12,
+            lineHeight: 1.1,
+            textTransform: (fontTransform || 'none') as React.CSSProperties['textTransform'],
+          }}>
+            {brandName || 'Your Brand'}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {[
+              { label: 'Primary', value: primaryColor },
+              { label: 'Secondary', value: secondaryColor },
+              { label: 'Accent', value: accentColor },
+            ].filter(c => c.value && c.value !== '#000000' && c.value !== '#ffffff').map(({ label, value }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: 6,
+                  background: value, border: '2px solid rgba(255,255,255,0.3)', flexShrink: 0,
+                }} />
+                <span style={{
+                  fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.5)',
+                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                }}>{label}</span>
+              </div>
+            ))}
             {brandFont && (
-              <p className="text-sm mt-2 text-muted" style={{ fontFamily: `${brandFont}, sans-serif`, fontWeight: 700, textTransform: fontTransform as any }}>
-                {brandName || 'The quick brown fox jumps over the lazy dog'}
-              </p>
+              <>
+                <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.2)', margin: '0 4px' }} />
+                <div style={{
+                  background: 'rgba(255,255,255,0.12)', borderRadius: 20,
+                  padding: '3px 10px', fontSize: 10, color: 'rgba(255,255,255,0.7)', fontWeight: 600,
+                }}>{brandFont}</div>
+              </>
             )}
-          </div>
-          <div>
-            <label className="text-xs font-semibold block mb-1.5">Font style</label>
-            <div className="flex gap-2">
-              <div className="flex gap-1">
-                {([
-                  { label: 'Normal', value: 'none' as const },
-                  { label: 'ALL CAPS', value: 'uppercase' as const },
-                  { label: 'all lower', value: 'lowercase' as const },
-                  { label: 'Title Case', value: 'capitalize' as const },
-                ]).map(t => (
-                  <button key={t.value} onClick={() => setFontTransform(t.value)}
-                    className="px-3 py-1.5 text-xs font-medium border rounded-btn transition-all"
-                    style={fontTransform === t.value
-                      ? { background: '#111', color: '#fff', borderColor: '#111' }
-                      : { borderColor: '#ddd', color: '#888' }}>
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-              <span className="w-px bg-border" />
-              <div className="flex gap-1">
-                {([
-                  { label: 'Tight', value: 'tight' as const },
-                  { label: 'Normal', value: 'normal' as const },
-                  { label: 'Wide', value: 'wide' as const },
-                ]).map(s => (
-                  <button key={s.value} onClick={() => setFontLetterSpacing(s.value)}
-                    className="px-3 py-1.5 text-xs font-medium border rounded-btn transition-all"
-                    style={fontLetterSpacing === s.value
-                      ? { background: '#111', color: '#fff', borderColor: '#111' }
-                      : { borderColor: '#ddd', color: '#888' }}>
-                    {s.label}
-                  </button>
-                ))}
+            <div style={{ marginLeft: 'auto' }}>
+              <div style={{
+                background: 'rgba(0,255,151,0.15)', border: '1px solid rgba(0,255,151,0.3)',
+                borderRadius: 20, padding: '3px 10px', fontSize: 10, color: '#00ff97', fontWeight: 700,
+              }}>
+                {detectedName ? '✦ Detected' : '✦ Manual'}
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Detected images strip */}
+      {detectedImages.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{
+            fontSize: 10, fontWeight: 700, color: '#999',
+            letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8,
+          }}>
+            Detected images ({Math.min(detectedImages.length, 8)})
+          </div>
+          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
+            {detectedImages.slice(0, 8).map((img, i) => (
+              <img key={i} src={img.url} alt="" style={{
+                width: 64, height: 64, objectFit: 'cover', borderRadius: 8,
+                border: '1px solid var(--border)', flexShrink: 0,
+              }} onError={e => { e.currentTarget.style.display = 'none' }} />
+            ))}
           </div>
         </div>
       )}
-      <div>
-        <label className="text-xs font-semibold block mb-2">Brand colors</label>
-        <div className="flex gap-4">
-          {[
-            { label: 'Primary', value: primaryColor, set: setPrimaryColor },
-            { label: 'Secondary / Accent', value: secondaryColor, set: setSecondaryColor },
-          ].map(c => (
-            <div key={c.label} className="flex-1">
-              <div style={{ width: 40, height: 40, borderRadius: 8, background: c.value || '#f2f2f2', border: '1px solid #ddd', marginBottom: 4 }} />
-              <span className="text-[10px] text-muted block mb-1">{c.label}</span>
-              <input className={inputCls + ' font-mono !text-xs !py-1.5'} value={c.value} onChange={e => c.set(e.target.value)} placeholder="#000000" />
-            </div>
-          ))}
+
+      {/* Editable fields — compact 2-col grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+        <div style={{ gridColumn: '1 / -1' }}>
+          <label style={{ display: 'block', marginBottom: 6, fontSize: 11, fontWeight: 600, color: '#666', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Brand name *</label>
+          <input className={inputCls} value={brandName} onChange={e => setBrandName(e.target.value)} placeholder="e.g. Afterdream" />
+          {errors.brandName && <p className="text-danger text-xs mt-1">{errors.brandName}</p>}
         </div>
+        <div>
+          <label style={{ display: 'block', marginBottom: 6, fontSize: 11, fontWeight: 600, color: '#666', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Website</label>
+          <input className={inputCls} value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://yourbrand.com" />
+        </div>
+        <div>
+          <label style={{ display: 'block', marginBottom: 6, fontSize: 11, fontWeight: 600, color: '#666', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Category</label>
+          <input className={inputCls} value={category} onChange={e => setCategory(e.target.value)} placeholder="Coffee, Skincare..." />
+        </div>
+        <div style={{ gridColumn: '1 / -1' }}>
+          <label style={{ display: 'block', marginBottom: 6, fontSize: 11, fontWeight: 600, color: '#666', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Brand font</label>
+          <input className={inputCls} value={brandFont} onChange={e => setBrandFont(e.target.value)} placeholder="Fraunces, Barlow..." />
+        </div>
+      </div>
+
+      {/* Color inputs — 3 swatches */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 4 }}>
+        {[
+          { label: 'Primary', value: primaryColor, set: setPrimaryColor, id: 'color-primary' },
+          { label: 'Secondary', value: secondaryColor, set: setSecondaryColor, id: 'color-secondary' },
+          { label: 'Accent', value: accentColor, set: setAccentColor, id: 'color-accent' },
+        ].map(({ label, value, set, id }) => (
+          <div key={id}>
+            <label style={{ display: 'block', marginBottom: 6, fontSize: 11, fontWeight: 600, color: '#666', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{label}</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: 6,
+                background: value || '#000', border: '1px solid var(--border)',
+                flexShrink: 0, cursor: 'pointer',
+              }} onClick={() => (document.getElementById(id) as HTMLInputElement)?.click()} />
+              <input id={id} type="color" value={value || '#000000'} onChange={e => set(e.target.value)}
+                style={{ width: 0, height: 0, opacity: 0, position: 'absolute' }} />
+              <input className={inputCls + ' font-mono'} style={{ fontSize: 11, padding: '6px 8px' }}
+                value={value} placeholder="#000000" onChange={e => set(e.target.value)} />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
