@@ -257,9 +257,9 @@ export default function OnboardingWizard() {
       </button>
 
       {/* Brand identity card */}
-      <div style={{ borderRadius: 14, overflow: 'hidden', marginBottom: 16, display: 'flex', background: '#2a2a2a' }}>
+      <div className="wiz-brand-row" style={{ borderRadius: 14, overflow: 'hidden', marginBottom: 16, display: 'flex', background: '#2a2a2a' }}>
         {/* Left: brand info */}
-        <div style={{ flex: '0 0 50%', padding: '18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 12 }}>
+        <div className="wiz-brand-info" style={{ flex: '0 0 50%', padding: '18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 24, color: '#fff', lineHeight: 1.1 }}>
             {brandName || 'Your Brand'}
           </div>
@@ -286,7 +286,7 @@ export default function OnboardingWizard() {
         </div>
         {/* Right: OG image — full bleed */}
         {detectedImage && (
-          <div style={{ flex: '0 0 50%', overflow: 'hidden' }}>
+          <div className="wiz-brand-img" style={{ flex: '0 0 50%', overflow: 'hidden' }}>
             <img src={detectedImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               onError={e => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none' }} />
           </div>
@@ -314,7 +314,7 @@ export default function OnboardingWizard() {
       )}
 
       {/* Editable fields — compact 2-col grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+      <div className="wiz-field-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
         <div style={{ gridColumn: '1 / -1' }}>
           <label style={{ display: 'block', marginBottom: 6, fontSize: 12, fontWeight: 600, color: '#666', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Brand name *</label>
           <input className={inputCls} value={brandName} onChange={e => setBrandName(e.target.value)} placeholder="e.g. Afterdream" />
@@ -341,7 +341,7 @@ export default function OnboardingWizard() {
       </div>
 
       {/* Color inputs — 3 swatches */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 4 }}>
+      <div className="wiz-color-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 4 }}>
         {[
           { label: 'Primary', value: primaryColor, set: setPrimaryColor, id: 'color-primary' },
           { label: 'Secondary', value: secondaryColor, set: setSecondaryColor, id: 'color-secondary' },
@@ -384,7 +384,7 @@ export default function OnboardingWizard() {
             <>
               <div style={{ fontSize: 16, fontWeight: 800, color: '#000', marginBottom: 16 }}>Tap to select your hero product</div>
               <p style={{ fontSize: 15, fontWeight: 500, color: '#444', marginBottom: 12 }}>We found {detectedProducts.length} {detectedProducts.length === 1 ? 'product' : 'products'}. Select one for your first campaign.</p>
-              <div className="grid grid-cols-2 gap-3" style={{ textAlign: 'left' }}>
+              <div className="grid grid-cols-2 gap-3 wiz-product-grid" style={{ textAlign: 'left' }}>
                 {detectedProducts.map((p, idx) => (
                   <button key={idx} onClick={() => selectProduct(idx)}
                     className="rounded-card p-3 text-left transition-all cursor-pointer"
@@ -492,6 +492,19 @@ export default function OnboardingWizard() {
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .wizard-scroll::-webkit-scrollbar { display: none; }
         .wizard-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        @media (max-width: 600px) {
+          .wiz-card { padding: 20px !important; }
+          .wiz-brand-row { flex-direction: column !important; }
+          .wiz-brand-img { flex: none !important; width: 100% !important; height: 140px !important; border-radius: 0 0 14px 14px !important; }
+          .wiz-brand-info { flex: none !important; width: 100% !important; }
+          .wiz-color-grid { grid-template-columns: 1fr 1fr !important; }
+          .wiz-field-grid { grid-template-columns: 1fr !important; }
+          .wiz-field-grid > div { grid-column: auto !important; }
+          .wiz-product-grid { grid-template-columns: 1fr !important; }
+          .wiz-nav { flex-direction: column !important; gap: 8px !important; }
+          .wiz-nav button { width: 100% !important; text-align: center !important; }
+          .wiz-subtext { font-size: 15px !important; }
+        }
       `}</style>
 
       {/* STATE A: Full-screen hero on black */}
@@ -570,7 +583,7 @@ export default function OnboardingWizard() {
             <AttomikLogo height={38} color="#ffffff" />
           </div>
 
-          <div className="mx-4" style={{
+          <div className="mx-4 wiz-card" style={{
             maxWidth: '100%', width: 'min(540px, calc(100vw - 32px))', background: '#fff',
             borderRadius: 16, padding: '32px',
             border: '1px solid var(--border)',

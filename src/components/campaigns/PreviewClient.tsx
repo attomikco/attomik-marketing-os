@@ -356,9 +356,31 @@ export default function PreviewClient({
 
       {/* Preview content — hidden until ready */}
       <div style={{ visibility: previewReady ? 'visible' : 'hidden', opacity: previewReady ? 1 : 0, transition: 'opacity 0.6s ease', background: 'var(--cream, #f8f7f4)' }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .pv-hero { padding: 40px 20px 32px !important; }
+          .pv-hero h1 { font-size: clamp(28px, 8vw, 56px) !important; }
+          .pv-funnel-flow { flex-direction: column !important; gap: 24px !important; }
+          .pv-funnel-flow .pv-arrow { display: none !important; }
+          .pv-compare { grid-template-columns: 1fr !important; }
+          .pv-compare-vs { display: none !important; }
+          .pv-point { padding-top: 32px !important; }
+          .pv-bcb-row { flex-direction: column !important; gap: 20px !important; }
+          .pv-bcb-divider { display: none !important; }
+          .pv-bcb-grid { grid-template-columns: 180px 1fr !important; }
+          .pv-section-head { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+          .pv-draft-bar { flex-direction: column !important; gap: 12px !important; text-align: center !important; }
+          .pv-draft-bar button { width: 100% !important; }
+          .pv-iframe { height: 400px !important; }
+        }
+        @media (max-width: 480px) {
+          .pv-bcb-grid { grid-template-columns: 1fr !important; }
+          .pv-hero { padding: 32px 16px 24px !important; }
+        }
+      `}</style>
 
       {/* Hero */}
-      <div style={{ background: '#000', padding: '64px 32px 56px', textAlign: 'center', marginBottom: 0 }}>
+      <div className="pv-hero" style={{ background: '#000', padding: '64px 32px 56px', textAlign: 'center', marginBottom: 0 }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.25)', borderRadius: 999, padding: '5px 16px', fontSize: 11, fontWeight: 700, color: '#00ff97', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 24 }}>
           ✦ Built in 30 seconds
         </div>
@@ -370,7 +392,7 @@ export default function PreviewClient({
         </div>
         {/* Funnel explainer */}
         <div style={{ maxWidth: 960, margin: '0 auto', padding: '80px 48px 80px' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 0, marginBottom: 40 }}>
+          <div className="pv-funnel-flow" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 0, marginBottom: 40 }}>
             {([
               { num: '9', label: 'AD CREATIVES', desc: 'Multi-format visuals built from your brand colors, font and images. Ready to upload directly to Meta.', color: '#a78bfa' },
               null,
@@ -379,7 +401,7 @@ export default function PreviewClient({
               { num: '1', label: 'LANDING PAGE', desc: 'A full conversion page matched to your ad message. Same brand. Same promise. No bounce.', color: '#fbbf24' },
             ] as (null | { num: string; label: string; desc: string; color: string })[]).map((item, i) =>
               item === null ? (
-                <div key={i} style={{ alignSelf: 'flex-start', marginTop: 40, padding: '0 8px', color: 'rgba(255,255,255,0.3)', fontSize: 28, flexShrink: 0 }}>→</div>
+                <div key={i} className="pv-arrow" style={{ alignSelf: 'flex-start', marginTop: 40, padding: '0 8px', color: 'rgba(255,255,255,0.3)', fontSize: 28, flexShrink: 0 }}>→</div>
               ) : (
                 <div key={i} style={{ textAlign: 'center', padding: '0 20px', flex: 1 }}>
                   <div style={{ width: 80, height: 80, borderRadius: '50%', background: `${item.color}18`, border: `1.5px solid ${item.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 32, color: item.color }}>{item.num}</div>
@@ -391,7 +413,7 @@ export default function PreviewClient({
           </div>
 
           {/* Without vs With */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 0, alignItems: 'stretch', marginBottom: 40 }}>
+          <div className="pv-compare" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 0, alignItems: 'stretch', marginBottom: 40 }}>
             <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '32px 36px' }}>
               <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: 20 }}>Without this</div>
               {['Random creative with no system', 'Copy that doesn\'t match the ad', 'Generic page that loses the sale', 'Months wasted finding what works'].map((t, i) => (
@@ -400,7 +422,7 @@ export default function PreviewClient({
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px', fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 18, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em' }}>VS</div>
+            <div className="pv-compare-vs" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px', fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 18, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em' }}>VS</div>
             <div style={{ border: '1px solid rgba(0,255,151,0.2)', borderRadius: 14, padding: '32px 36px', background: 'rgba(0,255,151,0.03)' }}>
               <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#00ff97', marginBottom: 20 }}>With this</div>
               {['A complete funnel built in 30 seconds', 'Consistent message from ad to page', 'Landing page that closes the sale', 'Start testing today, find winners fast'].map((t, i) => (
@@ -411,7 +433,7 @@ export default function PreviewClient({
             </div>
           </div>
 
-          <div style={{ textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 48 }}>
+          <div className="pv-point" style={{ textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 48 }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(0,255,151,0.06)', border: '1px solid rgba(0,255,151,0.15)', borderRadius: 999, padding: '8px 22px', marginBottom: 14 }}>
               <span style={{ color: '#00ff97', fontSize: 13, fontWeight: 700 }}>THE POINT</span>
             </div>
@@ -427,7 +449,7 @@ export default function PreviewClient({
 
       {brand.status === 'draft' && (
         <div className="max-w-5xl mx-auto px-4 md:px-10 mt-8">
-          <div style={{
+          <div className="pv-draft-bar" style={{
             background: '#000',
             border: '1px solid rgba(255,255,255,0.1)',
             borderRadius: 12,
@@ -519,7 +541,7 @@ export default function PreviewClient({
 
         {/* ═══ SECTION 1: Ad Creatives ═══ */}
         <div>
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-6 pv-section-head">
             <div className="flex items-center gap-3">
               <span className="w-7 h-7 rounded-full bg-ink text-white flex items-center justify-center text-xs font-bold">1</span>
               <span className="font-bold text-xl" style={{ textTransform: 'uppercase' }}>Ad Creatives</span>
@@ -661,7 +683,7 @@ export default function PreviewClient({
 
         {/* ═══ SECTION 2: Ad Copy ═══ */}
         <div className="mt-12 pt-12 border-t border-border">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-6 pv-section-head">
             <div className="flex items-center gap-3">
               <span className="w-7 h-7 rounded-full bg-ink text-white flex items-center justify-center text-xs font-bold">2</span>
               <span style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 28, textTransform: 'uppercase' }}>Ad Copy</span>
@@ -732,7 +754,7 @@ export default function PreviewClient({
 
         {/* ═══ SECTION 3: Landing Page ═══ */}
         <div className="mt-12 pt-12 border-t border-border">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-6 pv-section-head">
             <div className="flex items-center gap-3">
               <span className="w-7 h-7 rounded-full bg-ink text-[#00ff97] flex items-center justify-center text-xs font-black">3</span>
               <span style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 28, textTransform: 'uppercase' }}>Landing Page</span>
@@ -752,7 +774,7 @@ export default function PreviewClient({
           </div>
           {landingBrief ? (
             <div style={{ position: 'relative' }}>
-              <div style={{ width: '100%', height: 600, overflow: 'hidden', borderRadius: 16, border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', position: 'relative', background: '#fff' }}>
+              <div className="pv-iframe" style={{ width: '100%', height: 600, overflow: 'hidden', borderRadius: 16, border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', position: 'relative', background: '#fff' }}>
                 <iframe
                   src={`/api/campaigns/${campaign.id}/landing-html`}
                   style={{ width: '250%', height: '250%', border: 'none', transform: 'scale(0.4)', transformOrigin: 'top left' }}

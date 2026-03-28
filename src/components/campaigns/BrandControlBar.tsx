@@ -44,7 +44,7 @@ export default function BrandControlBar({
       {/* Card */}
       <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 16, padding: '24px 24px 20px', boxShadow: '0 2px 16px rgba(0,0,0,0.05)' }}>
         {/* Row 1: Colors + Font + Save */}
-        <div style={{
+        <div className="pv-bcb-row" style={{
           display: 'flex', gap: 32, alignItems: 'flex-start',
           marginBottom: allImageUrls.length > 0 ? 24 : 0,
           paddingBottom: allImageUrls.length > 0 ? 24 : 0,
