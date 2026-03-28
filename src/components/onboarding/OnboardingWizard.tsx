@@ -321,13 +321,14 @@ export default function OnboardingWizard() {
             </div>
           </div>
 
-          {/* Right: detected image */}
+          {/* Right: detected image — full bleed */}
           {detectedImage && (
             <div style={{
-              width: 100, height: 100, flexShrink: 0,
-              borderRadius: 10, overflow: 'hidden',
-              border: '2px solid rgba(255,255,255,0.2)',
-              alignSelf: 'center',
+              width: 130, flexShrink: 0,
+              alignSelf: 'stretch',
+              borderRadius: '0 12px 12px 0',
+              overflow: 'hidden',
+              margin: '-16px -18px -16px 0',
             }}>
               <img src={detectedImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                 onError={e => { e.currentTarget.parentElement!.style.display = 'none' }} />
