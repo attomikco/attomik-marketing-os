@@ -258,7 +258,7 @@ export default function OnboardingWizard() {
       </button>
 
       {/* Brand identity card */}
-      <div style={{ borderRadius: 14, overflow: 'hidden', marginBottom: 16, display: 'flex', background: '#111' }}>
+      <div style={{ borderRadius: 14, overflow: 'hidden', marginBottom: 16, display: 'flex', background: '#2a2a2a' }}>
         {/* Left: brand info */}
         <div style={{ flex: '0 0 50%', padding: '18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 24, color: '#fff', lineHeight: 1.1 }}>
