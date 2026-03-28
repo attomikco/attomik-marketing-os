@@ -497,8 +497,8 @@ export default function PreviewClient({
 
             return (
               <>
-                {/* ── 4:5 GRID — 6 creatives, 2 per row ── */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 48 }}>
+                {/* ── 4:5 GRID — 6 creatives, 3 per row ── */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 48 }}>
                   {gridCards.map((card, i) => (
                     <div key={i} style={{ display: 'flex', flexDirection: 'column' }}>
                       <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#888', marginBottom: 8 }}>
