@@ -279,39 +279,43 @@ export default function OnboardingWizard() {
           }}>
             {brandName || 'Your Brand'}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          {/* Colors row */}
+          <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
             {[
               { label: 'Primary', value: primaryColor },
               { label: 'Secondary', value: secondaryColor },
               { label: 'Accent', value: accentColor },
-            ].filter(c => c.value && c.value !== '#000000' && c.value !== '#ffffff').map(({ label, value }) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            ].filter(c => c.value).map(({ label, value }) => (
+              <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                 <div style={{
-                  width: 28, height: 28, borderRadius: 8,
-                  background: value, border: '2px solid rgba(255,255,255,0.3)', flexShrink: 0,
+                  width: 40, height: 40, borderRadius: 10,
+                  background: value!, border: '3px solid rgba(255,255,255,0.4)',
+                  boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.3)',
+                  outline: '2px solid rgba(255,255,255,0.15)', outlineOffset: '2px',
+                  flexShrink: 0,
                 }} />
                 <span style={{
                   fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.6)',
-                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                  letterSpacing: '0.08em', textTransform: 'uppercase' as const,
                 }}>{label}</span>
               </div>
             ))}
+          </div>
+
+          {/* Font + detected row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             {brandFont && (
-              <>
-                <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.2)', margin: '0 4px' }} />
-                <div style={{
-                  background: 'rgba(255,255,255,0.15)', borderRadius: 20,
-                  padding: '5px 14px', fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 700,
-                }}>{brandFont}</div>
-              </>
-            )}
-            <div style={{ marginLeft: 'auto' }}>
               <div style={{
-                background: 'rgba(0,255,151,0.15)', border: '1px solid rgba(0,255,151,0.3)',
-                borderRadius: 20, padding: '4px 12px', fontSize: 11, color: '#00ff97', fontWeight: 700,
-              }}>
-                {detectedName ? '✦ Detected' : '✦ Manual'}
-              </div>
+                background: 'rgba(255,255,255,0.15)', borderRadius: 20,
+                padding: '5px 14px', fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.9)',
+              }}>{brandFont}</div>
+            )}
+            <div style={{
+              background: 'rgba(0,255,151,0.15)', border: '1px solid rgba(0,255,151,0.4)',
+              borderRadius: 20, padding: '5px 14px', fontSize: 11, color: '#00ff97', fontWeight: 700,
+              marginLeft: 'auto',
+            }}>
+              {detectedName ? '✦ Detected' : '✦ Manual'}
             </div>
           </div>
         </div>
