@@ -286,8 +286,8 @@ export default function PreviewClient({
 
       {/* Branded logo in gaps between modals */}
       {!previewReady && !magicModal && !showReel && !showReadyModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <AttomikLogo height={32} color="rgba(255,255,255,0.15)" />
+        <div style={{ position: 'fixed', inset: 0, zIndex: 160, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <AttomikLogo height={38} color="rgba(255,255,255,0.2)" />
         </div>
       )}
 
