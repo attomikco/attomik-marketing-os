@@ -71,15 +71,16 @@ export default function PreviewClient({
 
   const hasContent = adCopyContent.length > 0 || landingContent.length > 0
 
-  // Parse existing content
-  const existingAdVariation: AdVariation | null = adCopyContent.length > 0
+  // Parse existing content — extract ALL variations
+  const existingAdVariations: AdVariation[] = adCopyContent.length > 0
     ? (() => {
         try {
           const parsed = JSON.parse(adCopyContent[0].content)
-          return parsed?.variations?.[0] || parsed
-        } catch { return null }
+          if (parsed?.variations && Array.isArray(parsed.variations)) return parsed.variations.slice(0, 3)
+          return [parsed].filter(Boolean)
+        } catch { return [] }
       })()
-    : null
+    : []
 
   const existingLandingBrief: LandingBrief | null = landingContent.length > 0
     ? (() => {
@@ -88,7 +89,7 @@ export default function PreviewClient({
     : null
 
   // Generation state
-  const [adVariations, setAdVariations] = useState<AdVariation[]>(existingAdVariation ? [existingAdVariation] : [])
+  const [adVariations, setAdVariations] = useState<AdVariation[]>(existingAdVariations)
   const adVariation = adVariations[0] || null
   const [landingBrief, setLandingBrief] = useState<LandingBrief | null>(existingLandingBrief)
   const [magicModal, setMagicModal] = useState<{ mode: 'adcopy' | 'landing'; isDone: boolean } | null>(null)
