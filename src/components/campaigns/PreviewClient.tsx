@@ -427,6 +427,28 @@ export default function PreviewClient({
         </div>
       )}
 
+      {/* Hero */}
+      <div style={{ background: '#000', padding: '64px 32px 56px', textAlign: 'center', marginBottom: 0 }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.25)', borderRadius: 999, padding: '5px 16px', fontSize: 11, fontWeight: 700, color: '#00ff97', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 24 }}>
+          ✦ Built in 30 seconds
+        </div>
+        <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 56, lineHeight: 1.05, letterSpacing: '-0.03em', color: '#fff', marginBottom: 16, textTransform: 'uppercase' }}>
+          Your funnel is<br/><span style={{ color: '#00ff97' }}>ready to launch.</span>
+        </div>
+        <div style={{ fontSize: 17, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6, maxWidth: 480, margin: '0 auto 32px' }}>
+          Ad creatives, copy, and landing page — generated from your brand. Refine below to make it perfect.
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
+          {[{ num: '9', label: 'Ad creatives' }, { num: '3', label: 'Copy variations' }, { num: '7', label: 'Landing sections' }].map(({ num, label }) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 999, padding: '8px 18px' }}>
+              <span style={{ fontSize: 18, fontWeight: 900, color: '#00ff97', fontFamily: 'Barlow, sans-serif' }}>{num}</span>
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ height: 40, background: 'linear-gradient(to bottom, #000, var(--cream, #f8f7f4))' }} />
+
       <div className="max-w-5xl mx-auto px-4 md:px-10 py-8 space-y-8">
         {/* Brand control bar */}
         <BrandControlBar
