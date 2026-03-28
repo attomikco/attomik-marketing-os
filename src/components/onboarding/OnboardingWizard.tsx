@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Upload, ArrowLeft } from 'lucide-react'
@@ -43,6 +43,11 @@ export default function OnboardingWizard() {
   const [targetAudience, setTargetAudience] = useState('')
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
+  }, [step, detected])
 
   // Step 3
   const [campaignName, setCampaignName] = useState('')
@@ -471,7 +476,7 @@ export default function OnboardingWizard() {
   const isHeroState = step === 0 && !detected
 
   return (
-    <div className="fixed inset-0 bg-ink z-50 flex flex-col items-center wizard-scroll" style={{ padding: '40px 24px', overflowY: 'auto' }}>
+    <div ref={scrollRef} className="fixed inset-0 bg-ink z-50 flex flex-col items-center wizard-scroll" style={{ padding: '40px 24px', overflowY: 'auto' }}>
       <style>{`
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -484,10 +489,10 @@ export default function OnboardingWizard() {
         <>
           {/* Logo */}
           <div style={{ position: 'absolute', top: 40, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
-            <AttomikLogo height={36} color="#ffffff" />
+            <AttomikLogo height={28} color="#ffffff" />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', maxWidth: 560, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', maxWidth: 560, margin: '0 auto', padding: '0 24px', paddingTop: 120, textAlign: 'center' }}>
             {/* Badge */}
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.25)', borderRadius: 999, padding: '5px 16px', fontSize: 11, fontWeight: 700, color: '#00ff97', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 24 }}>
               ✦ AI-Powered Funnel Builder
