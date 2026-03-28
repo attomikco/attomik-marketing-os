@@ -154,11 +154,12 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
         @keyframes popIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
       `}</style>
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: 520, margin: '0 auto' }}>
-        {/* Logo */}
-        <div style={{ marginBottom: 32 }}>
-          <AttomikLogo height={38} color="#ffffff" />
-        </div>
+      {/* Logo — fixed at top */}
+      <div style={{ position: 'absolute', top: 40, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
+        <AttomikLogo height={36} color="#ffffff" />
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: 520, margin: '0 auto', paddingTop: 100 }}>
 
         {/* SCAN: Radar */}
         {mode === 'scan' && !isDone && (
@@ -229,9 +230,16 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
           </div>
         )}
         {mode === 'landing' && isDone && (
-          <div style={{ marginBottom: 32, textAlign: 'center' }}>
-            <CheckCircle size={48} color="#00ff97" style={{ animation: 'popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards' }} />
-            <div style={{ color: '#00ff97', fontSize: 12, marginTop: 12, fontWeight: 700 }}>7 sections complete</div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: 32, width: '100%' }}>
+            <div style={{ width: 280, marginBottom: 16 }}>
+              {[...Array(6)].map((_, i) => (
+                <div key={i} style={{ height: 32, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, marginBottom: 6, width: '100%' }} />
+              ))}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <CheckCircle size={20} color="#00ff97" />
+              <span style={{ color: '#00ff97', fontSize: 13, fontWeight: 700 }}>7 sections complete</span>
+            </div>
           </div>
         )}
 

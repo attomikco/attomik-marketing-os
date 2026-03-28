@@ -9,10 +9,12 @@ export default function FunnelReadyModal({ isOpen, brandName, onContinue }: { is
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '40px 24px', opacity: visible ? 1 : 0, transition: 'opacity 0.4s ease' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: 520, margin: '0 auto' }}>
-        {/* Logo */}
-        <AttomikLogo height={38} color="#ffffff" />
-        <div style={{ height: 40 }} />
+      {/* Logo — fixed at top */}
+      <div style={{ position: 'absolute', top: 40, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
+        <AttomikLogo height={36} color="#ffffff" />
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: 520, margin: '0 auto', paddingTop: 100 }}>
 
         {/* Main message */}
         <div style={{

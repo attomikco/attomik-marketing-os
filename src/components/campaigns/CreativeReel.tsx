@@ -135,12 +135,12 @@ export default function CreativeReel({ brand, adVariation, imageUrl, allImageUrl
       opacity: isExiting ? 0 : 1, transition: 'opacity 500ms ease',
       ...externalStyle,
     }}>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: 520, margin: '0 auto' }}>
-        {/* Logo */}
-        <div style={{ marginBottom: 32 }}>
-          <AttomikLogo height={38} color="#ffffff" />
-        </div>
+      {/* Logo — fixed at top */}
+      <div style={{ position: 'absolute', top: 40, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
+        <AttomikLogo height={36} color="#ffffff" />
+      </div>
 
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: 520, margin: '0 auto', paddingTop: 100 }}>
         {/* Progress dots */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 32 }}>
           {Array.from({ length: TOTAL }).map((_, i) => (
