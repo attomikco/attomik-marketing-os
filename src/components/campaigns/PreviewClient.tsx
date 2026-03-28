@@ -256,6 +256,7 @@ export default function PreviewClient({
         isDone={magicModal?.isDone || false}
         brandName={brand.name}
         headline={adVariations[0]?.headline}
+        bodyText={adVariations[0]?.primary_text}
       />
 
       {showReel && adVariation && (

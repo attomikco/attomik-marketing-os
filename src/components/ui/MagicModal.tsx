@@ -10,6 +10,7 @@ interface MagicModalProps {
   brandName?: string
   onComplete?: () => void
   headline?: string
+  bodyText?: string
 }
 
 const COPY = {
@@ -33,7 +34,7 @@ const COPY = {
   },
 }
 
-export default function MagicModal({ isOpen, mode, isDone, brandName = 'your brand', onComplete, headline }: MagicModalProps) {
+export default function MagicModal({ isOpen, mode, isDone, brandName = 'your brand', onComplete, headline, bodyText }: MagicModalProps) {
   const [phraseIndex, setPhraseIndex] = useState(0)
   const [visible, setVisible] = useState(false)
   const [scanText, setScanText] = useState('Scanning website...')
@@ -70,19 +71,33 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
 
   const charIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const loopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const targetIndexRef = useRef(0)
 
   useEffect(() => {
     // Always clear on any change
     if (charIntervalRef.current) clearInterval(charIntervalRef.current)
     if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current)
     setTypedText('')
+    targetIndexRef.current = 0
 
     if (!isOpen || isDone || mode !== 'adcopy') return
 
-    const target = headline || 'Built Different.'
+    const targets = headline
+      ? [
+          headline,
+          headline.split(' ').slice(0, 3).join(' ') + '.',
+          'Beyond Ordinary.',
+        ]
+      : [
+          'Built Different.',
+          'Made to Convert.',
+          'Your Story, Told Right.',
+        ]
+
     let i = 0
 
     function startTyping() {
+      const target = targets[targetIndexRef.current]
       i = 0
       setTypedText('')
       charIntervalRef.current = setInterval(() => {
@@ -91,7 +106,10 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
         if (i >= target.length) {
           clearInterval(charIntervalRef.current!)
           charIntervalRef.current = null
-          loopTimeoutRef.current = setTimeout(startTyping, 2000)
+          loopTimeoutRef.current = setTimeout(() => {
+            targetIndexRef.current = (targetIndexRef.current + 1) % targets.length
+            startTyping()
+          }, 2000)
         }
       }, 55)
     }
@@ -142,17 +160,90 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
 
         {/* ADCOPY: Typewriter */}
         {mode === 'adcopy' && !isDone && (
-          <div style={{ position: 'relative', width: 320, height: 200, marginBottom: 40 }}>
-            {[{ scale: 0.92, y: 16, op: 0.3 }, { scale: 0.96, y: 8, op: 0.5 }, { scale: 1, y: 0, op: 1 }].map((c, i) => (
-              <div key={i} style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, transform: `translateY(${c.y}px) scale(${c.scale})`, opacity: c.op, padding: 20, transformOrigin: 'bottom center' }}>
-                {i === 2 && (<>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: '#00ff97', marginBottom: 12 }}>VARIATION 1</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', minHeight: 28 }}>{typedText}<span style={{ animation: 'pulse 0.8s ease infinite' }}>|</span></div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 10, lineHeight: 1.5 }}>Premium quality crafted for people who value the best...</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#00ff97', marginTop: 12 }}>Shop Now →</div>
-                </>)}
-              </div>
+          <div style={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: 400,
+            height: 220,
+            margin: '0 auto 40px',
+          }}>
+            {/* Back cards — decorative */}
+            {[
+              { scale: 0.92, y: 16, opacity: 0.25 },
+              { scale: 0.96, y: 8, opacity: 0.45 },
+            ].map((card, i) => (
+              <div key={i} style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 16,
+                transform: `translateY(${card.y}px) scale(${card.scale})`,
+                opacity: card.opacity,
+                transformOrigin: 'bottom center',
+              }} />
             ))}
+
+            {/* Front card — active */}
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: 16,
+              padding: '20px 24px',
+            }}>
+              <div style={{
+                fontSize: 10, fontWeight: 700,
+                letterSpacing: '0.12em',
+                color: '#00ff97',
+                marginBottom: 14,
+                borderBottom: '1px solid rgba(255,255,255,0.08)',
+                paddingBottom: 12,
+              }}>
+                VARIATION 1
+              </div>
+
+              <div style={{
+                fontSize: 22,
+                fontWeight: 800,
+                color: '#fff',
+                fontFamily: 'Barlow, sans-serif',
+                minHeight: 32,
+                marginBottom: 12,
+                lineHeight: 1.2,
+              }}>
+                {typedText}
+                <span style={{
+                  display: 'inline-block',
+                  width: 2, height: 22,
+                  background: '#00ff97',
+                  marginLeft: 2,
+                  verticalAlign: 'middle',
+                  animation: 'pulse 0.8s ease infinite',
+                }} />
+              </div>
+
+              <div style={{
+                fontSize: 13,
+                color: 'rgba(255,255,255,0.4)',
+                lineHeight: 1.6,
+                marginBottom: 14,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical' as const,
+                overflow: 'hidden',
+              }}>
+                {bodyText ? bodyText.slice(0, 80) + (bodyText.length > 80 ? '...' : '') : 'Crafting your message...'}
+              </div>
+
+              <div style={{
+                fontSize: 13, fontWeight: 700,
+                color: '#00ff97',
+              }}>
+                Shop Now →
+              </div>
+            </div>
           </div>
         )}
         {mode === 'adcopy' && isDone && (
