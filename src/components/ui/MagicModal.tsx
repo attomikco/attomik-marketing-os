@@ -73,20 +73,16 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
       setCurrentBlock(count - 1)
       if (count >= 6) {
         clearInterval(buildInterval)
-        // After all built, cycle through them
         let cycle = 0
-        const cycleInterval = setInterval(() => {
+        cycleIntervalRef.current = setInterval(() => {
           cycle = (cycle + 1) % 6
           setCurrentBlock(cycle)
         }, 800)
-        // Clean up cycle on unmount via return below won't catch this,
-        // so store ref
-        ;(buildInterval as any).__cycleInterval = cycleInterval
       }
     }, 600)
     return () => {
       clearInterval(buildInterval)
-      if ((buildInterval as any).__cycleInterval) clearInterval((buildInterval as any).__cycleInterval)
+      if (cycleIntervalRef.current) { clearInterval(cycleIntervalRef.current); cycleIntervalRef.current = null }
     }
   }, [isOpen, isDone, mode])
 
