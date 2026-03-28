@@ -14,6 +14,7 @@ import MagicModal from '@/components/ui/MagicModal'
 import CreativeReel from './CreativeReel'
 import FunnelReadyModal from '@/components/ui/FunnelReadyModal'
 import AttomikLogo from '@/components/ui/AttomikLogo'
+import BrandControlBar from './BrandControlBar'
 
 interface AdVariation {
   primary_text: string
@@ -102,10 +103,10 @@ export default function PreviewClient({
   const [imagesLoaded, setImagesLoaded] = useState(brandImages.length > 0)
   const brandImageUrl = productImageUrl
 
-  // Brand colors
-  const brandPrimary = brand.primary_color || '#000000'
-  const brandSecondary = brand.secondary_color || brandPrimary
-  const brandAccent = brand.accent_color || brandSecondary
+  // Brand colors (editable state)
+  const [brandPrimary, setBrandPrimary] = useState(brand.primary_color || '#000000')
+  const [brandSecondary, setBrandSecondary] = useState(brand.secondary_color || brand.primary_color || '#000000')
+  const [brandAccent, setBrandAccent] = useState(brand.accent_color || brand.secondary_color || brand.primary_color || '#000000')
   function isLightColor(hex: string): boolean {
     const c = (hex || '').replace('#', ''); if (c.length < 6) return false
     const r = parseInt(c.slice(0,2),16); const g = parseInt(c.slice(2,4),16); const b = parseInt(c.slice(4,6),16)
@@ -113,11 +114,23 @@ export default function PreviewClient({
   }
   const textOnPrimary = isLightColor(brandPrimary) ? '#000000' : '#ffffff'
   const textOnAccent = isLightColor(brandAccent) ? '#000000' : '#ffffff'
-  console.log('[Brand Colors Applied]', { primary: brandPrimary, secondary: brandSecondary, accent: brandAccent })
 
-  // Brand font
+  // Brand font (editable state)
   const fh = brand.font_heading
-  const fontFamily = fh?.family || brand.font_primary?.split('|')[0] || ''
+  const [fontFamily, setFontFamily] = useState(fh?.family || brand.font_primary?.split('|')[0] || '')
+  const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const [savingBrand, setSavingBrand] = useState(false)
+
+  async function saveBrandColors() {
+    setSavingBrand(true)
+    await supabase.from('brands').update({
+      primary_color: brandPrimary,
+      secondary_color: brandSecondary,
+      accent_color: brandAccent,
+      font_primary: fontFamily,
+    }).eq('id', brand.id)
+    setSavingBrand(false)
+  }
 
   // Load Google Font
   useEffect(() => {
@@ -238,12 +251,16 @@ export default function PreviewClient({
     letterSpacing: fh?.letterSpacing === 'wide' ? '0.12em' : fh?.letterSpacing === 'tight' ? '-0.02em' : 'normal',
   }
 
-  // Cycle images across creative cards
-  const img0 = allImageUrls[0] || productImageUrl || null
-  const img1 = allImageUrls[1] || productImageUrl || null
-  const img2 = allImageUrls[2] || lifestyleImageUrl || productImageUrl || null
-  const img3 = allImageUrls[3] || productImageUrl || null
-  const img4 = allImageUrls[4] || productImageUrl || null
+  // Cycle images across creative cards (offset by activeImageIndex)
+  const getImg = (offset: number) =>
+    allImageUrls.length > 0
+      ? allImageUrls[(activeImageIndex + offset) % allImageUrls.length]
+      : productImageUrl || null
+  const img0 = getImg(0)
+  const img1 = getImg(1)
+  const img2 = getImg(2)
+  const img3 = getImg(3)
+  const img4 = getImg(4)
 
   // Template props for ad creative
   const templateProps = adVariation ? {
@@ -418,6 +435,23 @@ export default function PreviewClient({
       )}
 
       <div className="max-w-5xl mx-auto px-4 md:px-10 py-8 space-y-8">
+        {/* Brand control bar */}
+        <BrandControlBar
+          primaryColor={brandPrimary}
+          secondaryColor={brandSecondary}
+          accentColor={brandAccent}
+          fontFamily={fontFamily}
+          allImageUrls={allImageUrls}
+          activeImageIndex={activeImageIndex}
+          onPrimaryChange={setBrandPrimary}
+          onSecondaryChange={setBrandSecondary}
+          onAccentChange={setBrandAccent}
+          onFontChange={setFontFamily}
+          onImageIndexChange={setActiveImageIndex}
+          onSave={saveBrandColors}
+          saving={savingBrand}
+        />
+
         {/* Hero section */}
         <div className="text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-cream rounded-full border border-border text-sm">
