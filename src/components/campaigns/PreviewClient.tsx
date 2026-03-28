@@ -481,6 +481,7 @@ export default function PreviewClient({
                         imageUrl: img0,
                         bgColor: brandPrimary,
                         textPosition: 'center' as const,
+                        showCta: false,
                       }
 
                       return (
@@ -620,28 +621,32 @@ export default function PreviewClient({
                             </div>
                           </div>
 
-                          {/* Copy snippet below */}
-                          <div style={{ width: w, maxWidth: w }}>
+                          {/* Copy below card */}
+                          <div style={{
+                            width: '100%',
+                            maxWidth: w,
+                            marginTop: 4,
+                            paddingTop: 12,
+                            borderTop: '1px solid var(--border)',
+                          }}>
                             <div style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: '#111',
+                              fontSize: 14,
+                              color: '#333',
+                              lineHeight: 1.6,
+                              marginBottom: 6,
+                              display: '-webkit-box',
+                              WebkitLineClamp: 3,
+                              WebkitBoxOrient: 'vertical' as const,
                               overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
                             }}>
-                              {adVariation?.headline}
+                              {adVariation?.primary_text || ''}
                             </div>
                             <div style={{
-                              fontSize: 11,
-                              color: '#888',
-                              marginTop: 2,
-                              overflow: 'hidden',
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
+                              fontSize: 12,
+                              color: '#999',
+                              fontStyle: 'italic',
                             }}>
-                              {adVariation?.primary_text?.slice(0, 80)}
+                              {adVariation?.description || ''}
                             </div>
                           </div>
                         </div>
