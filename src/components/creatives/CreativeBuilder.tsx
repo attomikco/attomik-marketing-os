@@ -89,6 +89,8 @@ export default function CreativeBuilder({
   const [exporting, setExporting] = useState(false)
   const [exportingAll, setExportingAll] = useState(false)
   const [exportToast, setExportToast] = useState<string | null>(null)
+  const [previewContainerW, setPreviewContainerW] = useState(600)
+  const leftPanelRef = useRef<HTMLDivElement>(null)
 
   // ── Helpers ────────────────────────────────────────────────────────
   function updateBgColor(color: string) {
@@ -362,6 +364,14 @@ export default function CreativeBuilder({
     }
   }, [headline, bodyText, ctaText, selectedImageId, templateId, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight, bodyTransform, bgColor, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity, textBanner, textBannerColor, textPosition, showCta, imagePosition])
 
+  useEffect(() => {
+    const el = leftPanelRef.current
+    if (!el) return
+    const ro = new ResizeObserver(([entry]) => setPreviewContainerW(entry.contentRect.width))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   // ── Template props ─────────────────────────────────────────────────
   const templateProps = {
     imageUrl, headline, bodyText, ctaText, brandColor, brandName: brand?.name || '',
@@ -413,9 +423,10 @@ export default function CreativeBuilder({
 
   // ── Preview scaling ────────────────────────────────────────────────
   const maxPreviewH = 460
-  const scale = maxPreviewH / size.h
+  const maxPreviewW = Math.min(600, previewContainerW || 600)
+  const scale = Math.min(maxPreviewH / size.h, maxPreviewW / size.w)
   const previewW = Math.round(size.w * scale)
-  const previewH = maxPreviewH
+  const previewH = Math.round(size.h * scale)
 
   // ── Styles ─────────────────────────────────────────────────────────
   const inputCls = "w-full text-sm border border-border rounded-btn px-3 py-2 bg-cream focus:outline-none focus:border-accent transition-colors font-sans placeholder:text-[#bbb]"
@@ -443,7 +454,7 @@ export default function CreativeBuilder({
     <div className="space-y-4">
 
       {/* TOP BAR — Brand + Size + Actions */}
-      <div className="bg-paper border border-border rounded-card px-4 py-2.5 flex flex-wrap items-center gap-3">
+      <div className="bg-paper border border-border rounded-card px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2">
         <div className="relative flex-shrink-0">
           <select value={brandId} onChange={e => setBrandId(e.target.value)}
             className="text-sm font-semibold border border-border rounded-btn pl-3 pr-7 py-1.5 bg-cream appearance-none focus:outline-none focus:border-accent">
@@ -451,8 +462,8 @@ export default function CreativeBuilder({
           </select>
           <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
         </div>
-        <span className="w-px h-5 bg-border" />
-        <div className="flex gap-1">
+        <span className="hidden sm:block w-px h-5 bg-border" />
+        <div className="flex gap-1 flex-shrink-0">
           {SIZES.map(s => (
             <button key={s.id} onClick={() => setSizeId(s.id)} {...pill(sizeId === s.id)}>{s.label}</button>
           ))}
@@ -525,7 +536,7 @@ export default function CreativeBuilder({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
         {/* LEFT: Preview + Style */}
-        <div className="lg:col-span-7 space-y-4">
+        <div className="lg:col-span-7 space-y-4 overflow-hidden" ref={leftPanelRef}>
           <PreviewCanvas
             templateLabel={template.label}
             size={size}

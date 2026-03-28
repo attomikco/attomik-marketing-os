@@ -424,6 +424,7 @@ export default function PreviewClient({
           </div>
           <h1 className="text-2xl md:text-3xl font-black">{campaign.name}</h1>
           {campaign.angle && <p className="text-muted max-w-lg mx-auto">{campaign.angle}</p>}
+          <p className="text-sm text-muted max-w-md mx-auto">One consistent message across creative, copy, and landing page — built to convert.</p>
         </div>
 
         {/* ═══ SECTION 1: Ad Creatives ═══ */}
@@ -458,9 +459,9 @@ export default function PreviewClient({
             ]
 
             const storyCards = [
-              { label: 'Story — Overlay', Comp: OverlayTemplate, img: img0, variation: v0, tp: 'bottom-left' as const, bgColor: brandPrimary },
-              { label: 'Story — Split', Comp: SplitTemplate, img: img1, variation: v1, tp: 'center' as const, bgColor: brand.secondary_color || brandPrimary },
-              { label: 'Story — Statement', Comp: StatTemplate, img: img2, variation: v2, tp: 'center' as const, bgColor: brand.accent_color || brandPrimary },
+              { label: 'Overlay', Comp: OverlayTemplate, img: img0, variation: v0, tp: 'bottom-left' as const, bgColor: brandPrimary },
+              { label: 'Split', Comp: SplitTemplate, img: img1, variation: v1, tp: 'center' as const, bgColor: brand.secondary_color || brandPrimary },
+              { label: 'Statement', Comp: StatTemplate, img: img2, variation: v2, tp: 'center' as const, bgColor: brand.accent_color || brandPrimary },
             ]
 
             function makeProps(card: { variation: typeof v0, img: string | null, tp: 'center' | 'bottom-left', bgColor: string }) {
@@ -498,7 +499,7 @@ export default function PreviewClient({
             return (
               <>
                 {/* ── 4:5 GRID — 6 creatives, 3 per row ── */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 48 }}>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
                   {gridCards.map((card, i) => (
                     <div key={i} style={{ display: 'flex', flexDirection: 'column' }}>
                       <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#888', marginBottom: 8 }}>
@@ -528,7 +529,7 @@ export default function PreviewClient({
                   <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 20, textAlign: 'center' }}>
                     Instagram & TikTok Stories
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {storyCards.map((card, i) => (
                       <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#888', marginBottom: 8 }}>
