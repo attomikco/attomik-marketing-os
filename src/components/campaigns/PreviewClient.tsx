@@ -191,7 +191,17 @@ export default function PreviewClient({
           loadImages(data as BrandImage[])
           setImagesLoaded(true)
           clearInterval(retryInterval)
-        } else if (retries >= 5) {
+          // Final fetch after 3s to catch stragglers
+          setTimeout(() => {
+            supabase.from('brand_images').select('*')
+              .eq('brand_id', brand.id).order('created_at')
+              .then(({ data: final }) => {
+                if (final && final.length > (data?.length || 0)) {
+                  loadImages(final as BrandImage[])
+                }
+              })
+          }, 3000)
+        } else if (retries >= 10) {
           setImagesLoaded(true)
           clearInterval(retryInterval)
         }

@@ -118,8 +118,8 @@ export default function OnboardingWizard() {
   }
 
   async function uploadImagesInBackground(brandId: string) {
-    // Upload manually selected files
-    for (const file of imageFiles) {
+    // Upload manually selected files — parallel
+    await Promise.allSettled(imageFiles.map(async (file) => {
       try {
         const ext = file.name.split('.').pop() || 'jpg'
         const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
@@ -131,8 +131,8 @@ export default function OnboardingWizard() {
             tag: 'product', mime_type: file.type, size_bytes: file.size,
           })
         }
-      } catch { continue }
-    }
+      } catch {}
+    }))
     // Download and upload detected product image
     if (productImageUrl) {
       try {
@@ -152,18 +152,18 @@ export default function OnboardingWizard() {
         }
       } catch {}
     }
-    // Upload scraped images from website (prepend OG image as lifestyle)
+    // Upload scraped images from website — parallel (prepend OG image as lifestyle)
     const ogEntry: typeof detectedImages = detectedImage
       ? [{ url: detectedImage, tag: 'lifestyle' as const, score: 10 }]
       : []
     const allToUpload = [...ogEntry, ...detectedImages].slice(0, 9)
-    for (const img of allToUpload) {
+    await Promise.allSettled(allToUpload.map(async (img) => {
       try {
         const imgRes = await fetch('/api/brands/proxy-image', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: img.url }),
         })
-        if (!imgRes.ok) continue
+        if (!imgRes.ok) return
         const blob = await imgRes.blob()
         const ext = img.url.split('.').pop()?.split('?')[0]?.slice(0, 4) || 'jpg'
         const filename = `scraped_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
@@ -175,8 +175,8 @@ export default function OnboardingWizard() {
             mime_type: blob.type || 'image/jpeg', tag: img.tag, size_bytes: blob.size,
           })
         }
-      } catch { continue }
-    }
+      } catch {}
+    }))
   }
 
   async function submit() {
