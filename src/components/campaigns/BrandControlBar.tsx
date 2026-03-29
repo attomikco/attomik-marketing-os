@@ -225,7 +225,7 @@ export default function BrandControlBar({
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {allImageUrls.slice(0, 10).map((url, i) => (
+              {allImageUrls.filter(url => !url.includes('/logo.') && !url.includes('_logo')).slice(0, 10).map((url, i) => (
                 <div key={i} style={{ position: 'relative', flexShrink: 0 }}>
                   <div onClick={() => onImageIndexChange(i)}
                     style={{ width: 96, height: 96, borderRadius: 12, overflow: 'hidden', border: activeImageIndex === i ? '3px solid #000' : '2px solid #eee', cursor: 'pointer', transition: 'border-color 0.15s' }}>

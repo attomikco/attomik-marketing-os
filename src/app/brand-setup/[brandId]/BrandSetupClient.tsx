@@ -134,28 +134,21 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
     const file = e.target.files?.[0]
     if (!file) return
     const ext = file.name.split('.').pop() || 'png'
-    const path = `${brand.id}/logo_${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('brand-images').upload(path, file, { contentType: file.type })
+    const path = `${brand.id}/logo.${ext}`
+    const { error } = await supabase.storage.from('brand-assets').upload(path, file, { contentType: file.type, upsert: true })
     if (!error) {
-      const { data } = supabase.storage.from('brand-images').getPublicUrl(path)
+      const { data } = supabase.storage.from('brand-assets').getPublicUrl(path)
       setLogoUrl(data.publicUrl)
     }
   }
 
-  async function handleImageUpload(files: File[]) {
+  async function handleImageUpload(files: File[], tag: 'product' | 'lifestyle') {
     setUploading(true)
     for (const file of files) {
       const ext = file.name.split('.').pop() || 'jpg'
-      const path = `${brand.id}/hub_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+      const path = `${brand.id}/${tag}_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
       const { error } = await supabase.storage.from('brand-images').upload(path, file, { contentType: file.type })
       if (!error) {
-        const tag = await new Promise<string>(resolve => {
-          const img = new Image()
-          const url = URL.createObjectURL(file)
-          img.onload = () => { resolve(img.width > img.height ? 'lifestyle' : 'product'); URL.revokeObjectURL(url) }
-          img.onerror = () => { resolve('product'); URL.revokeObjectURL(url) }
-          img.src = url
-        })
         const { data: inserted } = await supabase.from('brand_images').insert({ brand_id: brand.id, file_name: file.name, storage_path: path, mime_type: file.type, tag }).select().single()
         if (inserted) setImages(prev => [...prev, inserted as BrandImage])
       }
@@ -163,11 +156,14 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
     setUploading(false)
   }
 
-  async function removeImage(index: number) {
-    const img = images[index]
-    if (!img) return
-    await supabase.from('brand_images').delete().eq('id', img.id)
-    setImages(prev => prev.filter((_, i) => i !== index))
+  function getImageUrl(img: BrandImage) {
+    const cleanPath = img.storage_path.replace(/^brand-images\//, '')
+    return supabase.storage.from('brand-images').getPublicUrl(cleanPath).data.publicUrl
+  }
+
+  async function removeImageById(id: string) {
+    await supabase.from('brand_images').delete().eq('id', id)
+    setImages(prev => prev.filter(img => img.id !== id))
   }
 
   const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }
@@ -378,27 +374,48 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
 
       {/* ── SECTION 5: IMAGES ── */}
       <SectionHeader title="Images" subtitle={`${images.length} image${images.length !== 1 ? 's' : ''} in your library`} />
-      {imageUrls.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
-          {imageUrls.map((url, i) => (
-            <div key={i} style={{ position: 'relative', flexShrink: 0 }}>
-              <div style={{ width: 80, height: 80, borderRadius: 10, overflow: 'hidden', border: '2px solid #eee' }}>
-                <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none' }} />
-              </div>
-              <button onClick={() => removeImage(i)} style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: '#000', color: '#fff', border: '2px solid #fff', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>×</button>
+
+      {/* Product images */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#666', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>
+          Product images
+          <span style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 400, marginLeft: 8, textTransform: 'none', letterSpacing: 0 }}>Hero shots of your product</span>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {images.filter(img => img.tag === 'product').map(img => (
+            <div key={img.id} style={{ position: 'relative' }}>
+              <img src={getImageUrl(img)} alt="" style={{ width: 80, height: 80, borderRadius: 10, objectFit: 'cover', border: '1px solid var(--border)', display: 'block' }} onError={e => { (e.currentTarget as HTMLElement).style.display = 'none' }} />
+              <button onClick={() => removeImageById(img.id)} style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: '#000', color: '#fff', border: '2px solid #fff', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>×</button>
             </div>
           ))}
+          <label style={{ width: 80, height: 80, borderRadius: 10, border: '2px dashed var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--muted)', fontSize: 11, fontWeight: 600, gap: 4, transition: 'border-color 0.15s' }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = '#000')} onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
+            <span style={{ fontSize: 20, lineHeight: 1 }}>+</span>Add
+            <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => { const f = Array.from(e.target.files || []); if (f.length) handleImageUpload(f, 'product'); e.target.value = '' }} />
+          </label>
         </div>
-      )}
-      <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: 120, borderRadius: 16, border: '2px dashed var(--border)', cursor: 'pointer', padding: 24, textAlign: 'center', transition: 'border-color 0.15s' }}
-        onMouseEnter={e => (e.currentTarget.style.borderColor = '#999')}
-        onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-      >
-        <div style={{ fontSize: 24, marginBottom: 4 }}>+</div>
-        <div style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>{uploading ? 'Uploading...' : 'Drop product + lifestyle shots here'}</div>
-        <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>Portrait images tagged as product, landscape as lifestyle</div>
-        <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => { const files = Array.from(e.target.files || []); if (files.length) handleImageUpload(files); e.target.value = '' }} />
-      </label>
+      </div>
+
+      {/* Lifestyle images */}
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#666', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>
+          Lifestyle images
+          <span style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 400, marginLeft: 8, textTransform: 'none', letterSpacing: 0 }}>Brand context, mood, people using the product</span>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {images.filter(img => img.tag === 'lifestyle' || img.tag === 'background').map(img => (
+            <div key={img.id} style={{ position: 'relative' }}>
+              <img src={getImageUrl(img)} alt="" style={{ width: 80, height: 80, borderRadius: 10, objectFit: 'cover', border: '1px solid var(--border)', display: 'block' }} onError={e => { (e.currentTarget as HTMLElement).style.display = 'none' }} />
+              <button onClick={() => removeImageById(img.id)} style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: '#000', color: '#fff', border: '2px solid #fff', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>×</button>
+            </div>
+          ))}
+          <label style={{ width: 80, height: 80, borderRadius: 10, border: '2px dashed var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--muted)', fontSize: 11, fontWeight: 600, gap: 4, transition: 'border-color 0.15s' }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = '#000')} onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
+            <span style={{ fontSize: 20, lineHeight: 1 }}>+</span>Add
+            <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => { const f = Array.from(e.target.files || []); if (f.length) handleImageUpload(f, 'lifestyle'); e.target.value = '' }} />
+          </label>
+        </div>
+      </div>
 
       {/* Spacer at bottom */}
       <div style={{ height: 80 }} />
