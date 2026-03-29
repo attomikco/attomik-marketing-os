@@ -1,131 +1,126 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import AttomikLogo from '@/components/ui/AttomikLogo'
 import { Brand, BrandImage } from '@/types'
-import { CheckCircle } from 'lucide-react'
 
-export default function BrandSetupClient({
-  brand: initialBrand,
-  brandImages: initialImages,
-}: {
-  brand: Brand
-  brandImages: BrandImage[]
-}) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const campaignId = searchParams.get('campaign')
-  const initialStep = parseInt(searchParams.get('step') || '0')
+function TagInput({ tags, onChange, placeholder }: { tags: string[]; onChange: (t: string[]) => void; placeholder: string }) {
+  const [input, setInput] = useState('')
+  const id = 'tag-inp-' + placeholder.replace(/\s/g, '-')
+  return (
+    <div
+      style={{ border: '1.5px solid #e0e0e0', borderRadius: 10, padding: '8px 12px', display: 'flex', flexWrap: 'wrap', gap: 6, minHeight: 44, cursor: 'text' }}
+      onClick={() => document.getElementById(id)?.focus()}
+    >
+      {tags.map((tag, i) => (
+        <span key={i} style={{ background: '#f0f0f0', borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, color: '#000' }}>
+          {tag}
+          <span onClick={() => onChange(tags.filter((_, j) => j !== i))} style={{ cursor: 'pointer', opacity: 0.5, fontSize: 14 }}>×</span>
+        </span>
+      ))}
+      <input
+        id={id}
+        value={input}
+        onChange={e => setInput(e.target.value)}
+        onKeyDown={e => {
+          if ((e.key === 'Enter' || e.key === ',') && input.trim()) {
+            e.preventDefault()
+            onChange([...tags, input.trim()])
+            setInput('')
+          }
+          if (e.key === 'Backspace' && !input && tags.length) {
+            onChange(tags.slice(0, -1))
+          }
+        }}
+        placeholder={tags.length === 0 ? placeholder : ''}
+        style={{ border: 'none', outline: 'none', fontSize: 13, minWidth: 80, flex: 1, background: 'transparent' }}
+      />
+    </div>
+  )
+}
+
+export default function BrandHubClient({ brand, initialImages }: { brand: Brand; initialImages: BrandImage[] }) {
   const supabase = createClient()
+  const logoInputRef = useRef<HTMLInputElement>(null)
 
-  const [step, setStep] = useState(initialStep)
+  // State
+  const [name, setName] = useState(brand.name)
+  const [website, setWebsite] = useState(brand.website || '')
+  const [mission, setMission] = useState(brand.mission || '')
+  const [targetAudience, setTargetAudience] = useState(brand.target_audience || '')
+  const [brandVoice, setBrandVoice] = useState(brand.brand_voice || '')
+  const [toneKeywords, setToneKeywords] = useState<string[]>(brand.tone_keywords || [])
+  const [avoidWords, setAvoidWords] = useState<string[]>(brand.avoid_words || [])
+  const [primaryColor, setPrimaryColor] = useState(brand.primary_color || '#000000')
+  const [secondaryColor, setSecondaryColor] = useState(brand.secondary_color || '#000000')
+  const [accentColor, setAccentColor] = useState(brand.accent_color || '#000000')
+  const [fontFamily, setFontFamily] = useState(brand.font_primary?.split('|')[0] || '')
+  const [logoUrl, setLogoUrl] = useState(brand.logo_url || '')
+  const [defaultCta, setDefaultCta] = useState(brand.default_cta || '')
+  const [productName, setProductName] = useState(brand.products?.[0]?.name || '')
+  const [productDesc, setProductDesc] = useState(brand.products?.[0]?.description || '')
+  const [productPrice, setProductPrice] = useState(brand.products?.[0]?.price_range || '')
   const [saving, setSaving] = useState(false)
-
-  // Step 1 fields
-  const [name, setName] = useState(initialBrand.name)
-  const [mission, setMission] = useState(initialBrand.mission || '')
-  const [targetAudience, setTargetAudience] = useState(initialBrand.target_audience || '')
-  const [website, setWebsite] = useState(initialBrand.website || '')
-  const [logoUrl, setLogoUrl] = useState(initialBrand.logo_url || '')
-
-  // Step 2 fields
-  const firstProduct = initialBrand.products?.[0]
-  const [productName, setProductName] = useState(firstProduct?.name || '')
-  const [price, setPrice] = useState(firstProduct?.price_range || '')
-  const [productDesc, setProductDesc] = useState(firstProduct?.description || '')
-  const [differentiator, setDifferentiator] = useState('')
-  const [keyBenefit, setKeyBenefit] = useState(initialBrand.default_headline || '')
-
-  // Step 3 fields
+  const [saved, setSaved] = useState(false)
   const [images, setImages] = useState<BrandImage[]>(initialImages)
   const [imageUrls, setImageUrls] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [activeColor, setActiveColor] = useState<'primary' | 'secondary' | 'accent' | null>(null)
 
-  // Completion
-  const [completing, setCompleting] = useState(false)
-  const [regenerating, setRegenerating] = useState(false)
-  const [regenStep, setRegenStep] = useState(0)
+  const palette = [primaryColor, secondaryColor, accentColor, '#000000', '#ffffff', '#f5f5f5', '#1a1a1a'].filter((c, i, a) => a.indexOf(c) === i)
 
   // Build image URLs
   useEffect(() => {
-    const urls = images.map(img => {
+    setImageUrls(images.map(img => {
       const cleanPath = img.storage_path.replace(/^brand-images\//, '')
-      const { data } = supabase.storage.from('brand-images').getPublicUrl(cleanPath)
-      return data.publicUrl
-    })
-    setImageUrls(urls)
+      return supabase.storage.from('brand-images').getPublicUrl(cleanPath).data.publicUrl
+    }))
   }, [images])
 
-  async function saveStep1() {
-    setSaving(true)
-    await supabase.from('brands').update({
-      name,
-      mission,
-      target_audience: targetAudience,
-      website,
-      logo_url: logoUrl,
-    }).eq('id', initialBrand.id)
-    setSaving(false)
-    setStep(2)
-  }
+  // Load Google Font preview
+  useEffect(() => {
+    if (!fontFamily) return
+    const id = 'hub-font'
+    let link = document.getElementById(id) as HTMLLinkElement | null
+    if (!link) { link = document.createElement('link'); link.id = id; link.rel = 'stylesheet'; document.head.appendChild(link) }
+    link.href = `https://fonts.googleapis.com/css2?family=${fontFamily.replace(/ /g, '+')}:wght@400;700;800;900&display=swap`
+  }, [fontFamily])
 
-  async function saveStep2() {
-    setSaving(true)
-    const products = [{
-      name: productName,
-      description: productDesc,
-      price_range: price,
-    }]
-    await supabase.from('brands').update({
-      products,
-      default_headline: keyBenefit,
-    }).eq('id', initialBrand.id)
-    setSaving(false)
-    setStep(3)
-  }
-
-  async function saveStep3() {
-    setStep(4)
-    setCompleting(true)
-
-    if (campaignId) {
-      setRegenerating(true)
-      setRegenStep(0)
-      await new Promise(r => setTimeout(r, 600))
-
-      setRegenStep(1)
-      try {
-        await fetch(`/api/campaigns/${campaignId}/ad-copy`, { method: 'POST' })
-      } catch {}
-
-      setRegenStep(2)
-      try {
-        await fetch(`/api/campaigns/${campaignId}/landing-brief`, { method: 'POST' })
-      } catch {}
-
-      setRegenStep(3)
-      await new Promise(r => setTimeout(r, 800))
-
-      setRegenStep(4)
-      setRegenerating(false)
-      await new Promise(r => setTimeout(r, 600))
-
-      router.push(`/creatives?brand=${initialBrand.id}&campaign=${campaignId}`)
-    } else {
-      setTimeout(() => router.push('/dashboard'), 2500)
+  // Click outside color picker
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (!(e.target as HTMLElement).closest('.color-picker-wrap')) setActiveColor(null)
     }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  async function saveAll() {
+    setSaving(true)
+    setSaved(false)
+    const products = productName ? [{ name: productName, description: productDesc || undefined, price_range: productPrice || undefined }] : brand.products
+    await supabase.from('brands').update({
+      name, website: website || null, mission: mission || null,
+      target_audience: targetAudience || null, brand_voice: brandVoice || null,
+      tone_keywords: toneKeywords.length ? toneKeywords : null,
+      avoid_words: avoidWords.length ? avoidWords : null,
+      primary_color: primaryColor, secondary_color: secondaryColor, accent_color: accentColor,
+      font_primary: fontFamily || null, logo_url: logoUrl || null,
+      default_cta: defaultCta || null, products: products || null,
+    }).eq('id', brand.id)
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 3000)
   }
 
-  async function handleLogoUpload(file: File) {
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
     const ext = file.name.split('.').pop() || 'png'
-    const path = `${initialBrand.id}/logo_${Date.now()}.${ext}`
+    const path = `${brand.id}/logo_${Date.now()}.${ext}`
     const { error } = await supabase.storage.from('brand-images').upload(path, file, { contentType: file.type })
     if (!error) {
       const { data } = supabase.storage.from('brand-images').getPublicUrl(path)
       setLogoUrl(data.publicUrl)
-      await supabase.from('brands').update({ logo_url: data.publicUrl }).eq('id', initialBrand.id)
     }
   }
 
@@ -133,29 +128,17 @@ export default function BrandSetupClient({
     setUploading(true)
     for (const file of files) {
       const ext = file.name.split('.').pop() || 'jpg'
-      const path = `${initialBrand.id}/setup_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+      const path = `${brand.id}/hub_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
       const { error } = await supabase.storage.from('brand-images').upload(path, file, { contentType: file.type })
       if (!error) {
-        // Guess tag from image dimensions
-        const img = new Image()
-        const url = URL.createObjectURL(file)
         const tag = await new Promise<string>(resolve => {
-          img.onload = () => {
-            resolve(img.width > img.height ? 'lifestyle' : 'product')
-            URL.revokeObjectURL(url)
-          }
+          const img = new Image()
+          const url = URL.createObjectURL(file)
+          img.onload = () => { resolve(img.width > img.height ? 'lifestyle' : 'product'); URL.revokeObjectURL(url) }
           img.onerror = () => { resolve('product'); URL.revokeObjectURL(url) }
           img.src = url
         })
-
-        const { data: inserted } = await supabase.from('brand_images').insert({
-          brand_id: initialBrand.id,
-          file_name: file.name,
-          storage_path: path,
-          mime_type: file.type,
-          tag,
-        }).select().single()
-
+        const { data: inserted } = await supabase.from('brand_images').insert({ brand_id: brand.id, file_name: file.name, storage_path: path, mime_type: file.type, tag }).select().single()
         if (inserted) setImages(prev => [...prev, inserted as BrandImage])
       }
     }
@@ -169,408 +152,228 @@ export default function BrandSetupClient({
     setImages(prev => prev.filter((_, i) => i !== index))
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '13px 16px',
-    border: '2px solid #eee', borderRadius: 12,
-    fontSize: 15, fontWeight: 500, color: '#000',
-    outline: 'none', background: '#fff',
-  }
-  const textareaStyle: React.CSSProperties = {
-    ...inputStyle, resize: 'vertical',
-  }
-  const labelStyle: React.CSSProperties = {
-    fontSize: 12, fontWeight: 700, color: '#555',
-    letterSpacing: '0.04em', marginBottom: 8, display: 'block',
-  }
+  const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }
+  const inputStyle: React.CSSProperties = { border: '1.5px solid #e0e0e0', borderRadius: 10, padding: '11px 14px', fontSize: 14, width: '100%', outline: 'none', color: '#000', background: '#fff' }
+  const helperStyle: React.CSSProperties = { fontSize: 11, color: '#aaa', marginTop: 4 }
 
-  // ── STEP 0: WELCOME ──
-  if (step === 0) {
+  function renderColorPicker(label: string, key: 'primary' | 'secondary' | 'accent', value: string, onChange: (v: string) => void) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', position: 'relative' }}>
-        <div style={{ position: 'absolute', top: 40, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
-          <AttomikLogo height={36} color="#ffffff" />
-        </div>
-
-        <div style={{ textAlign: 'center', maxWidth: 600 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.25)', borderRadius: 999, padding: '5px 16px', fontSize: 11, fontWeight: 700, color: '#00ff97', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 32 }}>
-            ✦ Brand Setup
-          </div>
-
-          <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 52, lineHeight: 1.05, letterSpacing: '-0.03em', color: '#fff', marginBottom: 20, textTransform: 'uppercase' }}>
-            Let&apos;s make your<br />funnel <span style={{ color: '#00ff97' }}>actually yours.</span>
-          </div>
-
-          <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.45)', lineHeight: 1.7, maxWidth: 460, margin: '0 auto 40px' }}>
-            We built that from your website — which means it&apos;s incomplete. Add your real brand context and we&apos;ll regenerate everything to match.
-          </div>
-
-          {/* Progress pills */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 48 }}>
-            {[
-              { num: '1', label: 'Brand' },
-              { num: '2', label: 'Product' },
-              { num: '3', label: 'Images' },
-            ].map((p, i) => (
-              <div key={i} style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 999, padding: '8px 18px',
-                fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.4)',
-              }}>
-                <span style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800 }}>
-                  {p.num}
-                </span>
-                {p.label}
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={() => setStep(1)}
-            style={{
-              background: '#00ff97', color: '#000',
-              fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 16,
-              padding: '16px 40px', borderRadius: 999,
-              border: 'none', cursor: 'pointer',
-              marginBottom: 20,
-            }}
-          >
-            Let&apos;s do it →
-          </button>
-
-          <div>
-            <button
-              onClick={() => router.push('/dashboard')}
-              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: 13, cursor: 'pointer' }}
-            >
-              Skip for now, go to dashboard →
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // ── STEP 4: COMPLETION ──
-  if (step === 4) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
-        <style>{`
-          @keyframes popIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }
-          @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-          @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
-        `}</style>
-
-        <AttomikLogo height={36} color="#ffffff" />
-
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, marginTop: 40 }}>
-          {regenStep < 4 ? (
-            <div style={{
-              width: 64, height: 64, borderRadius: '50%',
-              border: '2px solid rgba(0,255,151,0.15)',
-              borderTop: '2px solid #00ff97',
-              animation: 'spin 1s linear infinite',
-              flexShrink: 0,
-            }} />
-          ) : (
-            <div style={{
-              width: 64, height: 64, borderRadius: '50%',
-              background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.3)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              animation: 'popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards',
-            }}>
-              <CheckCircle size={28} color="#00ff97" />
-            </div>
-          )}
-
-          {regenStep < 4 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 280 }}>
-              {[
-                { label: 'Saving brand context', done: regenStep > 0 },
-                { label: 'Rewriting ad copy', done: regenStep > 1 },
-                { label: 'Rebuilding landing page', done: regenStep > 2 },
-                { label: 'Finalizing your funnel', done: regenStep > 3 },
-              ].map(({ label, done }, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  opacity: regenStep >= i ? 1 : 0.25,
-                  transition: 'opacity 0.4s ease',
-                }}>
-                  <div style={{
-                    width: 20, height: 20, borderRadius: '50%',
-                    background: done ? '#00ff97' : regenStep === i ? 'rgba(0,255,151,0.2)' : 'rgba(255,255,255,0.1)',
-                    border: done ? 'none' : '1px solid rgba(0,255,151,0.3)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, transition: 'all 0.3s ease',
-                  }}>
-                    {done && (
-                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                        <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    )}
-                    {regenStep === i && !done && (
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#00ff97', animation: 'pulse 1s ease infinite' }} />
-                    )}
-                  </div>
-                  <span style={{
-                    fontSize: 14,
-                    color: done ? 'rgba(255,255,255,0.9)' : regenStep === i ? '#fff' : 'rgba(255,255,255,0.35)',
-                    fontWeight: regenStep === i ? 600 : 400,
-                    transition: 'color 0.3s ease',
-                  }}>
-                    {label}
-                  </span>
-                </div>
+      <div className="color-picker-wrap" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, position: 'relative' }}>
+        <div onClick={() => setActiveColor(activeColor === key ? null : key)} style={{
+          width: 52, height: 52, borderRadius: 12, background: value,
+          border: activeColor === key ? '3px solid #000' : '2px solid #eee',
+          cursor: 'pointer', transition: 'border-color 0.15s',
+          boxShadow: activeColor === key ? '0 0 0 2px rgba(0,0,0,0.1)' : 'none',
+        }} />
+        <span style={{ fontSize: 9, fontWeight: 600, color: '#999', fontFamily: 'monospace' }}>{value.toUpperCase()}</span>
+        <span style={{ fontSize: 9, fontWeight: 700, color: '#bbb', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</span>
+        {activeColor === key && (
+          <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 8, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 16, padding: 16, zIndex: 100, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', width: 220 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Brand colors</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+              {palette.map(color => (
+                <div key={color} onClick={() => { onChange(color); setActiveColor(null) }} title={color} style={{
+                  width: 32, height: 32, borderRadius: 8, background: color,
+                  border: color === value ? '3px solid #000' : '1.5px solid #e0e0e0',
+                  cursor: 'pointer', transition: 'transform 0.1s', flexShrink: 0,
+                }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)' }} onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }} />
               ))}
             </div>
-          ) : (
-            <div style={{
-              fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 28,
-              color: '#fff', textTransform: 'uppercase', textAlign: 'center',
-            }}>
-              Your funnel is ready.
+            <div style={{ borderTop: '1px solid #f0f0f0', marginBottom: 12 }} />
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Custom</div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input type="color" value={value} onChange={e => onChange(e.target.value)} style={{ width: 36, height: 36, borderRadius: 8, border: '1.5px solid #eee', cursor: 'pointer', padding: 2, background: 'none', flexShrink: 0 }} />
+              <input type="text" value={value.toUpperCase()} onChange={e => { if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) onChange(e.target.value) }} placeholder="#000000" style={{ flex: 1, padding: '7px 10px', border: '1.5px solid #eee', borderRadius: 8, fontSize: 12, fontFamily: 'monospace', fontWeight: 600, color: '#000', outline: 'none' }} />
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     )
   }
 
-  // ── STEPS 1-3 ──
-  const stepConfig = [
-    null, // 0
-    { num: '1 of 3', title: 'YOUR BRAND' },
-    { num: '2 of 3', title: 'YOUR HERO PRODUCT' },
-    { num: '3 of 3', title: 'YOUR IMAGES' },
-  ]
-  const current = stepConfig[step]!
+  function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
+        <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{title}</div>
+        <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 400 }}>{subtitle}</div>
+      </div>
+    )
+  }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 24px 120px', position: 'relative' }}>
+    <div style={{ padding: '32px 40px', maxWidth: 800, margin: '0 auto' }}>
+
+      {/* Page header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 40, paddingBottom: 24, borderBottom: '1px solid var(--border)', flexWrap: 'wrap', gap: 16 }}>
+        <div>
+          <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 28, textTransform: 'uppercase', letterSpacing: '-0.01em' }}>Brand Hub</div>
+          <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>Everything Attomik knows about {brand.name}. The more you add, the better your creatives.</div>
+        </div>
+        <button onClick={saveAll} disabled={saving} style={{
+          background: saving ? '#e0e0e0' : '#000', color: saving ? '#999' : '#00ff97',
+          fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 13,
+          padding: '10px 24px', borderRadius: 999, border: 'none',
+          cursor: saving ? 'not-allowed' : 'pointer',
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          {saving ? 'Saving...' : saved ? '✓ Saved' : 'Save changes'}
+        </button>
+      </div>
+
+      {/* ── SECTION 1: IDENTITY ── */}
+      <SectionHeader title="Identity" subtitle="Basic brand info" />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16, marginBottom: 16 }}>
+        <div>
+          <label style={labelStyle}>Brand name</label>
+          <input style={inputStyle} value={name} onChange={e => setName(e.target.value)} onFocus={e => e.currentTarget.style.borderColor = '#000'} onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+        <div>
+          <label style={labelStyle}>Website</label>
+          <input style={inputStyle} value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://yourbrand.com" onFocus={e => e.currentTarget.style.borderColor = '#000'} onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
+        </div>
+        <div>
+          <label style={labelStyle}>Industry</label>
+          <input style={inputStyle} value={brand.industry || ''} readOnly placeholder="Auto-detected" onFocus={e => e.currentTarget.style.borderColor = '#000'} onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
+        </div>
+      </div>
+
       {/* Logo */}
-      <div style={{ marginBottom: 48 }}>
-        <AttomikLogo height={32} color="#ffffff" />
+      <div
+        onClick={() => logoInputRef.current?.click()}
+        style={{ border: '2px dashed var(--border)', borderRadius: 16, padding: 24, display: 'flex', alignItems: 'center', gap: 20, cursor: 'pointer', marginTop: 16 }}
+      >
+        {logoUrl ? (
+          <img src={logoUrl} style={{ height: 56, borderRadius: 8, maxWidth: 200, objectFit: 'contain' }} alt="Logo" />
+        ) : (
+          <div style={{ width: 56, height: 56, borderRadius: 8, background: 'var(--cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: 'var(--muted)' }}>+</div>
+        )}
+        <div>
+          <div style={{ fontWeight: 600, fontSize: 14 }}>{logoUrl ? 'Change logo' : 'Upload logo'}</div>
+          <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>PNG, SVG or JPG. Shown on landing pages and creatives.</div>
+        </div>
+        <input type="file" accept="image/*" style={{ display: 'none' }} ref={logoInputRef} onChange={handleLogoUpload} />
       </div>
 
-      {/* Step indicator */}
-      <div style={{ textAlign: 'center', marginBottom: 32 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
-          {current.num}
+      <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '36px 0' }} />
+
+      {/* ── SECTION 2: COLORS & FONT ── */}
+      <SectionHeader title="Colors & Font" subtitle="Visual identity" />
+      <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
+        {renderColorPicker('Primary', 'primary', primaryColor, setPrimaryColor)}
+        {renderColorPicker('Secondary', 'secondary', secondaryColor, setSecondaryColor)}
+        {renderColorPicker('Accent', 'accent', accentColor, setAccentColor)}
+      </div>
+      <div style={{ maxWidth: 320 }}>
+        <label style={labelStyle}>Heading font</label>
+        <input style={inputStyle} value={fontFamily} onChange={e => setFontFamily(e.target.value)} placeholder="Barlow, Montserrat..." onFocus={e => e.currentTarget.style.borderColor = '#000'} onBlur={e => {
+          e.currentTarget.style.borderColor = '#e0e0e0'
+          if (e.currentTarget.value) {
+            const link = document.createElement('link'); link.rel = 'stylesheet'
+            link.href = `https://fonts.googleapis.com/css2?family=${e.currentTarget.value.replace(/ /g, '+')}:wght@400;700;800;900&display=swap`
+            document.head.appendChild(link)
+          }
+        }} />
+        {fontFamily && <div style={{ fontSize: 13, color: '#555', marginTop: 8, fontFamily, fontWeight: 600 }}>The quick brown fox jumps over the lazy dog</div>}
+      </div>
+
+      <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '36px 0' }} />
+
+      {/* ── SECTION 3: BRAND VOICE ── */}
+      <SectionHeader title="Brand Voice" subtitle="How your brand communicates" />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div>
+          <label style={labelStyle}>What does your brand do?</label>
+          <input style={inputStyle} value={mission} onChange={e => setMission(e.target.value)} placeholder="Non-alcoholic functional drinks for people who want to socialize without the downsides of alcohol" onFocus={e => e.currentTarget.style.borderColor = '#000'} onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
+          <div style={helperStyle}>One line that captures your value proposition.</div>
         </div>
-        <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 28, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em' }}>
-          {current.title}
+        <div>
+          <label style={labelStyle}>Who buys from you?</label>
+          <input style={inputStyle} value={targetAudience} onChange={e => setTargetAudience(e.target.value)} placeholder="Health-conscious adults 25-40 who want to maintain their social life without compromising their wellness goals" onFocus={e => e.currentTarget.style.borderColor = '#000'} onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
+        </div>
+        <div>
+          <label style={labelStyle}>How does your brand sound?</label>
+          <textarea style={{ ...inputStyle, resize: 'vertical' }} rows={3} value={brandVoice} onChange={e => setBrandVoice(e.target.value)} placeholder="Bold and energetic but approachable. We're the friend who's always down to hang, just making smarter choices. Never preachy, never boring." onFocus={e => e.currentTarget.style.borderColor = '#000'} onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
+        </div>
+        <div>
+          <label style={labelStyle}>Tone keywords (press Enter to add)</label>
+          <TagInput tags={toneKeywords} onChange={setToneKeywords} placeholder="e.g. Bold, Energetic, Approachable" />
+        </div>
+        <div>
+          <label style={labelStyle}>Words/phrases to avoid</label>
+          <TagInput tags={avoidWords} onChange={setAvoidWords} placeholder="e.g. Cheap, Basic, Alcoholic" />
         </div>
       </div>
 
-      {/* Card */}
-      <div style={{
-        background: '#fff', borderRadius: 20,
-        padding: '36px 32px', width: '100%',
-        maxWidth: step === 3 ? 640 : 560,
-        boxShadow: '0 24px 64px rgba(0,0,0,0.3)',
-      }}>
-        {step === 1 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {/* Logo upload */}
-            <div>
-              <label style={labelStyle}>Logo</label>
-              {logoUrl ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <img src={logoUrl} alt="Logo" style={{ height: 48, maxWidth: 200, objectFit: 'contain' }} />
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#888', cursor: 'pointer', textDecoration: 'underline' }}>
-                    Change
-                    <input type="file" accept="image/*" style={{ display: 'none' }}
-                      onChange={e => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f) }} />
-                  </label>
-                </div>
-              ) : (
-                <label style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  width: '100%', height: 80, borderRadius: 12,
-                  border: '2px dashed #ddd', cursor: 'pointer',
-                  fontSize: 14, fontWeight: 600, color: '#888',
-                }}>
-                  + Upload logo
-                  <input type="file" accept="image/*" style={{ display: 'none' }}
-                    onChange={e => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f) }} />
-                </label>
-              )}
-            </div>
+      <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '36px 0' }} />
 
-            <div>
-              <label style={labelStyle}>Brand name</label>
-              <input style={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="Your brand name" />
-            </div>
-
-            <div>
-              <label style={labelStyle}>What does your brand do? (one line)</label>
-              <input style={inputStyle} value={mission} onChange={e => setMission(e.target.value)}
-                placeholder="e.g. Non-alcoholic functional drinks for social occasions" />
-            </div>
-
-            <div>
-              <label style={labelStyle}>Who buys from you?</label>
-              <input style={inputStyle} value={targetAudience} onChange={e => setTargetAudience(e.target.value)}
-                placeholder="e.g. Health-conscious adults 25-40 who want to socialize without alcohol" />
-            </div>
-
-            <div>
-              <label style={labelStyle}>Website</label>
-              <input style={inputStyle} value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://yourbrand.com" />
-            </div>
+      {/* ── SECTION 4: YOUR PRODUCT ── */}
+      <SectionHeader title="Your Product" subtitle="Hero product details" />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
+          <div>
+            <label style={labelStyle}>Product name</label>
+            <input style={inputStyle} value={productName} onChange={e => setProductName(e.target.value)} placeholder="Your hero product" onFocus={e => e.currentTarget.style.borderColor = '#000'} onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
           </div>
-        )}
-
-        {step === 2 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div>
-              <label style={labelStyle}>Product name *</label>
-              <input style={inputStyle} value={productName} onChange={e => setProductName(e.target.value)} placeholder="Your hero product" />
-            </div>
-
-            <div>
-              <label style={labelStyle}>Price</label>
-              <input style={inputStyle} value={price} onChange={e => setPrice(e.target.value)} placeholder="e.g. $29.99" />
-            </div>
-
-            <div>
-              <label style={labelStyle}>What problem does it solve?</label>
-              <textarea style={textareaStyle} rows={3} value={productDesc} onChange={e => setProductDesc(e.target.value)}
-                placeholder="e.g. People want to socialize and have a good time without the negative effects of alcohol..." />
-            </div>
-
-            <div>
-              <label style={labelStyle}>What makes it different?</label>
-              <textarea style={textareaStyle} rows={2} value={differentiator} onChange={e => setDifferentiator(e.target.value)}
-                placeholder="e.g. Only functional drink with both Lion's Mane AND L-Theanine..." />
-            </div>
-
-            <div>
-              <label style={labelStyle}>Key benefit (single phrase)</label>
-              <input style={inputStyle} value={keyBenefit} onChange={e => setKeyBenefit(e.target.value)}
-                placeholder="e.g. Feel the buzz, skip the hangover" />
-            </div>
+          <div>
+            <label style={labelStyle}>Price range</label>
+            <input style={inputStyle} value={productPrice} onChange={e => setProductPrice(e.target.value)} placeholder="e.g. $29 – $49" onFocus={e => e.currentTarget.style.borderColor = '#000'} onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
           </div>
-        )}
+        </div>
+        <div>
+          <label style={labelStyle}>What problem does it solve?</label>
+          <textarea style={{ ...inputStyle, resize: 'vertical' }} rows={3} value={productDesc} onChange={e => setProductDesc(e.target.value)} placeholder="People want to socialize and have a good time without the negative effects of alcohol..." onFocus={e => e.currentTarget.style.borderColor = '#000'} onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
+        </div>
+        <div>
+          <label style={labelStyle}>Default CTA text</label>
+          <input style={inputStyle} value={defaultCta} onChange={e => setDefaultCta(e.target.value)} placeholder="e.g. Shop Now, Try It Free, Get Started" onFocus={e => e.currentTarget.style.borderColor = '#000'} onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
+        </div>
+      </div>
 
-        {step === 3 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {/* Existing images */}
-            {imageUrls.length > 0 && (
-              <div>
-                <label style={labelStyle}>Current images ({images.length})</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                  {imageUrls.map((url, i) => (
-                    <div key={i} style={{ position: 'relative', flexShrink: 0 }}>
-                      <div style={{ width: 96, height: 96, borderRadius: 12, overflow: 'hidden', border: '2px solid #eee' }}>
-                        <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                          onError={e => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none' }} />
-                      </div>
-                      <button onClick={() => removeImage(i)} style={{
-                        position: 'absolute', top: -6, right: -6,
-                        width: 20, height: 20, borderRadius: '50%',
-                        background: '#000', color: '#fff', border: '2px solid #fff',
-                        fontSize: 11, cursor: 'pointer', display: 'flex',
-                        alignItems: 'center', justifyContent: 'center', zIndex: 1,
-                      }}>
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
+      <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '36px 0' }} />
+
+      {/* ── SECTION 5: IMAGES ── */}
+      <SectionHeader title="Images" subtitle={`${images.length} image${images.length !== 1 ? 's' : ''} in your library`} />
+      {imageUrls.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+          {imageUrls.map((url, i) => (
+            <div key={i} style={{ position: 'relative', flexShrink: 0 }}>
+              <div style={{ width: 80, height: 80, borderRadius: 10, overflow: 'hidden', border: '2px solid #eee' }}>
+                <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none' }} />
               </div>
-            )}
-
-            {/* Upload zone */}
-            <div>
-              <label style={labelStyle}>Add images</label>
-              <label style={{
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-                width: '100%', minHeight: 160, borderRadius: 16,
-                border: '2px dashed #ddd', cursor: 'pointer',
-                padding: 32, textAlign: 'center',
-                transition: 'border-color 0.15s',
-              }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = '#999')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = '#ddd')}
-              >
-                <div style={{ fontSize: 32, marginBottom: 8 }}>+</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#333', marginBottom: 4 }}>
-                  {uploading ? 'Uploading...' : 'Drop your best product + lifestyle shots here'}
-                </div>
-                <div style={{ fontSize: 13, color: '#999' }}>
-                  Portrait images tagged as product, landscape as lifestyle
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  style={{ display: 'none' }}
-                  onChange={e => {
-                    const files = Array.from(e.target.files || [])
-                    if (files.length) handleImageUpload(files)
-                    e.target.value = ''
-                  }}
-                />
-              </label>
+              <button onClick={() => removeImage(i)} style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: '#000', color: '#fff', border: '2px solid #fff', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>×</button>
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Bottom nav */}
-      <div style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0,
-        padding: '20px 24px',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16,
-        background: 'linear-gradient(to top, #000 60%, transparent)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, width: '100%', maxWidth: 560, justifyContent: 'space-between' }}>
-          <button
-            onClick={() => setStep(step - 1)}
-            style={{
-              background: 'none', border: 'none',
-              color: 'rgba(255,255,255,0.4)', fontSize: 14,
-              fontWeight: 600, cursor: 'pointer',
-            }}
-          >
-            ← Back
-          </button>
-
-          {/* Step dots */}
-          <div style={{ display: 'flex', gap: 8 }}>
-            {[1, 2, 3].map(s => (
-              <div key={s} style={{
-                width: 8, height: 8, borderRadius: '50%',
-                background: s === step ? '#00ff97' : s < step ? '#00ff97' : 'rgba(255,255,255,0.15)',
-                opacity: s <= step ? 1 : 0.5,
-                transition: 'all 0.2s',
-              }} />
-            ))}
-          </div>
-
-          <button
-            onClick={() => {
-              if (step === 1) saveStep1()
-              else if (step === 2) saveStep2()
-              else if (step === 3) saveStep3()
-            }}
-            disabled={saving || uploading}
-            style={{
-              background: '#00ff97', color: '#000',
-              fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 15,
-              padding: '12px 28px', borderRadius: 999,
-              border: 'none', cursor: 'pointer',
-              opacity: saving ? 0.7 : 1,
-            }}
-          >
-            {saving ? 'Saving...' : step === 3 ? 'Finish →' : 'Continue →'}
-          </button>
+          ))}
         </div>
-      </div>
+      )}
+      <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: 120, borderRadius: 16, border: '2px dashed var(--border)', cursor: 'pointer', padding: 24, textAlign: 'center', transition: 'border-color 0.15s' }}
+        onMouseEnter={e => (e.currentTarget.style.borderColor = '#999')}
+        onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+      >
+        <div style={{ fontSize: 24, marginBottom: 4 }}>+</div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>{uploading ? 'Uploading...' : 'Drop product + lifestyle shots here'}</div>
+        <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>Portrait images tagged as product, landscape as lifestyle</div>
+        <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => { const files = Array.from(e.target.files || []); if (files.length) handleImageUpload(files); e.target.value = '' }} />
+      </label>
+
+      {/* Spacer at bottom */}
+      <div style={{ height: 80 }} />
+
+      {/* Floating save toast */}
+      {saved && (
+        <div style={{
+          position: 'fixed', bottom: 24, right: 24, zIndex: 100,
+          background: '#000', color: '#00ff97',
+          padding: '12px 24px', borderRadius: 12,
+          fontSize: 14, fontWeight: 700,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+          animation: 'fadeIn 0.2s ease',
+        }}>
+          ✓ Brand saved
+        </div>
+      )}
+      <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
     </div>
   )
 }
