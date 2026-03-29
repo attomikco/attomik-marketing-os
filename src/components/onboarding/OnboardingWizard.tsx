@@ -588,7 +588,7 @@ export default function OnboardingWizard() {
       )}
 
       {/* STATE B + Steps 1-2: White card */}
-      {!isHeroState && (
+      {!isHeroState && (step > 0 || detected) && (
         <>
           {/* Logo above card */}
           <div className="flex justify-center mb-8">
