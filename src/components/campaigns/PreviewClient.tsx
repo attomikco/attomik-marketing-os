@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Pencil, Plus, Info } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { Brand, Campaign, GeneratedContent, BrandImage } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import OverlayTemplate from '@/components/creatives/templates/OverlayTemplate'
@@ -32,6 +32,66 @@ interface LandingBrief {
 }
 
 const APP_ACCENT = '#00ff97'
+
+function ScaledCreative({
+  Comp, props, srcW, srcH, aspectRatio, borderRadius = 14
+}: {
+  Comp: React.ComponentType<any>
+  props: any
+  srcW: number
+  srcH: number
+  aspectRatio: string
+  borderRadius?: number
+}) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const innerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(0)
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+    const ro = new ResizeObserver(entries => {
+      const w = entries[0].contentRect.width
+      if (w > 0) setScale(w / srcW)
+    })
+    ro.observe(container)
+    const w = container.offsetWidth
+    if (w > 0) setScale(w / srcW)
+    return () => ro.disconnect()
+  }, [srcW])
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        width: '100%',
+        aspectRatio,
+        position: 'relative',
+        overflow: 'hidden',
+        borderRadius,
+        border: '1px solid var(--border)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+      }}
+    >
+      {scale > 0 && (
+        <div
+          ref={innerRef}
+          style={{
+            position: 'absolute',
+            top: 0, left: 0,
+            width: srcW,
+            height: srcH,
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            pointerEvents: 'none',
+          }}
+        >
+          <Comp {...props} width={srcW} height={srcH} />
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function PreviewClient({
   campaign,
@@ -368,14 +428,17 @@ export default function PreviewClient({
           .pv-bcb-row { flex-direction: column !important; gap: 20px !important; }
           .pv-bcb-divider { display: none !important; }
           .pv-bcb-grid { grid-template-columns: 180px 1fr !important; }
-          .pv-section-head { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+          .pv-section-head { margin-bottom: 20px !important; }
+          .pv-section-head span[style*="fontSize: 26"] { font-size: 20px !important; }
           .pv-draft-bar { flex-direction: column !important; gap: 12px !important; text-align: center !important; }
           .pv-draft-bar button { width: 100% !important; }
-          .pv-iframe { height: 400px !important; }
+          .pv-iframe { height: 380px !important; }
+          .pv-brand-bar { flex-direction: column !important; }
         }
         @media (max-width: 480px) {
           .pv-bcb-grid { grid-template-columns: 1fr !important; }
           .pv-hero { padding: 32px 16px 24px !important; }
+          .pv-iframe { height: 280px !important; }
         }
       `}</style>
 
@@ -451,43 +514,44 @@ export default function PreviewClient({
         <div className="max-w-5xl mx-auto px-4 md:px-10 mt-8">
           <div className="pv-draft-bar" style={{
             background: '#000',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 12,
-            padding: '18px 24px',
+            borderRadius: 16,
+            padding: '20px 24px',
+            margin: '0 0 24px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: 16,
-            marginBottom: 8,
+            flexWrap: 'wrap',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Info size={15} color="#00ff97" />
+            <div>
+              <div style={{
+                fontFamily: 'Barlow, sans-serif',
+                fontWeight: 900, fontSize: 17,
+                color: '#fff', marginBottom: 4,
+                textTransform: 'uppercase',
+              }}>
+                Your funnel is ready — save it to your account.
               </div>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 2 }}>
-                  This funnel is saved as a draft
-                </div>
-                <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>
-                  Activate it to unlock full editing, brand settings and export.
-                </div>
+              <div style={{
+                fontSize: 14,
+                color: 'rgba(255,255,255,0.45)',
+              }}>
+                Activate to unlock editing, custom images, and export.
               </div>
             </div>
-            <button onClick={activateBrand} disabled={activating} style={{
-              background: '#00ff97', color: '#000',
-              fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 15,
-              padding: '12px 24px', borderRadius: 999, border: 'none',
-              cursor: activating ? 'not-allowed' : 'pointer',
-              opacity: activating ? 0.7 : 1,
-              whiteSpace: 'nowrap', flexShrink: 0,
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}>
-              {activating ? (
-                <>
-                  <span style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid rgba(0,0,0,0.3)', borderTopColor: '#000', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
-                  Activating...
-                </>
-              ) : 'Activate & continue \u2192'}
+            <button
+              onClick={activateBrand}
+              disabled={activating}
+              style={{
+                background: '#00ff97', color: '#000',
+                fontFamily: 'Barlow, sans-serif',
+                fontWeight: 800, fontSize: 15,
+                padding: '12px 28px', borderRadius: 999,
+                border: 'none', cursor: 'pointer',
+                flexShrink: 0, whiteSpace: 'nowrap',
+              }}
+            >
+              {activating ? 'Activating...' : 'Activate & save →'}
             </button>
           </div>
         </div>
@@ -541,14 +605,14 @@ export default function PreviewClient({
 
         {/* ═══ SECTION 1: Ad Creatives ═══ */}
         <div>
-          <div className="flex items-center justify-between mb-6 pv-section-head">
-            <div className="flex items-center gap-3">
-              <span className="w-7 h-7 rounded-full bg-ink text-white flex items-center justify-center text-xs font-bold">1</span>
-              <span className="font-bold text-xl" style={{ textTransform: 'uppercase' }}>Ad Creatives</span>
+          <div className="pv-section-head" style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#a78bfa', flexShrink: 0 }} />
+              <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#000', color: '#a78bfa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>1</span>
+              <span style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 26, textTransform: 'uppercase', letterSpacing: '-0.01em', color: '#000' }}>Ad Creatives</span>
             </div>
-            <button onClick={() => navigateWithActivation(`/campaigns/${campaign.id}`)} className="text-sm text-muted hover:text-ink transition-colors">
-              Edit in creative builder →
-            </button>
           </div>
 
           {adVariation ? (() => {
@@ -616,28 +680,21 @@ export default function PreviewClient({
 
             return (
               <>
-                {/* ── 4:5 GRID — 6 creatives, 3 per row ── */}
+                {/* ── 4:5 GRID — 9 creatives, 3 per row ── */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
                   {gridCards.map((card, i) => (
                     <div key={i} style={{ display: 'flex', flexDirection: 'column' }}>
                       <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#888', marginBottom: 8 }}>
                         {card.label}
                       </div>
-                      <div style={{ width: '100%', aspectRatio: '4/5', position: 'relative', overflow: 'hidden', borderRadius: 14, border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
-                          <div
-                            ref={el => {
-                              if (!el) return
-                              const w = el.parentElement!.offsetWidth
-                              const scale = w / SRC_W
-                              el.style.transform = `scale(${scale})`
-                            }}
-                            style={{ position: 'absolute', top: 0, left: 0, width: SRC_W, height: SRC_H, transformOrigin: 'top left' }}
-                          >
-                            <card.Comp {...makeProps(card)} width={SRC_W} height={SRC_H} />
-                          </div>
-                        </div>
-                      </div>
+                      <ScaledCreative
+                        Comp={card.Comp}
+                        props={makeProps(card)}
+                        srcW={SRC_W}
+                        srcH={SRC_H}
+                        aspectRatio="4/5"
+                        borderRadius={14}
+                      />
                     </div>
                   ))}
                 </div>
@@ -647,27 +704,20 @@ export default function PreviewClient({
                   <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 20, textAlign: 'center' }}>
                     Instagram & TikTok Stories
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {storyCards.map((card, i) => (
                       <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#888', marginBottom: 8 }}>
                           {card.label}
                         </div>
-                        <div style={{ width: '100%', aspectRatio: '9/16', position: 'relative', overflow: 'hidden', borderRadius: 16, border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
-                          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
-                            <div
-                              ref={el => {
-                                if (!el) return
-                                const w = el.parentElement!.offsetWidth
-                                const scale = w / STORY_SRC_W
-                                el.style.transform = `scale(${scale})`
-                              }}
-                              style={{ position: 'absolute', top: 0, left: 0, width: STORY_SRC_W, height: STORY_SRC_H, transformOrigin: 'top left' }}
-                            >
-                              <card.Comp {...makeProps(card)} width={STORY_SRC_W} height={STORY_SRC_H} />
-                            </div>
-                          </div>
-                        </div>
+                        <ScaledCreative
+                          Comp={card.Comp}
+                          props={makeProps(card)}
+                          srcW={STORY_SRC_W}
+                          srcH={STORY_SRC_H}
+                          aspectRatio="9/16"
+                          borderRadius={16}
+                        />
                       </div>
                     ))}
                   </div>
@@ -683,14 +733,14 @@ export default function PreviewClient({
 
         {/* ═══ SECTION 2: Ad Copy ═══ */}
         <div className="mt-12 pt-12 border-t border-border">
-          <div className="flex items-center justify-between mb-6 pv-section-head">
-            <div className="flex items-center gap-3">
-              <span className="w-7 h-7 rounded-full bg-ink text-white flex items-center justify-center text-xs font-bold">2</span>
-              <span style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 28, textTransform: 'uppercase' }}>Ad Copy</span>
+          <div className="pv-section-head" style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#34d399', flexShrink: 0 }} />
+              <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#000', color: '#34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>2</span>
+              <span style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 26, textTransform: 'uppercase', letterSpacing: '-0.01em', color: '#000' }}>Ad Copy</span>
             </div>
-            <button onClick={() => navigateWithActivation(`/campaigns/${campaign.id}`)} className="text-sm text-muted hover:text-ink transition-colors">
-              Edit copy →
-            </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {adVariations.slice(0, 3).map((v, i) => (
@@ -754,12 +804,15 @@ export default function PreviewClient({
 
         {/* ═══ SECTION 3: Landing Page ═══ */}
         <div className="mt-12 pt-12 border-t border-border">
-          <div className="flex items-center justify-between mb-6 pv-section-head">
-            <div className="flex items-center gap-3">
-              <span className="w-7 h-7 rounded-full bg-ink text-[#00ff97] flex items-center justify-center text-xs font-black">3</span>
-              <span style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 28, textTransform: 'uppercase' }}>Landing Page</span>
+          <div className="pv-section-head" style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#fbbf24', flexShrink: 0 }} />
+              <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#000', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>3</span>
+              <span style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 26, textTransform: 'uppercase', letterSpacing: '-0.01em', color: '#000' }}>Landing Page</span>
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
+            {brand.status === 'active' && (
               <a
                 href={`/api/campaigns/${campaign.id}/landing-html`}
                 download={`${brand.name.toLowerCase().replace(/\s+/g, '-')}-landing-page.html`}
@@ -767,23 +820,60 @@ export default function PreviewClient({
               >
                 ↓ Download HTML
               </a>
-              <button onClick={() => navigateWithActivation(`/campaigns/${campaign.id}`)} style={{ fontSize: 13, color: '#888', background: 'none', border: 'none', cursor: 'pointer' }}>
-                Edit brief →
-              </button>
-            </div>
+            )}
           </div>
           {landingBrief ? (
-            <div style={{ position: 'relative' }}>
-              <div className="pv-iframe" style={{ width: '100%', height: 600, overflow: 'hidden', borderRadius: 16, border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', position: 'relative', background: '#fff' }}>
-                <iframe
-                  src={`/api/campaigns/${campaign.id}/landing-html`}
-                  style={{ width: '250%', height: '250%', border: 'none', transform: 'scale(0.4)', transformOrigin: 'top left' }}
-                  title="Landing page preview"
-                />
-              </div>
-              <div style={{ position: 'absolute', bottom: 16, right: 16 }}>
-                <a href={`/api/campaigns/${campaign.id}/landing-html`} target="_blank" rel="noopener noreferrer"
-                  style={{ background: '#000', color: '#00ff97', fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 999, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <div className="pv-iframe" style={{
+              width: '100%',
+              height: 680,
+              position: 'relative',
+              borderRadius: 20,
+              overflow: 'hidden',
+              border: '1px solid var(--border)',
+              boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
+              background: '#fff',
+            }}>
+              <iframe
+                src={`/api/campaigns/${campaign.id}/landing-html`}
+                style={{
+                  position: 'absolute',
+                  top: 0, left: 0,
+                  width: '250%',
+                  height: '250%',
+                  border: 'none',
+                  transform: 'scale(0.4)',
+                  transformOrigin: 'top left',
+                  pointerEvents: 'none',
+                }}
+                title="Landing page preview"
+                loading="lazy"
+              />
+              <div style={{
+                position: 'absolute',
+                bottom: 0, left: 0, right: 0,
+                height: 120,
+                background: 'linear-gradient(to bottom, transparent, #fff)',
+                pointerEvents: 'none',
+              }} />
+              <div style={{
+                position: 'absolute',
+                bottom: 20, left: '50%',
+                transform: 'translateX(-50%)',
+                display: 'flex', gap: 10,
+              }}>
+                <a
+                  href={`/api/campaigns/${campaign.id}/landing-html`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    background: '#000', color: '#00ff97',
+                    fontSize: 13, fontWeight: 700,
+                    padding: '10px 20px', borderRadius: 999,
+                    textDecoration: 'none',
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+                  }}
+                >
                   ↗ View full page
                 </a>
               </div>
@@ -794,24 +884,46 @@ export default function PreviewClient({
         </div>
 
         {/* ═══ Context banner ═══ */}
-        <div className="mt-12 bg-ink rounded-card p-6 md:p-8 text-center" style={{ color: '#fff' }}>
-          <div className="font-bold text-lg mb-1">Make it yours</div>
-          <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            This entire funnel was built from your brand context. Customize the copy, upload images, and refine everything.
-          </p>
-          <div className="flex items-center justify-center gap-3">
-            <button onClick={() => navigateWithActivation(`/campaigns/${campaign.id}`)}
-              className="text-sm font-bold px-5 py-2.5 rounded-btn transition-opacity hover:opacity-90 inline-flex items-center gap-1.5"
-              style={{ background: APP_ACCENT, color: '#000' }}>
-              <Pencil size={13} /> Edit campaign
-            </button>
-            <button onClick={() => navigateWithActivation(`/brands/${brand.id}`)}
-              className="text-sm font-bold px-5 py-2.5 rounded-btn border transition-colors hover:border-white inline-flex items-center gap-1.5"
-              style={{ borderColor: 'rgba(255,255,255,0.2)', color: '#fff' }}>
-              <Plus size={13} /> Add context
+        {brand.status === 'draft' && (
+          <div style={{
+            marginTop: 48,
+            background: '#000',
+            borderRadius: 20,
+            padding: '48px 40px',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              fontFamily: 'Barlow, sans-serif',
+              fontWeight: 900, fontSize: 32,
+              color: '#fff', marginBottom: 12,
+              textTransform: 'uppercase',
+              lineHeight: 1.1,
+            }}>
+              Ready to launch?
+            </div>
+            <div style={{
+              fontSize: 16, color: 'rgba(255,255,255,0.45)',
+              maxWidth: 440, margin: '0 auto 32px',
+              lineHeight: 1.7,
+            }}>
+              Upload your creatives to Meta, deploy your landing page,
+              and start finding your winners. This funnel was built
+              in 30 seconds — testing it takes even less.
+            </div>
+            <button
+              onClick={activateBrand}
+              style={{
+                background: '#00ff97', color: '#000',
+                fontFamily: 'Barlow, sans-serif',
+                fontWeight: 900, fontSize: 16,
+                padding: '16px 40px', borderRadius: 999,
+                border: 'none', cursor: 'pointer',
+              }}
+            >
+              Activate & continue →
             </button>
           </div>
-        </div>
+        )}
       </div>
       </div>{/* end preview gate */}
     </div>
