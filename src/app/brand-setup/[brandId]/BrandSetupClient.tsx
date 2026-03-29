@@ -46,6 +46,7 @@ export default function BrandSetupClient({
   // Completion
   const [completing, setCompleting] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
+  const [regenStep, setRegenStep] = useState(0)
 
   // Build image URLs
   useEffect(() => {
@@ -86,23 +87,32 @@ export default function BrandSetupClient({
   }
 
   async function saveStep3() {
-    setSaving(true)
-    setSaving(false)
-    setStep(4) // completion
+    setStep(4)
     setCompleting(true)
 
     if (campaignId) {
       setRegenerating(true)
+      setRegenStep(0)
+      await new Promise(r => setTimeout(r, 600))
+
+      setRegenStep(1)
       try {
-        await Promise.all([
-          fetch(`/api/campaigns/${campaignId}/ad-copy`, { method: 'POST' }),
-          fetch(`/api/campaigns/${campaignId}/landing-brief`, { method: 'POST' }),
-        ])
-      } catch (e) {
-        console.error('Regeneration failed:', e)
-      }
+        await fetch(`/api/campaigns/${campaignId}/ad-copy`, { method: 'POST' })
+      } catch {}
+
+      setRegenStep(2)
+      try {
+        await fetch(`/api/campaigns/${campaignId}/landing-brief`, { method: 'POST' })
+      } catch {}
+
+      setRegenStep(3)
+      await new Promise(r => setTimeout(r, 800))
+
+      setRegenStep(4)
       setRegenerating(false)
-      setTimeout(() => router.push(`/creatives?brand=${initialBrand.id}&campaign=${campaignId}`), 1500)
+      await new Promise(r => setTimeout(r, 600))
+
+      router.push(`/creatives?brand=${initialBrand.id}&campaign=${campaignId}`)
     } else {
       setTimeout(() => router.push('/'), 2500)
     }
@@ -246,30 +256,82 @@ export default function BrandSetupClient({
   if (step === 4) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
-        <style>{`@keyframes popIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }`}</style>
-        <div style={{
-          width: 88, height: 88, borderRadius: '50%',
-          background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.3)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          animation: 'popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards',
-          marginBottom: 24,
-        }}>
-          <CheckCircle size={36} color="#00ff97" />
-        </div>
-        <div style={{
-          fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 32,
-          color: '#fff', textTransform: 'uppercase', marginBottom: 12, textAlign: 'center',
-        }}>
-          Your brand is ready.
-        </div>
-        <div style={{
-          fontSize: 15, color: 'rgba(255,255,255,0.4)', textAlign: 'center', maxWidth: 400, lineHeight: 1.7,
-        }}>
-          {regenerating
-            ? 'Regenerating your funnel with your real brand context...'
-            : campaignId
-              ? 'Taking you back to your funnel...'
-              : 'Redirecting to your dashboard...'}
+        <style>{`
+          @keyframes popIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }
+          @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+          @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
+        `}</style>
+
+        <AttomikLogo height={36} color="#ffffff" />
+
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, marginTop: 40 }}>
+          {regenStep < 4 ? (
+            <div style={{
+              width: 64, height: 64, borderRadius: '50%',
+              border: '2px solid rgba(0,255,151,0.15)',
+              borderTop: '2px solid #00ff97',
+              animation: 'spin 1s linear infinite',
+              flexShrink: 0,
+            }} />
+          ) : (
+            <div style={{
+              width: 64, height: 64, borderRadius: '50%',
+              background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              animation: 'popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards',
+            }}>
+              <CheckCircle size={28} color="#00ff97" />
+            </div>
+          )}
+
+          {regenStep < 4 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 280 }}>
+              {[
+                { label: 'Saving brand context', done: regenStep > 0 },
+                { label: 'Rewriting ad copy', done: regenStep > 1 },
+                { label: 'Rebuilding landing page', done: regenStep > 2 },
+                { label: 'Finalizing your funnel', done: regenStep > 3 },
+              ].map(({ label, done }, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  opacity: regenStep >= i ? 1 : 0.25,
+                  transition: 'opacity 0.4s ease',
+                }}>
+                  <div style={{
+                    width: 20, height: 20, borderRadius: '50%',
+                    background: done ? '#00ff97' : regenStep === i ? 'rgba(0,255,151,0.2)' : 'rgba(255,255,255,0.1)',
+                    border: done ? 'none' : '1px solid rgba(0,255,151,0.3)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, transition: 'all 0.3s ease',
+                  }}>
+                    {done && (
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                        <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                    {regenStep === i && !done && (
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#00ff97', animation: 'pulse 1s ease infinite' }} />
+                    )}
+                  </div>
+                  <span style={{
+                    fontSize: 14,
+                    color: done ? 'rgba(255,255,255,0.9)' : regenStep === i ? '#fff' : 'rgba(255,255,255,0.35)',
+                    fontWeight: regenStep === i ? 600 : 400,
+                    transition: 'color 0.3s ease',
+                  }}>
+                    {label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{
+              fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 28,
+              color: '#fff', textTransform: 'uppercase', textAlign: 'center',
+            }}>
+              Your funnel is ready.
+            </div>
+          )}
         </div>
       </div>
     )
