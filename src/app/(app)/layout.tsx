@@ -1,10 +1,10 @@
-import Sidebar from '@/components/ui/Sidebar'
+import TopNav from '@/components/ui/TopNav'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto bg-cream pt-14 md:pt-0">
+    <div style={{ minHeight: '100vh', background: 'var(--cream, #f8f7f4)' }}>
+      <TopNav />
+      <main style={{ minHeight: 'calc(100vh - 56px)' }}>
         {children}
       </main>
     </div>
