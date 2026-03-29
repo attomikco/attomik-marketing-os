@@ -53,7 +53,7 @@ export default function OnboardingWizard() {
 
   // Auto-analyze if URL param provided
   useEffect(() => {
-    if (searchParams.get('url') && !autoAnalyzed.current && !detected && !detecting) {
+    if (searchParams.get('url') && !autoAnalyzed.current && !detected) {
       autoAnalyzed.current = true
       analyzeWebsite()
     }
