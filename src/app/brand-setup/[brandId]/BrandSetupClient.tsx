@@ -201,7 +201,7 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
   }
 
   return (
-    <div style={{ padding: '32px 40px', maxWidth: 800, margin: '0 auto' }}>
+    <div style={{ padding: '32px 40px', maxWidth: 800, margin: '0 auto', background: 'var(--cream, #f8f7f4)', color: 'var(--ink, #1a1a1a)', minHeight: '100vh' }}>
 
       {/* Page header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 40, paddingBottom: 24, borderBottom: '1px solid var(--border)', flexWrap: 'wrap', gap: 16 }}>
