@@ -2,16 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
-function isLightColor(hex: string): boolean {
-  const c = (hex || '').replace('#', '')
-  if (c.length < 6) return false
-  const r = parseInt(c.slice(0, 2), 16)
-  const g = parseInt(c.slice(2, 4), 16)
-  const b = parseInt(c.slice(4, 6), 16)
-  return (r * 299 + g * 587 + b * 114) / 1000 > 128
-}
-
-export default async function HomePage() {
+export default async function DashboardPage() {
   const supabase = await createClient()
 
   const { data: brands } = await supabase
@@ -19,232 +10,262 @@ export default async function HomePage() {
     .select('*')
     .eq('status', 'active')
     .order('created_at', { ascending: false })
+    .limit(1)
 
-  if (!brands || brands.length === 0) {
-    redirect('/onboarding')
-  }
+  const brand = brands?.[0]
+  if (!brand) redirect('/onboarding')
+
+  const completenessFields = [
+    { key: 'logo_url',        label: 'Logo',              href: `/brand-setup/${brand.id}?step=1` },
+    { key: 'mission',         label: 'Brand description', href: `/brand-setup/${brand.id}?step=1` },
+    { key: 'target_audience', label: 'Target audience',   href: `/brand-setup/${brand.id}?step=1` },
+    { key: 'brand_voice',     label: 'Brand voice',       href: `/brand-setup/${brand.id}?step=1` },
+    { key: 'products',        label: 'Product details',   href: `/brand-setup/${brand.id}?step=2` },
+  ]
+
+  const completedCount = completenessFields.filter(
+    f => {
+      const v = (brand as any)[f.key]
+      if (f.key === 'products') return Array.isArray(v) && v.length > 0
+      return !!v
+    }
+  ).length
+  const completenessPercent = Math.round((completedCount / completenessFields.length) * 100)
+
+  const { count: imageCount } = await supabase
+    .from('brand_images')
+    .select('*', { count: 'exact', head: true })
+    .eq('brand_id', brand.id)
+
+  const hasImages = (imageCount || 0) > 0
 
   const { data: campaigns } = await supabase
     .from('campaigns')
-    .select('*, brand:brands(name, primary_color)')
+    .select('*')
+    .eq('brand_id', brand.id)
     .order('created_at', { ascending: false })
-    .limit(10)
+    .limit(3)
 
-  const { data: allImages } = await supabase
-    .from('brand_images')
-    .select('brand_id')
+  const latestCampaign = campaigns?.[0]
 
-  // Group image counts by brand
-  const imageCounts: Record<string, number> = {}
-  allImages?.forEach(img => {
-    imageCounts[img.brand_id] = (imageCounts[img.brand_id] || 0) + 1
-  })
-
-  // Find latest campaign per brand
-  const latestCampaignByBrand: Record<string, string> = {}
-  campaigns?.forEach(c => {
-    if (!latestCampaignByBrand[c.brand_id]) {
-      latestCampaignByBrand[c.brand_id] = c.id
-    }
-  })
-
-  function getCompleteness(brand: any) {
-    const fields = [
-      { key: 'logo_url', label: 'Add your logo', step: 1 },
-      { key: 'mission', label: 'Describe what your brand does', step: 1 },
-      { key: 'target_audience', label: 'Define your target audience', step: 1 },
-      { key: 'products', label: 'Add your hero product', step: 2, check: (v: any) => Array.isArray(v) && v.length > 0 },
-      { key: 'brand_voice', label: 'Set your brand voice', step: 1 },
-      { key: 'images', label: 'Upload product images', step: 3, check: () => (imageCounts[brand.id] || 0) > 0 },
-    ]
-    const completed = fields.filter(f => f.check ? f.check(brand[f.key]) : !!brand[f.key])
-    const missing = fields.filter(f => !(f.check ? f.check(brand[f.key]) : !!brand[f.key]))
-    return { completed: completed.length, total: fields.length, missing }
+  const primaryColor = brand.primary_color || '#000'
+  function isLight(hex: string) {
+    const c = hex.replace('#', '')
+    if (c.length < 6) return false
+    const r = parseInt(c.slice(0, 2), 16)
+    const g = parseInt(c.slice(2, 4), 16)
+    const b = parseInt(c.slice(4, 6), 16)
+    return (r * 299 + g * 587 + b * 114) / 1000 > 128
   }
+  const textOnPrimary = isLight(primaryColor) ? '#000' : '#fff'
 
   return (
-    <div className="p-4 md:p-10 max-w-[960px]">
+    <div className="pv-dash" style={{ padding: '32px 40px', maxWidth: 1000, margin: '0 auto' }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .pv-dash { padding: 20px 16px !important; }
+          .pv-dash-pillars { grid-template-columns: 1fr !important; }
+          .pv-dash-brand { flex-direction: column !important; }
+        }
+      `}</style>
+
       {/* Header */}
-      <div style={{ marginBottom: 40 }}>
-        <div style={{
-          fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 32,
-          textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#000', marginBottom: 4,
-        }}>
+      <div style={{ marginBottom: 36 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 6 }}>
           Your workspace
         </div>
-        <div style={{ fontSize: 15, color: '#888' }}>
-          Everything you&apos;ve built for your brands.
+        <h1 style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 32, letterSpacing: '-0.02em', textTransform: 'uppercase' }}>
+          Welcome back.
+        </h1>
+      </div>
+
+      {/* Brand card */}
+      <div className="pv-dash-brand" style={{
+        background: primaryColor, borderRadius: 20, padding: '28px 32px', marginBottom: 20,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          {brand.logo_url ? (
+            <img src={brand.logo_url} style={{ height: 48, width: 'auto', objectFit: 'contain', borderRadius: 8 }} alt={brand.name} />
+          ) : (
+            <div style={{
+              width: 48, height: 48, borderRadius: 12, background: `${textOnPrimary}18`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, color: textOnPrimary,
+            }}>
+              {brand.name[0].toUpperCase()}
+            </div>
+          )}
+          <div>
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 24, color: textOnPrimary, letterSpacing: '-0.01em', textTransform: 'uppercase' }}>
+              {brand.name}
+            </div>
+            <div style={{ fontSize: 13, color: `${textOnPrimary}80`, marginTop: 2 }}>
+              {brand.website || 'No website set'}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, minWidth: 160 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: `${textOnPrimary}70`, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            Brand completeness
+          </div>
+          <div style={{ width: 160, height: 4, background: `${textOnPrimary}20`, borderRadius: 2, overflow: 'hidden' }}>
+            <div style={{
+              height: '100%', width: `${completenessPercent}%`,
+              background: completenessPercent === 100 ? '#00ff97' : textOnPrimary,
+              borderRadius: 2, transition: 'width 0.5s ease',
+            }} />
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: textOnPrimary }}>
+            {completedCount}/{completenessFields.length} complete
+          </div>
         </div>
       </div>
 
-      {/* Brand cards */}
-      {brands.map((brand: any) => {
-        const textColor = isLightColor(brand.primary_color || '#000') ? '#000' : '#fff'
-        const mutedColor = isLightColor(brand.primary_color || '#000') ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)'
-        const { completed, total, missing } = getCompleteness(brand)
-        const pct = Math.round((completed / total) * 100)
-        const latestCampaign = latestCampaignByBrand[brand.id]
-
-        return (
-          <div key={brand.id} style={{ marginBottom: 32 }}>
-            {/* Brand card */}
-            <div style={{
-              background: brand.primary_color || '#000',
-              borderRadius: 20, padding: '28px 32px',
-              display: 'flex', alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 20, flexWrap: 'wrap',
-              marginBottom: 16,
-            }}>
-              <div>
-                {brand.logo_url && (
-                  <img src={brand.logo_url} alt="" style={{ height: 36, marginBottom: 10, maxWidth: 200, objectFit: 'contain' }} />
-                )}
-                <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 24, color: textColor }}>
-                  {brand.name}
-                </div>
-                {brand.website && (
-                  <div style={{ fontSize: 13, color: mutedColor, marginTop: 4 }}>
-                    {brand.website}
-                  </div>
-                )}
-              </div>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                <Link href={`/brand-setup/${brand.id}`} style={{
-                  background: 'rgba(255,255,255,0.15)', color: textColor,
-                  fontSize: 13, fontWeight: 700, padding: '10px 20px',
-                  borderRadius: 999, textDecoration: 'none',
-                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                }}>
-                  Edit brand →
-                </Link>
-                {latestCampaign && (
-                  <Link href={`/preview/${latestCampaign}`} style={{
-                    background: textColor, color: brand.primary_color || '#000',
-                    fontSize: 13, fontWeight: 700, padding: '10px 20px',
-                    borderRadius: 999, textDecoration: 'none',
-                    display: 'inline-flex', alignItems: 'center', gap: 4,
-                  }}>
-                    View funnel →
-                  </Link>
-                )}
-              </div>
-            </div>
-
-            {/* Completeness bar */}
-            <div style={{
-              background: '#fff', border: '1px solid var(--border)',
-              borderRadius: 16, padding: '20px 24px',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#333' }}>
-                  Brand completeness: {completed}/{total}
-                </span>
-                {completed === total && (
-                  <span style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 4,
-                    background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.3)',
-                    borderRadius: 999, padding: '3px 12px',
-                    fontSize: 11, fontWeight: 700, color: '#00cc7a',
-                  }}>
-                    ✦ Brand complete
-                  </span>
-                )}
-              </div>
-
-              {/* Progress bar */}
-              <div style={{
-                width: '100%', height: 6, borderRadius: 3,
-                background: '#f0f0f0', marginBottom: missing.length > 0 ? 16 : 0,
-                overflow: 'hidden',
-              }}>
-                <div style={{
-                  width: `${pct}%`, height: '100%', borderRadius: 3,
-                  background: completed === total ? '#00ff97' : '#000',
-                  transition: 'width 0.3s ease',
-                }} />
-              </div>
-
-              {/* Missing fields */}
-              {missing.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {missing.map((field, i) => (
-                    <Link key={i} href={`/brand-setup/${brand.id}?step=${field.step}`} style={{
-                      display: 'flex', alignItems: 'center', gap: 8,
-                      fontSize: 13, color: '#888', textDecoration: 'none',
-                    }}>
-                      <span style={{ color: '#ccc', fontSize: 14 }}>✗</span>
-                      <span style={{ borderBottom: '1px dashed #ccc' }}>{field.label} →</span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+      {/* Missing fields hint */}
+      {completenessPercent < 100 && (
+        <div style={{
+          background: 'var(--cream)', border: '1px solid var(--border)', borderRadius: 12,
+          padding: '12px 16px', marginBottom: 24,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+        }}>
+          <div style={{ fontSize: 13, color: 'var(--muted)' }}>
+            Missing:{' '}
+            {completenessFields
+              .filter(f => {
+                const v = (brand as any)[f.key]
+                if (f.key === 'products') return !(Array.isArray(v) && v.length > 0)
+                return !v
+              })
+              .map(f => f.label)
+              .join(', ')}
+            {!hasImages && ' · Product images'}
           </div>
-        )
-      })}
-
-      {/* Campaigns section */}
-      {campaigns && campaigns.length > 0 && (
-        <div style={{ marginTop: 48 }}>
-          <div style={{
-            fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22,
-            textTransform: 'uppercase', letterSpacing: '-0.01em', color: '#000', marginBottom: 20,
-          }}>
-            Your campaigns
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-            {campaigns.map((c: any) => (
-              <Link key={c.id} href={`/creatives?brand=${c.brand_id}&campaign=${c.id}`} style={{
-                background: '#fff', border: '1px solid var(--border)',
-                borderRadius: 16, padding: '20px 24px',
-                textDecoration: 'none', color: 'inherit',
-                transition: 'border-color 0.15s',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <div style={{
-                    width: 8, height: 8, borderRadius: '50%',
-                    background: c.brand?.primary_color || '#e0e0e0',
-                  }} />
-                  <span style={{ fontSize: 11, fontWeight: 600, color: '#999' }}>
-                    {c.brand?.name}
-                  </span>
-                </div>
-                <div style={{ fontWeight: 700, fontSize: 16, color: '#000', marginBottom: 4 }}>
-                  {c.name}
-                </div>
-                <div style={{ fontSize: 12, color: '#999' }}>
-                  {new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                </div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#00cc7a', marginTop: 10 }}>
-                  View preview →
-                </div>
-              </Link>
-            ))}
-          </div>
+          <Link href={`/brand-setup/${brand.id}`} style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            Complete brand setup →
+          </Link>
         </div>
       )}
 
-      {/* Quick actions */}
-      <div style={{ marginTop: 48, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <Link href="/creatives" style={{
-          background: '#000', color: '#00ff97',
-          fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 14,
-          padding: '12px 24px', borderRadius: 999,
-          textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6,
-        }}>
-          Open creative builder →
+      {/* Three pillars */}
+      <div className="pv-dash-pillars" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32 }}>
+
+        {/* Brand Hub */}
+        <Link href={`/brand-setup/${brand.id}`} style={{ textDecoration: 'none' }}>
+          <div style={{
+            background: '#fff', border: '1px solid var(--border)', borderRadius: 20, padding: '28px 24px', height: '100%',
+            cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s',
+          }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12, background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, fontSize: 20,
+            }}>✦</div>
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 18, textTransform: 'uppercase', letterSpacing: '0.02em', marginBottom: 8, color: '#000' }}>
+              Brand Hub
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, marginBottom: 20 }}>
+              Add your brand voice, colors, fonts and product details. The more context you give, the better your creatives get.
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {[
+                { label: 'Colors', done: !!brand.primary_color },
+                { label: 'Voice', done: !!brand.brand_voice },
+                { label: 'Images', done: hasImages },
+                { label: 'Product', done: !!(brand.products as any)?.length },
+              ].map(({ label, done }) => (
+                <span key={label} style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+                  padding: '3px 8px', borderRadius: 4,
+                  background: done ? 'rgba(0,255,151,0.1)' : 'rgba(0,0,0,0.05)',
+                  color: done ? '#00a86b' : 'var(--muted)',
+                  border: done ? '1px solid rgba(0,255,151,0.25)' : '1px solid transparent',
+                }}>
+                  {done ? '✓' : '○'} {label}
+                </span>
+              ))}
+            </div>
+          </div>
         </Link>
-        <Link href="/onboarding" style={{
-          background: '#fff', color: '#000',
-          fontWeight: 700, fontSize: 14,
-          padding: '12px 24px', borderRadius: 999,
-          textDecoration: 'none', border: '1px solid #ddd',
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-        }}>
-          Add another brand →
+
+        {/* Creative Studio */}
+        <Link
+          href={latestCampaign ? `/creatives?brand=${brand.id}&campaign=${latestCampaign.id}` : `/creatives?brand=${brand.id}`}
+          style={{ textDecoration: 'none' }}
+        >
+          <div style={{
+            background: '#000', borderRadius: 20, padding: '28px 24px', height: '100%',
+            cursor: 'pointer', transition: 'transform 0.15s',
+          }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12, background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, fontSize: 20,
+            }}>▦</div>
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 18, textTransform: 'uppercase', letterSpacing: '0.02em', marginBottom: 8, color: '#fff' }}>
+              Creative Studio
+            </div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6, marginBottom: 20 }}>
+              Build ad creatives on demand. Pick a template, choose your image, tweak the copy. Export Meta-ready in seconds.
+            </div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#00ff97', fontSize: 13, fontWeight: 700 }}>
+              Open studio →
+            </div>
+          </div>
+        </Link>
+
+        {/* Campaigns */}
+        <Link href="/campaigns" style={{ textDecoration: 'none' }}>
+          <div style={{
+            background: '#fff', border: '1px solid var(--border)', borderRadius: 20, padding: '28px 24px', height: '100%',
+            cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s',
+          }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12, background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, fontSize: 20,
+            }}>◈</div>
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 18, textTransform: 'uppercase', letterSpacing: '0.02em', marginBottom: 8, color: '#000' }}>
+              Campaigns
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, marginBottom: 20 }}>
+              Create a full campaign. Set your goal, audience, and budget — then generate your complete funnel in one shot.
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>
+              {campaigns?.length || 0} campaign{campaigns?.length !== 1 ? 's' : ''} created
+            </div>
+          </div>
         </Link>
       </div>
+
+      {/* Latest campaign preview */}
+      {latestCampaign && (
+        <div style={{
+          background: 'var(--cream)', border: '1px solid var(--border)', borderRadius: 16,
+          padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
+        }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 4 }}>
+              Latest campaign
+            </div>
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 16, color: 'var(--ink)' }}>
+              {latestCampaign.name}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Link href={`/preview/${latestCampaign.id}`} style={{
+              fontSize: 12, fontWeight: 700, color: 'var(--ink)', textDecoration: 'none',
+              padding: '8px 16px', border: '1px solid var(--border)', borderRadius: 999, background: '#fff',
+            }}>
+              View funnel →
+            </Link>
+            <Link href={`/creatives?brand=${brand.id}&campaign=${latestCampaign.id}`} style={{
+              fontSize: 12, fontWeight: 700, color: '#000', textDecoration: 'none',
+              padding: '8px 16px', border: 'none', borderRadius: 999, background: '#00ff97',
+            }}>
+              Edit creatives →
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
