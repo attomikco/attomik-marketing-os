@@ -483,7 +483,8 @@ export default function OnboardingWizard() {
   // On step 0 STATE A, hide Next — the Analyze button handles progression
   const showNext = step > 0 || detected
 
-  const isHeroState = step === 0 && !detected
+  const hasUrlParam = !!searchParams.get('url')
+  const isHeroState = step === 0 && !detected && !hasUrlParam
 
   return (
     <div ref={scrollRef} className="fixed inset-0 bg-ink z-50 flex flex-col items-center wizard-scroll" style={{ padding: 'clamp(16px, 4vw, 80px) 16px', overflowY: 'auto' }}>
@@ -506,6 +507,17 @@ export default function OnboardingWizard() {
           .wiz-subtext { font-size: 15px !important; }
         }
       `}</style>
+
+      {/* ANALYZING STATE: URL param provided, waiting for detection */}
+      {step === 0 && !detected && hasUrlParam && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: 20, minHeight: '60vh' }}>
+          <AttomikLogo height={32} color="#ffffff" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ width: 18, height: 18, border: '2.5px solid rgba(0,255,151,0.3)', borderTopColor: '#00ff97', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
+            <span style={{ fontSize: 16, fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>Analyzing {website}...</span>
+          </div>
+        </div>
+      )}
 
       {/* STATE A: Full-screen hero on black */}
       {isHeroState && (
