@@ -381,23 +381,27 @@ export default function OnboardingWizard() {
                   All saved to your brand. You can edit them in Brand Hub after your funnel is ready.
                 </div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 240, overflowY: 'auto', textAlign: 'left' }}>
-                {detectedProducts.slice(0, 6).map((p, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: '#f8f8f8', borderRadius: 10, border: '1px solid #eee' }}>
-                    {p.image && (
-                      <img src={p.image} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} onError={e => { e.currentTarget.style.display = 'none' }} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, maxHeight: 360, overflowY: 'auto' }}>
+                {detectedProducts.slice(0, 8).map((p, i) => (
+                  <div key={i} style={{ background: '#f8f8f8', borderRadius: 14, overflow: 'hidden', border: '1px solid #eee', display: 'flex', flexDirection: 'column' }}>
+                    {p.image ? (
+                      <img src={p.image} alt={p.name} style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block' }} onError={e => { e.currentTarget.style.display = 'none' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: 140, background: 'linear-gradient(135deg, #f0f0f0, #e0e0e0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, color: '#ccc' }}>◻</div>
                     )}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#000' }}>{p.name}</div>
-                      {p.price && <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>{p.price}</div>}
+                    <div style={{ padding: '10px 12px' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#000', marginBottom: 2, lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        {p.price && <span style={{ fontSize: 12, color: '#666', fontWeight: 500 }}>${p.price}</span>}
+                        <span style={{ fontSize: 9, fontWeight: 800, color: '#00a86b', background: 'rgba(0,255,151,0.12)', padding: '2px 7px', borderRadius: 4, border: '1px solid rgba(0,255,151,0.2)', letterSpacing: '0.04em', textTransform: 'uppercase', marginLeft: 'auto' }}>✓ Saved</span>
+                      </div>
                     </div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#00a86b', background: 'rgba(0,255,151,0.1)', padding: '2px 8px', borderRadius: 4, border: '1px solid rgba(0,255,151,0.2)' }}>✓ Saved</div>
                   </div>
                 ))}
-                {detectedProducts.length > 6 && (
-                  <div style={{ fontSize: 12, color: '#999', textAlign: 'center', padding: '4px 0' }}>+{detectedProducts.length - 6} more saved</div>
-                )}
               </div>
+              {detectedProducts.length > 8 && (
+                <div style={{ fontSize: 12, color: '#999', textAlign: 'center', padding: '8px 0 0', fontWeight: 600 }}>+{detectedProducts.length - 8} more saved to Brand Hub</div>
+              )}
             </>
           ) : (
             <>
