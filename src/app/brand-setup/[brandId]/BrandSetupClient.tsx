@@ -53,10 +53,19 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
   const [brandVoice, setBrandVoice] = useState(brand.brand_voice || '')
   const [toneKeywords, setToneKeywords] = useState<string[]>(brand.tone_keywords || [])
   const [avoidWords, setAvoidWords] = useState<string[]>(brand.avoid_words || [])
-  const [primaryColor, setPrimaryColor] = useState(brand.primary_color || '#000000')
-  const [secondaryColor, setSecondaryColor] = useState(brand.secondary_color || '#000000')
-  const [accentColor, setAccentColor] = useState(brand.accent_color || '#000000')
-  const [fontFamily, setFontFamily] = useState(brand.font_primary?.split('|')[0] || '')
+  const [colors, setColors] = useState<Array<{ label: string; value: string }>>(() => {
+    const base = [
+      { label: 'Primary', value: brand.primary_color || '#000000' },
+      { label: 'Secondary', value: brand.secondary_color || '#ffffff' },
+      { label: 'Accent', value: brand.accent_color || '#00ff97' },
+    ]
+    const extra = tryParse(brand.notes)?.extra_colors || []
+    return [...base, ...extra]
+  })
+  const [fonts, setFonts] = useState<Array<{ label: string; family: string }>>([
+    { label: 'Heading', family: brand.font_heading?.family || brand.font_primary?.split('|')[0] || '' },
+    { label: 'Body', family: brand.font_body?.family || brand.font_secondary?.split('|')[0] || '' },
+  ])
   const [logoDark, setLogoDark] = useState(brand.logo_url || '')
   const [logoLight, setLogoLight] = useState(tryParse(brand.notes)?.logo_url_light || '')
   const [defaultCta, setDefaultCta] = useState(brand.default_cta || '')
@@ -73,9 +82,22 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
   const [images, setImages] = useState<BrandImage[]>(initialImages)
   const [imageUrls, setImageUrls] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
-  const [activeColor, setActiveColor] = useState<'primary' | 'secondary' | 'accent' | null>(null)
 
-  const palette = [primaryColor, secondaryColor, accentColor, '#000000', '#ffffff', '#f5f5f5', '#1a1a1a'].filter((c, i, a) => a.indexOf(c) === i)
+  function updateColor(index: number, value: string) { setColors(prev => prev.map((c, i) => i === index ? { ...c, value } : c)) }
+  function updateColorLabel(index: number, label: string) { setColors(prev => prev.map((c, i) => i === index ? { ...c, label } : c)) }
+  function addColor() { setColors(prev => [...prev, { label: `Color ${prev.length + 1}`, value: '#000000' }]) }
+  function removeColor(index: number) { if (colors.length <= 1) return; setColors(prev => prev.filter((_, i) => i !== index)) }
+
+  function updateFont(index: number, family: string) {
+    setFonts(prev => prev.map((f, i) => i === index ? { ...f, family } : f))
+    if (family) {
+      const link = document.createElement('link'); link.rel = 'stylesheet'
+      link.href = `https://fonts.googleapis.com/css2?family=${family.replace(/ /g, '+')}:wght@400;700;900&display=swap`
+      document.head.appendChild(link)
+    }
+  }
+  function addFont() { setFonts(prev => [...prev, { label: `Font ${prev.length + 1}`, family: '' }]) }
+  function removeFont(index: number) { if (fonts.length <= 1) return; setFonts(prev => prev.filter((_, i) => i !== index)) }
 
   function updateProduct(index: number, field: string, value: string) {
     setProducts(prev => prev.map((p, i) => i === index ? { ...p, [field]: value } : p))
@@ -96,22 +118,14 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
     }))
   }, [images])
 
-  // Load Google Font preview
+  // Load Google Fonts for all font entries
   useEffect(() => {
-    if (!fontFamily) return
-    const id = 'hub-font'
-    let link = document.getElementById(id) as HTMLLinkElement | null
-    if (!link) { link = document.createElement('link'); link.id = id; link.rel = 'stylesheet'; document.head.appendChild(link) }
-    link.href = `https://fonts.googleapis.com/css2?family=${fontFamily.replace(/ /g, '+')}:wght@400;700;800;900&display=swap`
-  }, [fontFamily])
-
-  // Click outside color picker
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (!(e.target as HTMLElement).closest('.color-picker-wrap')) setActiveColor(null)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+    fonts.forEach(f => {
+      if (!f.family) return
+      const link = document.createElement('link'); link.rel = 'stylesheet'
+      link.href = `https://fonts.googleapis.com/css2?family=${f.family.replace(/ /g, '+')}:wght@400;700;800;900&display=swap`
+      document.head.appendChild(link)
+    })
   }, [])
 
   async function saveAll() {
@@ -125,9 +139,14 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
       target_audience: targetAudience || null, brand_voice: brandVoice || null,
       tone_keywords: toneKeywords.length ? toneKeywords : null,
       avoid_words: avoidWords.length ? avoidWords : null,
-      primary_color: primaryColor, secondary_color: secondaryColor, accent_color: accentColor,
-      font_primary: fontFamily || null, logo_url: logoDark || null,
-      notes: JSON.stringify({ ...tryParse(brand.notes), logo_url_light: logoLight || null }),
+      primary_color: colors[0]?.value || null, secondary_color: colors[1]?.value || null, accent_color: colors[2]?.value || null,
+      font_primary: fonts[0]?.family || null, font_secondary: fonts[1]?.family || null,
+      logo_url: logoDark || null,
+      notes: JSON.stringify({
+        ...tryParse(brand.notes),
+        logo_url_light: logoLight || null,
+        extra_colors: colors.slice(3).map(c => ({ label: c.label, value: c.value })),
+      }),
       default_cta: defaultCta || null, products: savedProducts.length ? savedProducts : null,
     }).eq('id', brand.id)
     setSaving(false)
@@ -184,41 +203,6 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
   const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }
   const inputStyle: React.CSSProperties = { border: '1.5px solid #e0e0e0', borderRadius: 10, padding: '11px 14px', fontSize: 14, width: '100%', outline: 'none', color: '#000', background: '#fff' }
   const helperStyle: React.CSSProperties = { fontSize: 11, color: '#aaa', marginTop: 4 }
-
-  function renderColorPicker(label: string, key: 'primary' | 'secondary' | 'accent', value: string, onChange: (v: string) => void) {
-    return (
-      <div className="color-picker-wrap" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, position: 'relative' }}>
-        <div onClick={() => setActiveColor(activeColor === key ? null : key)} style={{
-          width: 52, height: 52, borderRadius: 12, background: value,
-          border: activeColor === key ? '3px solid #000' : '2px solid #eee',
-          cursor: 'pointer', transition: 'border-color 0.15s',
-          boxShadow: activeColor === key ? '0 0 0 2px rgba(0,0,0,0.1)' : '0 2px 8px rgba(0,0,0,0.12)',
-        }} />
-        <span style={{ fontSize: 9, fontWeight: 600, color: '#999', fontFamily: 'monospace' }}>{value.toUpperCase()}</span>
-        <span style={{ fontSize: 9, fontWeight: 700, color: '#bbb', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</span>
-        {activeColor === key && (
-          <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 8, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 16, padding: 16, zIndex: 100, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', width: 220 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Brand colors</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-              {palette.map(color => (
-                <div key={color} onClick={() => { onChange(color); setActiveColor(null) }} title={color} style={{
-                  width: 32, height: 32, borderRadius: 8, background: color,
-                  border: color === value ? '3px solid #000' : '1.5px solid #e0e0e0',
-                  cursor: 'pointer', transition: 'transform 0.1s', flexShrink: 0,
-                }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)' }} onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }} />
-              ))}
-            </div>
-            <div style={{ borderTop: '1px solid #f0f0f0', marginBottom: 12 }} />
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Custom</div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input type="color" value={value} onChange={e => onChange(e.target.value)} style={{ width: 36, height: 36, borderRadius: 8, border: '1.5px solid #eee', cursor: 'pointer', padding: 2, background: 'none', flexShrink: 0 }} />
-              <input type="text" value={value.toUpperCase()} onChange={e => { if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) onChange(e.target.value) }} placeholder="#000000" style={{ flex: 1, padding: '7px 10px', border: '1.5px solid #eee', borderRadius: 8, fontSize: 12, fontFamily: 'monospace', fontWeight: 600, color: '#000', outline: 'none' }} />
-            </div>
-          </div>
-        )}
-      </div>
-    )
-  }
 
   function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
     return (
@@ -325,22 +309,57 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
 
       {/* ── SECTION 2: COLORS & FONT ── */}
       <SectionHeader title="Colors & Font" subtitle="Visual identity" />
-      <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
-        {renderColorPicker('Primary', 'primary', primaryColor, setPrimaryColor)}
-        {renderColorPicker('Secondary', 'secondary', secondaryColor, setSecondaryColor)}
-        {renderColorPicker('Accent', 'accent', accentColor, setAccentColor)}
+
+      {/* Colors */}
+      <div style={{ marginBottom: 24 }}>
+        <label style={labelStyle}>Brand colors</label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {colors.map((color, index) => (
+            <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <label style={{ width: 40, height: 40, borderRadius: 10, background: color.value, border: '2px solid #eee', cursor: 'pointer', display: 'block', boxShadow: '0 1px 4px rgba(0,0,0,0.12)', flexShrink: 0, position: 'relative' }}>
+                <input type="color" value={color.value} onChange={e => updateColor(index, e.target.value)} style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer', top: 0, left: 0 }} />
+              </label>
+              <input type="text" value={color.value.toUpperCase()} onChange={e => { const v = e.target.value; if (/^#[0-9A-Fa-f]{0,6}$/.test(v)) updateColor(index, v) }} onBlur={() => { if (!/^#[0-9A-Fa-f]{6}$/.test(color.value)) updateColor(index, colors[index].value) }} style={{ ...inputStyle, width: 110, fontFamily: 'monospace', fontSize: 13, padding: '8px 12px', textTransform: 'uppercase' }} maxLength={7} placeholder="#000000" onFocus={e => (e.target.style.borderColor = '#000')} />
+              <input type="text" value={color.label} onChange={e => updateColorLabel(index, e.target.value)} style={{ ...inputStyle, flex: 1, fontSize: 13, padding: '8px 12px', color: '#666' }} placeholder="e.g. Primary, Background, CTA..." onFocus={e => (e.target.style.borderColor = '#000')} onBlur={e => (e.target.style.borderColor = '#e0e0e0')} />
+              {colors.length > 1 && (
+                <button onClick={() => removeColor(index)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--muted)', lineHeight: 1, padding: '0 4px', flexShrink: 0 }}>×</button>
+              )}
+            </div>
+          ))}
+        </div>
+        <button onClick={addColor} style={{ marginTop: 10, background: 'none', border: '1.5px dashed var(--border)', borderRadius: 10, padding: '8px 16px', fontSize: 12, fontWeight: 700, color: 'var(--muted)', cursor: 'pointer', transition: 'border-color 0.15s, color 0.15s' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#000'; e.currentTarget.style.color = '#000' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted)' }}>
+          + Add color
+        </button>
       </div>
-      <div style={{ maxWidth: 320 }}>
-        <label style={labelStyle}>Heading font</label>
-        <input style={inputStyle} value={fontFamily} onChange={e => setFontFamily(e.target.value)} placeholder="Barlow, Montserrat..." onFocus={e => e.currentTarget.style.borderColor = '#000'} onBlur={e => {
-          e.currentTarget.style.borderColor = '#e0e0e0'
-          if (e.currentTarget.value) {
-            const link = document.createElement('link'); link.rel = 'stylesheet'
-            link.href = `https://fonts.googleapis.com/css2?family=${e.currentTarget.value.replace(/ /g, '+')}:wght@400;700;800;900&display=swap`
-            document.head.appendChild(link)
-          }
-        }} />
-        {fontFamily && <div style={{ fontSize: 13, color: '#555', marginTop: 8, fontFamily, fontWeight: 600 }}>The quick brown fox jumps over the lazy dog</div>}
+
+      {/* Fonts */}
+      <div>
+        <label style={labelStyle}>Fonts</label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {fonts.map((font, index) => (
+            <div key={index}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: font.family ? 6 : 0 }}>
+                <input type="text" value={font.label} onChange={e => setFonts(prev => prev.map((f, i) => i === index ? { ...f, label: e.target.value } : f))} style={{ ...inputStyle, width: 110, fontSize: 12, padding: '8px 12px', color: '#666' }} placeholder="Heading" onFocus={e => (e.target.style.borderColor = '#000')} onBlur={e => (e.target.style.borderColor = '#e0e0e0')} />
+                <input type="text" value={font.family} onChange={e => updateFont(index, e.target.value)} style={{ ...inputStyle, flex: 1, fontFamily: font.family || 'inherit', fontSize: 14, padding: '8px 14px' }} placeholder="e.g. Barlow, Montserrat, Fraunces..." onFocus={e => (e.target.style.borderColor = '#000')} onBlur={e => (e.target.style.borderColor = '#e0e0e0')} />
+                {fonts.length > 1 && (
+                  <button onClick={() => removeFont(index)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--muted)', lineHeight: 1, padding: '0 4px', flexShrink: 0 }}>×</button>
+                )}
+              </div>
+              {font.family && (
+                <div style={{ fontSize: 14, fontFamily: `${font.family}, sans-serif`, color: 'var(--muted)', padding: '0 0 0 120px' }}>
+                  The quick brown fox jumps over the lazy dog
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <button onClick={addFont} style={{ marginTop: 10, background: 'none', border: '1.5px dashed var(--border)', borderRadius: 10, padding: '8px 16px', fontSize: 12, fontWeight: 700, color: 'var(--muted)', cursor: 'pointer', transition: 'border-color 0.15s, color 0.15s' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#000'; e.currentTarget.style.color = '#000' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted)' }}>
+          + Add font
+        </button>
       </div>
 
       <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '36px 0' }} />
