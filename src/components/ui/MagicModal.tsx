@@ -41,8 +41,15 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
   const [visibleBlocks, setVisibleBlocks] = useState(0)
   const [currentBlock, setCurrentBlock] = useState(-1)
   const [typedText, setTypedText] = useState('')
+  const [modeKey, setModeKey] = useState(0)
 
   const copy = COPY[mode]
+
+  useEffect(() => {
+    setModeKey(k => k + 1)
+    setVisibleBlocks(0)
+    setCurrentBlock(-1)
+  }, [mode])
 
   useEffect(() => {
     if (isOpen) { setPhraseIndex(0); setVisibleBlocks(0); setCurrentBlock(-1); setTypedText(''); setTimeout(() => setVisible(true), 50) }
@@ -65,7 +72,6 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
 
   useEffect(() => {
     if (!isOpen || isDone || mode !== 'landing') return
-    setVisibleBlocks(0); setCurrentBlock(-1)
     let count = 0
     const buildInterval = setInterval(() => {
       count++
@@ -84,7 +90,7 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
       clearInterval(buildInterval)
       if (cycleIntervalRef.current) { clearInterval(cycleIntervalRef.current); cycleIntervalRef.current = null }
     }
-  }, [isOpen, isDone, mode])
+  }, [isOpen, isDone, mode, modeKey])
 
   const charIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const loopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -208,7 +214,7 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
               const isActive = currentBlock === i
               const isVis = visibleBlocks > i
               return (
-                <div key={i} style={{ height: b.h, background: isActive ? 'rgba(0,255,151,0.12)' : isVis ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)', border: `1px solid ${isActive ? 'rgba(0,255,151,0.3)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 8, marginBottom: 5, display: 'flex', alignItems: 'center', paddingLeft: 12, opacity: isVis ? 1 : 0, transform: isVis ? 'translateY(0)' : 'translateY(8px)', transition: 'all 0.4s ease' }}>
+                <div key={i} style={{ height: b.h, background: isActive ? 'rgba(0,255,151,0.12)' : isVis ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)', border: `1px solid ${isActive ? 'rgba(0,255,151,0.3)' : isVis ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 8, marginBottom: 5, display: 'flex', alignItems: 'center', paddingLeft: 12, opacity: isVis ? 1 : 0.15, transform: isVis ? 'translateY(0)' : 'translateY(8px)', transition: 'all 0.4s ease' }}>
                   <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: isActive ? '#00ff97' : isVis ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)' }}>{b.label}</span>
                 </div>
               )

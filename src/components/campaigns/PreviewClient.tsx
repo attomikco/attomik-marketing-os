@@ -162,6 +162,13 @@ export default function PreviewClient({
   const [showReel, setShowReel] = useState(false)
   const [showReadyModal, setShowReadyModal] = useState(false)
   const [previewReady, setPreviewReady] = useState(hasContent)
+  const [showWelcomeBack, setShowWelcomeBack] = useState(hasContent)
+
+  useEffect(() => {
+    if (!hasContent) return
+    const t = setTimeout(() => setShowWelcomeBack(false), 2000)
+    return () => clearTimeout(t)
+  }, [hasContent])
 
   // Brand image URLs
   const [productImageUrl, setProductImageUrl] = useState<string | null>(null)
@@ -413,6 +420,34 @@ export default function PreviewClient({
         brandName={brand.name}
         onContinue={() => { setShowReadyModal(false); setPreviewReady(true) }}
       />
+
+      {showWelcomeBack && (
+        <div style={{
+          position: 'fixed', inset: 0,
+          zIndex: 200, background: '#000',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          gap: 16,
+          opacity: showWelcomeBack ? 1 : 0,
+          transition: 'opacity 0.5s ease',
+        }}>
+          <AttomikLogo height={36} color="#ffffff" />
+          <div style={{
+            fontFamily: 'Barlow, sans-serif',
+            fontWeight: 900, fontSize: 24,
+            color: '#fff', textTransform: 'uppercase',
+            marginTop: 8,
+          }}>
+            Your funnel is ready.
+          </div>
+          <div style={{
+            fontSize: 13,
+            color: 'rgba(255,255,255,0.4)',
+          }}>
+            Loading {brand.name}...
+          </div>
+        </div>
+      )}
 
       {/* Preview content — hidden until ready */}
       <div style={{ visibility: previewReady ? 'visible' : 'hidden', opacity: previewReady ? 1 : 0, transition: 'opacity 0.6s ease', background: 'var(--cream, #f8f7f4)' }}>
