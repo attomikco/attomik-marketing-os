@@ -48,6 +48,16 @@ export default async function CopyPage({
     }
   }
 
+  const brandId = selectedCampaign?.brand_id || brands[0]?.id
+  let brandAudience = ''
+  let brandVoice = ''
+  if (brandId) {
+    const { data: brandData } = await supabase
+      .from('brands').select('target_audience, brand_voice').eq('id', brandId).single()
+    brandAudience = brandData?.target_audience || ''
+    brandVoice = brandData?.brand_voice || ''
+  }
+
   return (
     <CopyCreatorClient
       brands={brands}
@@ -55,6 +65,8 @@ export default async function CopyPage({
       initialCampaignId={campaignId || campaigns?.[0]?.id || ''}
       initialVariations={existingVariations}
       selectedCampaign={selectedCampaign}
+      brandAudience={brandAudience}
+      brandVoice={brandVoice}
     />
   )
 }

@@ -38,7 +38,8 @@ ${angle}
 - Offer/product: ${campaign.offer || 'Not specified'}
 - Key message: ${campaign.key_message || 'Not specified'}
 - Goal: ${campaign.goal || 'Conversions'}
-- Audience: ${audience}
+- Target audience: ${audience}
+- Write specifically FOR this audience. Use language, references, and pain points that resonate with them directly.
 
 For each variation write:
 1. PRIMARY TEXT: Engaging copy up to 300 characters. This is the main body above the image. Hook the reader, lead with value, end with a soft CTA if needed.

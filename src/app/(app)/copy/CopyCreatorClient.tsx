@@ -90,8 +90,8 @@ const ANGLES = [
   { value: 'custom', label: 'Custom...', desc: 'Write your own angle' },
 ]
 
-export default function CopyCreatorClient({ campaigns, initialCampaignId, initialVariations, selectedCampaign }: {
-  brands: any[]; campaigns: any[]; initialCampaignId: string; initialVariations: any[]; selectedCampaign: any
+export default function CopyCreatorClient({ campaigns, initialCampaignId, initialVariations, selectedCampaign, brandAudience = '', brandVoice = '' }: {
+  brands: any[]; campaigns: any[]; initialCampaignId: string; initialVariations: any[]; selectedCampaign: any; brandAudience?: string; brandVoice?: string
 }) {
   const router = useRouter()
   const [campaignId, setCampaignId] = useState(initialCampaignId)
@@ -114,7 +114,7 @@ export default function CopyCreatorClient({ campaigns, initialCampaignId, initia
       const body: any = { count }
       if (angle && angle !== 'custom') body.angle = angle
       if (angle === 'custom' && customAngle) body.angle = customAngle
-      if (audienceOverride) body.audience = audienceOverride
+      body.audience = audienceOverride || ''
       const res = await fetch(`/api/campaigns/${campaignId}/ad-copy`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data = await res.json()
       if (data.variations) {
@@ -180,8 +180,14 @@ export default function CopyCreatorClient({ campaigns, initialCampaignId, initia
             <div style={{ marginBottom: 24 }}>
               <label style={labelStyle}>Audience focus <span style={{ fontWeight: 400, marginLeft: 6, fontSize: 10 }}>optional override</span></label>
               <input value={audienceOverride} onChange={e => setAudienceOverride(e.target.value)}
-                placeholder={selectedCampaign?.audience_notes || 'e.g. Busy moms who want healthy snacks'}
+                placeholder={selectedCampaign?.audience_notes || brandAudience || 'e.g. Busy moms who want healthy snacks'}
                 style={{ ...inputStyle, fontSize: 13 }} />
+              {(() => {
+                const effectiveAudience = audienceOverride || selectedCampaign?.audience_notes || brandAudience
+                if (audienceOverride) return <div style={{ fontSize: 11, color: '#00a86b', marginTop: 4 }}>Using your custom audience for this run.</div>
+                if (effectiveAudience) return <div style={{ fontSize: 11, color: '#00a86b', marginTop: 4 }}>Using brand audience: &ldquo;{effectiveAudience.slice(0, 70)}{effectiveAudience.length > 70 ? '...' : ''}&rdquo;</div>
+                return <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>No audience set — add one in Brand Hub for better copy.</div>
+              })()}
             </div>
 
             <button onClick={generate} disabled={generating} style={{
