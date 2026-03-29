@@ -154,6 +154,7 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
         @keyframes scanDot { 0%,100%{opacity:0;transform:scale(0.5)} 50%{opacity:0.8;transform:scale(1)} }
         @keyframes popIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
       `}</style>
 
       {/* ZONE 1: Logo */}
@@ -210,28 +211,42 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
 
         {mode === 'landing' && !isDone && (
           <div style={{ width: 280 }}>
-            {[{label:'HERO',h:52},{label:'PROBLEM',h:32},{label:'SOLUTION',h:32},{label:'BENEFITS',h:40},{label:'SOCIAL PROOF',h:44},{label:'CTA',h:40}].map((b,i) => {
+            {[{label:'HERO',h:56},{label:'PROBLEM',h:36},{label:'SOLUTION',h:36},{label:'BENEFITS',h:44},{label:'SOCIAL PROOF',h:48},{label:'CTA',h:44}].map((b,i) => {
               const isActive = currentBlock === i
               const isVis = visibleBlocks > i
               return (
                 <div key={i} style={{ height: b.h, background: isActive ? 'rgba(0,255,151,0.12)' : isVis ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)', border: `1px solid ${isActive ? 'rgba(0,255,151,0.3)' : isVis ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 8, marginBottom: 5, display: 'flex', alignItems: 'center', paddingLeft: 12, opacity: isVis ? 1 : 0.15, transform: isVis ? 'translateY(0)' : 'translateY(8px)', transition: 'all 0.4s ease' }}>
-                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: isActive ? '#00ff97' : isVis ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)' }}>{b.label}</span>
+                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: isActive ? '#00ff97' : isVis ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.2)' }}>{b.label}</span>
                 </div>
               )
             })}
           </div>
         )}
         {mode === 'landing' && isDone && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-            <div style={{ width: 280, marginBottom: 16 }}>
-              {[...Array(6)].map((_,i) => (
-                <div key={i} style={{ height: 32, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, marginBottom: 5 }} />
-              ))}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <CheckCircle size={18} color="#00ff97" />
-              <span style={{ color: '#00ff97', fontSize: 13, fontWeight: 700 }}>7 sections complete</span>
-            </div>
+          <div style={{ width: 280 }}>
+            {[{label:'HERO',h:56},{label:'PROBLEM',h:36},{label:'SOLUTION',h:36},{label:'BENEFITS',h:44},{label:'SOCIAL PROOF',h:48},{label:'CTA',h:44}].map((b,i) => (
+              <div key={i} style={{
+                height: b.h,
+                background: 'rgba(0,255,151,0.1)',
+                border: '1px solid rgba(0,255,151,0.25)',
+                borderRadius: 8,
+                marginBottom: 5,
+                display: 'flex',
+                alignItems: 'center',
+                paddingLeft: 12,
+                opacity: 1,
+                animation: `fadeIn 0.3s ease ${i * 0.06}s both`,
+              }}>
+                <span style={{
+                  fontSize: 9,
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  color: '#00ff97',
+                }}>
+                  {b.label}
+                </span>
+              </div>
+            ))}
           </div>
         )}
       </div>
