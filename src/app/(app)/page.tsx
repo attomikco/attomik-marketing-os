@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowRight, Users, Mail, Sparkles } from 'lucide-react'
-import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -23,7 +23,7 @@ export default async function HomePage() {
   ]
 
   if ((brandCount ?? 0) === 0) {
-    return <OnboardingWizard />
+    redirect('/onboarding')
   }
 
   return (

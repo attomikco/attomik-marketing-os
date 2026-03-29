@@ -16,7 +16,7 @@ export default function OnboardingWizard() {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   // Step 1 — two states
-  const [detecting, setDetecting] = useState(false)
+  const [detecting, setDetecting] = useState(!!searchParams.get('url'))
   const [detected, setDetected] = useState(false)
   const [detectedName, setDetectedName] = useState<string | null>(null)
   const [detectedImage, setDetectedImage] = useState<string | null>(null)
