@@ -24,11 +24,13 @@ export default function CreativeBuilder({
   defaultBrandId,
   campaignId,
   campaignBrief,
+  preloadedCopy,
 }: {
   brands: Brand[]
   defaultBrandId?: string
   campaignId?: string
   campaignBrief?: string
+  preloadedCopy?: { headline?: string; primary_text?: string; description?: string } | null
 }) {
   const supabase = createClient()
 
@@ -365,6 +367,12 @@ export default function CreativeBuilder({
   }, [headline, bodyText, ctaText, selectedImageId, templateId, headlineColor, bodyColor, headlineFont, headlineWeight, headlineTransform, bodyFont, bodyWeight, bodyTransform, bgColor, headlineSizeMul, bodySizeMul, showOverlay, overlayOpacity, textBanner, textBannerColor, textPosition, showCta, imagePosition])
 
   useEffect(() => {
+    if (preloadedCopy?.headline) setHeadline(preloadedCopy.headline)
+    if (preloadedCopy?.primary_text) setBodyText(preloadedCopy.primary_text.slice(0, 150))
+    if (preloadedCopy?.description) setCtaText(preloadedCopy.description || 'Shop Now')
+  }, [])
+
+  useEffect(() => {
     const el = leftPanelRef.current
     if (!el) return
     const ro = new ResizeObserver(([entry]) => setPreviewContainerW(entry.contentRect.width))
@@ -452,6 +460,44 @@ export default function CreativeBuilder({
   // ── Render ─────────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
+
+      {campaignId && (
+        <div style={{
+          background: '#000',
+          borderRadius: 16,
+          padding: '20px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 12,
+        }}>
+          <div>
+            <div style={{
+              fontFamily: 'Barlow, sans-serif',
+              fontWeight: 900, fontSize: 18,
+              color: '#fff', textTransform: 'uppercase',
+              marginBottom: 4,
+            }}>
+              Make it yours.
+            </div>
+            <div style={{
+              fontSize: 13, color: 'rgba(255,255,255,0.45)',
+            }}>
+              Your AI-generated copy is pre-loaded. Pick a template, choose your image, download.
+            </div>
+          </div>
+          <a
+            href={`/preview/${campaignId}`}
+            style={{
+              fontSize: 12, color: 'rgba(255,255,255,0.4)',
+              textDecoration: 'none', fontWeight: 600,
+            }}
+          >
+            ← Back to funnel preview
+          </a>
+        </div>
+      )}
 
       {/* TOP BAR — Brand + Size + Actions */}
       <div className="bg-paper border border-border rounded-card px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2">

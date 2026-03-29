@@ -648,6 +648,14 @@ export default function PreviewClient({
               <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#000', color: '#a78bfa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>1</span>
               <span style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 26, textTransform: 'uppercase', letterSpacing: '-0.01em', color: '#000' }}>Ad Creatives</span>
             </div>
+            {brand.status === 'active' && (
+              <a href={`/creatives?brand=${brand.id}&campaign=${campaign.id}`} style={{
+                fontSize: 13, fontWeight: 700, color: '#00cc7a',
+                textDecoration: 'none',
+              }}>
+                Customize in builder →
+              </a>
+            )}
           </div>
 
           {adVariation ? (() => {
@@ -919,7 +927,7 @@ export default function PreviewClient({
         </div>
 
         {/* ═══ Context banner ═══ */}
-        {brand.status === 'draft' && (
+        {brand.status === 'draft' ? (
           <div style={{
             marginTop: 48,
             background: '#000',
@@ -957,6 +965,46 @@ export default function PreviewClient({
             >
               Activate & continue →
             </button>
+          </div>
+        ) : (
+          <div style={{
+            marginTop: 48,
+            background: '#000',
+            borderRadius: 20,
+            padding: '48px 40px',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              fontFamily: 'Barlow, sans-serif',
+              fontWeight: 900, fontSize: 32,
+              color: '#fff', marginBottom: 12,
+              textTransform: 'uppercase',
+              lineHeight: 1.1,
+            }}>
+              Make it yours.
+            </div>
+            <div style={{
+              fontSize: 16, color: 'rgba(255,255,255,0.45)',
+              maxWidth: 440, margin: '0 auto 32px',
+              lineHeight: 1.7,
+            }}>
+              Open the creative builder to customize templates,
+              swap images, and download ad-ready assets.
+            </div>
+            <a
+              href={`/creatives?brand=${brand.id}&campaign=${campaign.id}`}
+              style={{
+                background: '#00ff97', color: '#000',
+                fontFamily: 'Barlow, sans-serif',
+                fontWeight: 900, fontSize: 16,
+                padding: '16px 40px', borderRadius: 999,
+                border: 'none', cursor: 'pointer',
+                textDecoration: 'none',
+                display: 'inline-block',
+              }}
+            >
+              Customize in creative builder →
+            </a>
           </div>
         )}
       </div>

@@ -195,7 +195,7 @@ export default async function HomePage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
             {campaigns.map((c: any) => (
-              <Link key={c.id} href={`/preview/${c.id}`} style={{
+              <Link key={c.id} href={`/creatives?brand=${c.brand_id}&campaign=${c.id}`} style={{
                 background: '#fff', border: '1px solid var(--border)',
                 borderRadius: 16, padding: '20px 24px',
                 textDecoration: 'none', color: 'inherit',
@@ -227,13 +227,13 @@ export default async function HomePage() {
 
       {/* Quick actions */}
       <div style={{ marginTop: 48, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <Link href="/campaigns/new" style={{
+        <Link href="/creatives" style={{
           background: '#000', color: '#00ff97',
           fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 14,
           padding: '12px 24px', borderRadius: 999,
           textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6,
         }}>
-          New campaign →
+          Open creative builder →
         </Link>
         <Link href="/onboarding" style={{
           background: '#fff', color: '#000',

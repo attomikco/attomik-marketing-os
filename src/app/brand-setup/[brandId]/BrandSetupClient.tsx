@@ -102,7 +102,7 @@ export default function BrandSetupClient({
         console.error('Regeneration failed:', e)
       }
       setRegenerating(false)
-      setTimeout(() => router.push(`/preview/${campaignId}`), 1500)
+      setTimeout(() => router.push(`/creatives?brand=${initialBrand.id}&campaign=${campaignId}`), 1500)
     } else {
       setTimeout(() => router.push('/'), 2500)
     }
