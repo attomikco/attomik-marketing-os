@@ -85,22 +85,19 @@ export default async function DashboardPage() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          {brand.logo_url && (
+          {brand.logo_url ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img src={brand.logo_url} alt={brand.name}
-              onError={e => {
-                e.currentTarget.style.display = 'none'
-                const sibling = e.currentTarget.nextElementSibling as HTMLElement
-                if (sibling) sibling.style.display = 'flex'
-              }}
-              style={{ height: 48, width: 'auto', objectFit: 'contain', borderRadius: 8 }} />
+              style={{ height: 48, width: 'auto', objectFit: 'contain', borderRadius: 8, maxWidth: 120 }} />
+          ) : (
+            <div style={{
+              width: 48, height: 48, borderRadius: 12, background: `${textOnPrimary}18`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, color: textOnPrimary, flexShrink: 0,
+            }}>
+              {brand.name[0].toUpperCase()}
+            </div>
           )}
-          <div style={{
-            width: 48, height: 48, borderRadius: 12, background: `${textOnPrimary}18`,
-            display: brand.logo_url ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, color: textOnPrimary,
-          }}>
-            {brand.name[0].toUpperCase()}
-          </div>
           <div>
             <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 24, color: textOnPrimary, letterSpacing: '-0.01em', textTransform: 'uppercase' }}>
               {brand.name}
