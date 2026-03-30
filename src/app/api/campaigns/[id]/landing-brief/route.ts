@@ -22,10 +22,31 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const brand = campaign.brand
   const systemPrompt = buildBrandSystemPrompt(brand)
 
+  const notesData = (() => {
+    try { return brand.notes ? JSON.parse(brand.notes) : {} } catch { return {} }
+  })()
+  const businessType = notesData?.business_type || 'brand'
+  const offeringContext = ({
+    shopify: 'an ecommerce product brand',
+    ecommerce: 'an ecommerce brand',
+    saas: 'a SaaS software product',
+    restaurant: 'a restaurant or food business',
+    service: 'a service-based business',
+    brand: 'a brand',
+  } as Record<string, string>)[businessType] || 'a brand'
+  const defaultCtas = ({
+    shopify: ['Shop Now', 'Add to Cart'],
+    ecommerce: ['Shop Now', 'Buy Now'],
+    saas: ['Start Free Trial', 'Get Started'],
+    restaurant: ['Order Now', 'Reserve a Table'],
+    service: ['Book a Call', 'Get a Quote'],
+    brand: ['Learn More', 'Shop Now'],
+  } as Record<string, string[]>)[businessType] || ['Learn More', 'Shop Now']
+
   const audience = campaign.audience_notes || brand.target_audience || 'their target audience'
   const angle = campaign.angle ? `Campaign angle/concept: ${campaign.angle}` : ''
 
-  const userPrompt = `Write a structured landing page brief for ${brand.name}.
+  const userPrompt = `Write a structured landing page brief for ${brand.name}, which is ${offeringContext}.
 
 CAMPAIGN BRIEF:
 - Campaign: ${campaign.name}
@@ -73,7 +94,9 @@ Respond ONLY with valid JSON, no other text:
     "body": "1-2 sentences of urgency or reinforcement",
     "cta_text": "..."
   }
-}`
+}
+
+Suggested CTAs for this business type: ${defaultCtas.join(', ')}.`
 
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',

@@ -31,6 +31,12 @@ export default function OnboardingWizard() {
   const [secondaryColor, setSecondaryColor] = useState('#ffffff')
   const [accentColor, setAccentColor] = useState('#00ff97')
 
+  // Business type
+  type BusinessType = 'shopify' | 'ecommerce' | 'saas' | 'restaurant' | 'service' | 'brand'
+  type DetectedOffering = { name: string; description: string | null; price: string | null; image: string | null; type: 'product' | 'plan' | 'service' | 'menu_item' }
+  const [businessType, setBusinessType] = useState<BusinessType>('brand')
+  const [offerings, setOfferings] = useState<DetectedOffering[]>([])
+
   // Step 2
   type DetectedProduct = { name: string; description: string | null; price: string | null; image: string | null }
   type ScrapedImage = { url: string; tag: 'product' | 'lifestyle' | 'background' | 'other'; score: number }
@@ -44,6 +50,7 @@ export default function OnboardingWizard() {
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadTotal, setUploadTotal] = useState(0)
+  const [uploadPhase, setUploadPhase] = useState<'idle' | 'creating' | 'uploading' | 'done'>('idle')
   const fileRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const autoAnalyzed = useRef(false)
@@ -94,6 +101,8 @@ export default function OnboardingWizard() {
       if (data.logo) setDetectedLogo(data.logo)
       if (data.products?.length > 0) setDetectedProducts(data.products)
       if (data.images?.length > 0) setDetectedImages(data.images)
+      if (data.businessType) setBusinessType(data.businessType)
+      if (data.offerings?.length) setOfferings(data.offerings)
       setDetected(true)
     } catch {
       setBrandName('')
@@ -109,7 +118,7 @@ export default function OnboardingWizard() {
   function validate(): boolean {
     const errs: Record<string, string> = {}
     if (step === 0 && !brandName.trim()) errs.brandName = 'Brand name is required'
-    if (step === 1 && detectedProducts.length === 0 && !productName.trim()) errs.productName = 'Add a product name'
+    if (step === 1 && detectedProducts.length === 0 && offerings.length === 0 && !productName.trim()) errs.productName = 'Add a product name'
     if (step === 2 && !campaignName.trim()) errs.campaignName = 'Campaign name is required'
     setErrors(errs)
     return Object.keys(errs).length === 0
@@ -217,6 +226,7 @@ export default function OnboardingWizard() {
   async function submit() {
     if (!validate()) return
     setSaving(true)
+    setUploadPhase('creating')
 
     const slug = brandName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Math.random().toString(36).slice(2, 6)
 
@@ -230,11 +240,18 @@ export default function OnboardingWizard() {
       font_primary: brandFont ? `${brandFont}|700|${fontTransform}` : null,
       font_heading: brandFont ? { family: brandFont, weight: '700', transform: fontTransform, letterSpacing: fontLetterSpacing } : null,
       logo_url: null,
+      notes: JSON.stringify({ business_type: businessType }),
       products: (() => {
         if (detectedProducts.length > 0) {
           return detectedProducts.map(p => ({
             name: p.name, description: p.description || null,
             price_range: p.price || null, image: p.image || null,
+          }))
+        }
+        if (offerings.length > 0) {
+          return offerings.map(o => ({
+            name: o.name, description: o.description || null,
+            price_range: o.price || null, image: o.image || null,
           }))
         }
         if (productName.trim()) {
@@ -264,10 +281,18 @@ export default function OnboardingWizard() {
     sessionStorage.setItem('attomik_draft_brand_id', brand.id)
     sessionStorage.setItem('attomik_draft_campaign_id', campaign.id)
 
-    // Upload images BEFORE redirecting
+    // Count uploads
+    const productImageUrls = detectedProducts.map(p => p.image).filter((url): url is string => !!url)
+    const ogEntry = detectedImage ? 1 : 0
+    const total = productImageUrls.length + Math.min(ogEntry + detectedImages.length, 20) + (detectedLogo ? 1 : 0) + imageFiles.length
+    setUploadTotal(total)
+    setUploadProgress(0)
+    setUploadPhase('uploading')
+
     await uploadImagesInBackground(brand.id)
 
-    // Then redirect
+    setUploadPhase('done')
+    await new Promise(r => setTimeout(r, 800))
     router.push(`/preview/${campaign.id}`)
   }
 
@@ -311,8 +336,21 @@ export default function OnboardingWizard() {
             {brandFont && (
               <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>{brandFont}</div>
             )}
-            <div style={{ background: 'rgba(0,255,151,0.12)', border: '1px solid rgba(0,255,151,0.3)', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: '#00ff97', fontWeight: 700, marginLeft: 'auto' }}>
-              {detectedName ? '✦ Detected' : '✦ Manual'}
+            <div style={{ display: 'flex', gap: 6, marginLeft: 'auto', alignItems: 'center' }}>
+              {businessType !== 'brand' && (
+                <div style={{
+                  background: 'rgba(0,255,151,0.12)',
+                  border: '1px solid rgba(0,255,151,0.3)',
+                  borderRadius: 20, padding: '3px 10px',
+                  fontSize: 10, color: '#00ff97', fontWeight: 700,
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                }}>
+                  {{ shopify: '⬡ Shopify', ecommerce: '◻ Ecommerce', saas: '◈ SaaS', restaurant: '✦ Restaurant', service: '◆ Service', brand: '' }[businessType]}
+                </div>
+              )}
+              <div style={{ background: 'rgba(0,255,151,0.12)', border: '1px solid rgba(0,255,151,0.3)', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: '#00ff97', fontWeight: 700 }}>
+                {detectedName ? '✦ Detected' : '✦ Manual'}
+              </div>
             </div>
           </div>
         </div>
@@ -398,6 +436,15 @@ export default function OnboardingWizard() {
     </div>
   )
 
+  const step2Config = {
+    shopify:    { title: 'YOUR PRODUCTS',  subtitle: 'All saved to your brand.', emptyLabel: 'Add your hero product', itemLabel: 'product', icon: '◻' },
+    ecommerce:  { title: 'YOUR PRODUCTS',  subtitle: 'Found on your website.', emptyLabel: 'Add your main product', itemLabel: 'product', icon: '◻' },
+    saas:       { title: 'YOUR PLANS',     subtitle: 'We found your pricing tiers.', emptyLabel: 'Add your main plan', itemLabel: 'plan', icon: '◈' },
+    restaurant: { title: 'YOUR MENU',      subtitle: 'We found some menu items.', emptyLabel: 'Add a signature dish', itemLabel: 'dish', icon: '✦' },
+    service:    { title: 'YOUR SERVICES',  subtitle: 'What you offer your clients.', emptyLabel: 'Add your main service', itemLabel: 'service', icon: '◆' },
+    brand:      { title: 'WHAT YOU OFFER', subtitle: 'Tell us about your main offering.', emptyLabel: 'Describe what you sell or offer', itemLabel: 'offering', icon: '✦' },
+  }[businessType]
+
   const steps = [
     {
       title: detected ? 'Review your brand' : "Let's find your brand",
@@ -405,43 +452,58 @@ export default function OnboardingWizard() {
       content: step1Content,
     },
     {
-      title: detectedProducts.length > 0 ? 'Your products' : 'Your product & audience',
-      subtitle: detectedProducts.length > 0
-        ? 'All saved to your brand. You can edit them in Brand Hub later.'
-        : "Add your hero product below — you can always update this later.",
+      title: (detectedProducts.length > 0 || offerings.length > 0) ? step2Config.title : 'Your product & audience',
+      subtitle: (detectedProducts.length > 0 || offerings.length > 0)
+        ? step2Config.subtitle
+        : step2Config.emptyLabel + " — you can always update this later.",
       content: (
         <div className="space-y-4" style={{ textAlign: 'center' }}>
-          {detectedProducts.length > 0 ? (
+          {(detectedProducts.length > 0 || offerings.length > 0) ? (
             <>
               <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 24 }}>✦</div>
+                <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 24 }}>{step2Config.icon}</div>
                 <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, textTransform: 'uppercase', marginBottom: 8 }}>
-                  We found {detectedProducts.length} {detectedProducts.length === 1 ? 'product' : 'products'}.
+                  We found {detectedProducts.length || offerings.length} {(detectedProducts.length || offerings.length) === 1 ? step2Config.itemLabel : step2Config.itemLabel + 's'}.
                 </div>
                 <div style={{ fontSize: 14, color: '#666', lineHeight: 1.6 }}>
                   All saved to your brand. You can edit them in Brand Hub after your funnel is ready.
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, maxHeight: 360, overflowY: 'auto' }}>
-                {detectedProducts.slice(0, 8).map((p, i) => (
-                  <div key={i} style={{ background: '#f8f8f8', borderRadius: 14, overflow: 'hidden', border: '1px solid #eee', display: 'flex', flexDirection: 'column' }}>
-                    {p.image ? (
-                      <div style={{ width: '100%', aspectRatio: '1/1', overflow: 'hidden', flexShrink: 0 }}>
-                        <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => { e.currentTarget.parentElement!.style.display = 'none' }} />
-                      </div>
-                    ) : (
-                      <div style={{ width: '100%', aspectRatio: '1/1', background: 'linear-gradient(135deg, #f0f0f0, #e0e0e0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, color: '#ccc' }}>◻</div>
-                    )}
-                    <div style={{ padding: '10px 12px' }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#000', marginBottom: 2, lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        {p.price && <span style={{ fontSize: 12, color: '#666', fontWeight: 500 }}>${p.price}</span>}
-                        <span style={{ fontSize: 9, fontWeight: 800, color: '#00a86b', background: 'rgba(0,255,151,0.12)', padding: '2px 7px', borderRadius: 4, border: '1px solid rgba(0,255,151,0.2)', letterSpacing: '0.04em', textTransform: 'uppercase', marginLeft: 'auto' }}>✓ Saved</span>
+              {detectedProducts.length > 0 ? (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, maxHeight: 360, overflowY: 'auto' }}>
+                  {detectedProducts.slice(0, 8).map((p, i) => (
+                    <div key={i} style={{ background: '#f8f8f8', borderRadius: 14, overflow: 'hidden', border: '1px solid #eee', display: 'flex', flexDirection: 'column' }}>
+                      {p.image ? (
+                        <div style={{ width: '100%', aspectRatio: '1/1', overflow: 'hidden', flexShrink: 0 }}>
+                          <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => { e.currentTarget.parentElement!.style.display = 'none' }} />
+                        </div>
+                      ) : (
+                        <div style={{ width: '100%', aspectRatio: '1/1', background: 'linear-gradient(135deg, #f0f0f0, #e0e0e0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, color: '#ccc' }}>◻</div>
+                      )}
+                      <div style={{ padding: '10px 12px' }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#000', marginBottom: 2, lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          {p.price && <span style={{ fontSize: 12, color: '#666', fontWeight: 500 }}>${p.price}</span>}
+                          <span style={{ fontSize: 9, fontWeight: 800, color: '#00a86b', background: 'rgba(0,255,151,0.12)', padding: '2px 7px', borderRadius: 4, border: '1px solid rgba(0,255,151,0.2)', letterSpacing: '0.04em', textTransform: 'uppercase', marginLeft: 'auto' }}>✓ Saved</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {offerings.slice(0, 6).map((o, i) => (
+                    <div key={i} style={{ background: '#f8f8f8', borderRadius: 12, padding: '12px 16px', border: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left' }}>
+                      <span style={{ fontSize: 18, color: '#999' }}>{step2Config.icon}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#000', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{o.name}</div>
+                        {o.price && <span style={{ fontSize: 12, color: '#666' }}>{o.price}</span>}
+                      </div>
+                      <span style={{ fontSize: 9, fontWeight: 800, color: '#00a86b', background: 'rgba(0,255,151,0.12)', padding: '2px 7px', borderRadius: 4, border: '1px solid rgba(0,255,151,0.2)', letterSpacing: '0.04em', textTransform: 'uppercase', flexShrink: 0 }}>✓ Saved</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               {detectedProducts.length > 8 && (
                 <div style={{ fontSize: 12, color: '#999', textAlign: 'center', padding: '8px 0 0', fontWeight: 600 }}>+{detectedProducts.length - 8} more saved to Brand Hub</div>
               )}
@@ -465,6 +527,11 @@ export default function OnboardingWizard() {
                 <label className="text-xs font-semibold block mb-1">One-line description</label>
                 <input className={inputCls} value={productDesc} onChange={e => setProductDesc(e.target.value)} placeholder="Organic single-origin pour-over coffee" />
               </div>
+              {(businessType === 'service' || businessType === 'brand') && (
+                <button onClick={() => { setStep(2); if (!campaignName) setCampaignName(`${brandName.trim()} — Launch Campaign`) }} style={{ background: 'none', border: 'none', fontSize: 13, color: '#999', cursor: 'pointer', padding: 0, marginTop: 4 }}>
+                  Skip for now →
+                </button>
+              )}
             </>
           )}
 
@@ -515,6 +582,71 @@ export default function OnboardingWizard() {
 
   return (
     <div ref={scrollRef} className="fixed inset-0 bg-ink z-50 flex flex-col items-center wizard-scroll" style={{ padding: 'clamp(16px, 4vw, 80px) 16px', overflowY: 'auto' }}>
+      {uploadPhase !== 'idle' && (
+        <div style={{
+          position: 'fixed', inset: 0,
+          background: '#000', zIndex: 9999,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          gap: 32,
+        }}>
+          <AttomikLogo height={32} color="#fff" />
+
+          {/* SVG ring with progress */}
+          <div style={{ position: 'relative' }}>
+            <svg width="80" height="80" style={{ animation: 'spin 2s linear infinite' }}>
+              <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(0,255,151,0.15)" strokeWidth="2" />
+              <circle
+                cx="40" cy="40" r="34" fill="none" stroke="#00ff97" strokeWidth="2"
+                strokeDasharray={`${uploadPhase === 'uploading'
+                  ? (uploadProgress / Math.max(uploadTotal, 1)) * 213
+                  : uploadPhase === 'done' ? 213 : 20} 213`}
+                strokeLinecap="round"
+                style={{ transition: 'stroke-dasharray 0.5s ease' }}
+                transform="rotate(-90 40 40)"
+              />
+            </svg>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {uploadPhase === 'done' ? (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <polyline points="4,12 9,17 20,6" stroke="#00ff97" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              ) : (
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#00ff97', fontFamily: 'monospace' }}>
+                  {uploadPhase === 'uploading' && uploadTotal > 0 ? `${uploadProgress}/${uploadTotal}` : '...'}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Status text */}
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em', marginBottom: 8 }}>
+              {uploadPhase === 'creating' && 'Creating your brand...'}
+              {uploadPhase === 'uploading' && 'Saving your images...'}
+              {uploadPhase === 'done' && 'Your brand is ready.'}
+            </div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
+              {uploadPhase === 'creating' && 'Setting up your workspace'}
+              {uploadPhase === 'uploading' && `Uploading ${uploadTotal} images to your brand library`}
+              {uploadPhase === 'done' && 'Generating your funnel...'}
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          {uploadPhase === 'uploading' && uploadTotal > 0 && (
+            <div style={{ width: 200, height: 2, background: 'rgba(255,255,255,0.1)', borderRadius: 1, overflow: 'hidden' }}>
+              <div style={{
+                height: '100%',
+                width: `${(uploadProgress / uploadTotal) * 100}%`,
+                background: '#00ff97', borderRadius: 1,
+                transition: 'width 0.4s ease',
+                boxShadow: '0 0 8px rgba(0,255,151,0.5)',
+              }} />
+            </div>
+          )}
+        </div>
+      )}
       <style>{`
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

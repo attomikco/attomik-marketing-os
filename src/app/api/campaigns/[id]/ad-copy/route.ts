@@ -22,6 +22,27 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const brand = campaign.brand
   const systemPrompt = buildBrandSystemPrompt(brand)
 
+  const notesData = (() => {
+    try { return brand.notes ? JSON.parse(brand.notes) : {} } catch { return {} }
+  })()
+  const businessType = notesData?.business_type || 'brand'
+  const offeringContext = ({
+    shopify: 'an ecommerce product brand',
+    ecommerce: 'an ecommerce brand',
+    saas: 'a SaaS software product',
+    restaurant: 'a restaurant or food business',
+    service: 'a service-based business',
+    brand: 'a brand',
+  } as Record<string, string>)[businessType] || 'a brand'
+  const defaultCtas = ({
+    shopify: ['Shop Now', 'Add to Cart'],
+    ecommerce: ['Shop Now', 'Buy Now'],
+    saas: ['Start Free Trial', 'Get Started'],
+    restaurant: ['Order Now', 'Reserve a Table'],
+    service: ['Book a Call', 'Get a Quote'],
+    brand: ['Learn More', 'Shop Now'],
+  } as Record<string, string[]>)[businessType] || ['Learn More', 'Shop Now']
+
   const body = await req.json().catch(() => ({}))
   const variationCount = body.count || 3
   const angleOverride = body.angle || ''
@@ -30,7 +51,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const audience = audienceOverride || campaign.audience_notes || brand.target_audience || 'their target audience'
   const angle = angleOverride ? `Use this specific angle: ${angleOverride}` : campaign.angle ? `Campaign angle/concept: ${campaign.angle}` : ''
 
-  const userPrompt = `Write ${variationCount} distinct Facebook ad variations for ${brand.name}.
+  const userPrompt = `Write ${variationCount} distinct Facebook ad variations for ${brand.name}, which is ${offeringContext}.
 
 CAMPAIGN BRIEF:
 - Campaign: ${campaign.name}
@@ -47,6 +68,7 @@ For each variation write:
 3. DESCRIPTION: Maximum 27 characters. Supports the headline, adds context or urgency.
 
 Make each variation feel distinctly different — vary the angle, tone, and hook. Don't just rephrase.
+Suggested CTAs for this business type: ${defaultCtas.join(', ')}.
 
 Respond ONLY with valid JSON in this exact format, no other text:
 {

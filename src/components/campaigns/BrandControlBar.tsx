@@ -16,7 +16,7 @@ interface BrandControlBarProps {
   onFontChange: (v: string) => void
   onImageIndexChange: (i: number) => void
   onAddImages: (files: File[]) => void
-  onRemoveImage: (index: number) => void
+  onRemoveImage: (url: string) => void
   onSave: () => void
   saving?: boolean
 }
@@ -243,7 +243,7 @@ export default function BrandControlBar({
                       <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                         onError={e => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none' }} />
                     </div>
-                    <button onClick={() => onRemoveImage(realIndex >= 0 ? realIndex : i)}
+                    <button onClick={() => onRemoveImage(url)}
                       style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: '#000', color: '#fff', border: '2px solid #fff', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, zIndex: 1 }}>×</button>
                   </div>
                 )
@@ -258,7 +258,7 @@ export default function BrandControlBar({
                       <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                         onError={e => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none' }} />
                     </div>
-                    <button onClick={() => onRemoveImage(realIndex >= 0 ? realIndex : i)}
+                    <button onClick={() => onRemoveImage(url)}
                       style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: '#000', color: '#fff', border: '2px solid #fff', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, zIndex: 1 }}>×</button>
                   </div>
                 )
@@ -274,7 +274,7 @@ export default function BrandControlBar({
                     <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                       onError={e => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none' }} />
                   </div>
-                  <button onClick={() => onRemoveImage(realIndex)}
+                  <button onClick={() => onRemoveImage(url)}
                     style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: '#000', color: '#fff', border: '2px solid #fff', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, zIndex: 1 }}>×</button>
                 </div>
               ))}

@@ -56,6 +56,14 @@ function tryParse(s: string | null) {
 export default function BrandHubClient({ brand, initialImages }: { brand: Brand; initialImages: BrandImage[] }) {
   const supabase = createClient()
 
+  const notesData = tryParse(brand.notes)
+  const businessType = notesData?.business_type || 'brand'
+  const offeringLabel: string = ({
+    shopify: 'Products', ecommerce: 'Products',
+    saas: 'Plans & Pricing', restaurant: 'Menu Items',
+    service: 'Services', brand: 'Offerings',
+  } as Record<string, string>)[businessType] || 'Products'
+
   const isLight = (hex: string) => {
     const c = hex.replace('#', ''); if (c.length < 6) return false
     return (parseInt(c.slice(0,2),16)*299+parseInt(c.slice(2,4),16)*587+parseInt(c.slice(4,6),16)*114)/1000 > 128
@@ -601,7 +609,7 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
       <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '36px 0' }} />
 
       {/* ── SECTION 4: YOUR PRODUCTS ── */}
-      <SectionHeader title="Your Products" subtitle={`${products.length} product${products.length !== 1 ? 's' : ''}`} />
+      <SectionHeader title={`Your ${offeringLabel}`} subtitle={`${products.length} ${offeringLabel.toLowerCase()}`} />
 
       {products.map((product, index) => (
         <div key={index} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 14, padding: 16, marginBottom: 12, display: 'flex', gap: 16, alignItems: 'stretch', position: 'relative' }}>

@@ -277,17 +277,46 @@ export default function PreviewClient({
       setLifestyleImageUrls(lifestyleUrls)
       const allUrls = images.map(img => buildImageUrl(img.storage_path))
       setAllImageUrls(allUrls)
-      filterGoodImages(allUrls).then(goodUrls => { if (goodUrls.length > 0) setAllImageUrls(goodUrls) })
-      filterGoodImages(productUrls).then(good => { if (good.length > 0) setProductImageUrls(good) })
-      filterGoodImages(lifestyleUrls).then(good => { if (good.length > 0) setLifestyleImageUrls(good) })
+      filterGoodImages(allUrls).then(goodUrls => {
+        if (goodUrls.length >= Math.ceil(allUrls.length * 0.3) || goodUrls.length >= 3) {
+          setAllImageUrls(goodUrls)
+        }
+      })
+      filterGoodImages(productUrls).then(good => {
+        if (good.length >= Math.ceil(productUrls.length * 0.3) || good.length >= 2) {
+          setProductImageUrls(good)
+        }
+      })
+      filterGoodImages(lifestyleUrls).then(good => {
+        if (good.length >= Math.ceil(lifestyleUrls.length * 0.3) || good.length >= 2) {
+          setLifestyleImageUrls(good)
+        }
+      })
     }
     if (brandImages.length > 0) {
       console.log('[Preview] Using server-provided brandImages:', brandImages.length)
       loadImages(brandImages)
       setImagesLoaded(true)
+
+      // Poll for stragglers
+      let pollCount = 0
+      let knownCount = brandImages.length
+      const pollInterval = setInterval(async () => {
+        pollCount++
+        const { data } = await supabase
+          .from('brand_images').select('*')
+          .eq('brand_id', brand.id).order('created_at')
+        if (data && data.length > knownCount) {
+          knownCount = data.length
+          loadImages(data as BrandImage[])
+          pollCount = 0
+        }
+        if (pollCount >= 3 || knownCount >= 10) {
+          clearInterval(pollInterval)
+        }
+      }, 3000)
     } else {
       console.log('[Preview] No server images, fetching client-side for brand:', brand.id)
-      // Try immediately, then retry after 3s (images might still be uploading)
       const fetchImages = () => {
         supabase.from('brand_images').select('*').eq('brand_id', brand.id).order('created_at')
           .then(({ data }) => {
@@ -296,8 +325,9 @@ export default function PreviewClient({
           })
       }
       fetchImages()
-      // Retry every 2s up to 5 times, then force-unlock
+      // Retry every 2s, reset counter on new data
       let retries = 0
+      let lastCount = 0
       const retryInterval = setInterval(async () => {
         retries++
         const { data } = await supabase
@@ -305,22 +335,20 @@ export default function PreviewClient({
           .select('*')
           .eq('brand_id', brand.id)
           .order('created_at')
-        if (data && data.length > 0) {
+
+        const count = data?.length || 0
+
+        if (count > 0) {
           loadImages(data as BrandImage[])
           setImagesLoaded(true)
-          clearInterval(retryInterval)
-          // Final fetch after 3s to catch stragglers
-          setTimeout(() => {
-            supabase.from('brand_images').select('*')
-              .eq('brand_id', brand.id).order('created_at')
-              .then(({ data: final }) => {
-                if (final && final.length > (data?.length || 0)) {
-                  loadImages(final as BrandImage[])
-                }
-              })
-          }, 3000)
-        } else if (retries >= 10) {
-          setImagesLoaded(true)
+        }
+
+        if (count > lastCount) {
+          lastCount = count
+          retries = 0 // reset on new data
+        }
+
+        if ((count > 0 && retries >= 5) || retries >= 20) {
           clearInterval(retryInterval)
         }
       }, 2000)
@@ -701,10 +729,16 @@ export default function PreviewClient({
             }
             setAllImageUrls(prev => [...prev, ...newUrls])
           }}
-          onRemoveImage={(index: number) => {
-            const removedUrl = allImageUrls[index]
-            if (removedUrl) setRemovedImageUrls(prev => { const next = new Set(Array.from(prev)); next.add(removedUrl); return next })
-            setAllImageUrls(prev => prev.filter((_, i) => i !== index))
+          onRemoveImage={(url: string) => {
+            setRemovedImageUrls(prev => {
+              const next = new Set(Array.from(prev))
+              next.add(url)
+              return next
+            })
+            setAllImageUrls(prev => prev.filter(u => u !== url))
+            setProductImageUrls(prev => prev.filter(u => u !== url))
+            setLifestyleImageUrls(prev => prev.filter(u => u !== url))
+            setActiveImageIndex(0)
           }}
           onSave={saveBrandColors}
           saving={savingBrand}
