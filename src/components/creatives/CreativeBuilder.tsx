@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { BrandImage } from '@/types'
-import { ChevronDown, Download, Sparkles, Loader2, Check } from 'lucide-react'
+import { Download, Sparkles, Loader2, Check } from 'lucide-react'
 import { TextPosition } from './templates/types'
 import { Callout } from './templates/types'
 import { TEMPLATES, SIZES } from './templates/registry'
@@ -499,16 +499,8 @@ export default function CreativeBuilder({
         </div>
       )}
 
-      {/* TOP BAR — Brand + Size + Actions */}
+      {/* TOP BAR — Size selector */}
       <div className="bg-paper border border-border rounded-card px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2">
-        <div className="relative flex-shrink-0">
-          <select value={brandId} onChange={e => setBrandId(e.target.value)}
-            className="text-sm font-semibold border border-border rounded-btn pl-3 pr-7 py-1.5 bg-cream appearance-none focus:outline-none focus:border-accent">
-            {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-          </select>
-          <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-        </div>
-        <span className="hidden sm:block w-px h-5 bg-border" />
         <div className="flex gap-1 flex-shrink-0">
           {SIZES.map(s => (
             <button key={s.id} onClick={() => setSizeId(s.id)} {...pill(sizeId === s.id)}>{s.label}</button>
