@@ -73,7 +73,7 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
   ])
   const [logoDark, setLogoDark] = useState(brand.logo_url || '')
   const [logoLight, setLogoLight] = useState(tryParse(brand.notes)?.logo_url_light || '')
-  const [defaultCta, setDefaultCta] = useState(brand.default_cta || '')
+  const [defaultCta, setDefaultCta] = useState(brand.default_cta || 'Shop Now')
   const [products, setProducts] = useState<Array<{ name: string; description: string; price: string; image: string | null }>>(
     brand.products?.map((p: any) => ({
       name: p.name || '',
