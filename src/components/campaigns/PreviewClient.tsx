@@ -532,7 +532,23 @@ export default function PreviewClient({
       `}</style>
 
       {/* Hero */}
-      <div className="pv-hero" style={{ background: '#000', padding: '64px 32px 56px', textAlign: 'center', marginBottom: 0 }}>
+      {brand.status === 'active' && (
+        <div style={{ background: '#000', padding: '28px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, borderBottom: '1px solid rgba(255,255,255,0.08)', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: brand.primary_color || '#00ff97', flexShrink: 0 }} />
+            <div>
+              <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em' }}>{brand.name}</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{campaign.name} · Last updated {new Date(campaign.updated_at || campaign.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <a href={`/creatives?brand=${brand.id}&campaign=${campaign.id}`} style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', padding: '8px 16px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.05)', whiteSpace: 'nowrap' }}>Edit creatives →</a>
+            <a href={`/copy?campaign=${campaign.id}`} style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', padding: '8px 16px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.05)', whiteSpace: 'nowrap' }}>Edit copy →</a>
+            <a href="/dashboard" style={{ fontSize: 12, fontWeight: 700, color: '#000', textDecoration: 'none', padding: '8px 16px', borderRadius: 999, background: '#00ff97', whiteSpace: 'nowrap' }}>← Dashboard</a>
+          </div>
+        </div>
+      )}
+      {brand.status === 'draft' && <div className="pv-hero" style={{ background: '#000', padding: '64px 32px 56px', textAlign: 'center', marginBottom: 0 }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.25)', borderRadius: 999, padding: '5px 16px', fontSize: 11, fontWeight: 700, color: '#00ff97', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 24 }}>
           ✦ Built in 30 seconds
         </div>
@@ -597,7 +613,7 @@ export default function PreviewClient({
             </div>
           </div>
         </div>
-      </div>
+      </div>}
 
       {brand.status === 'draft' && (
         <div className="max-w-5xl mx-auto px-4 md:px-10 mt-8">
