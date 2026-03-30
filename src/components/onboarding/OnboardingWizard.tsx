@@ -218,7 +218,7 @@ export default function OnboardingWizard() {
       accent_color: accentColor || null,
       font_primary: brandFont ? `${brandFont}|700|${fontTransform}` : null,
       font_heading: brandFont ? { family: brandFont, weight: '700', transform: fontTransform, letterSpacing: fontLetterSpacing } : null,
-      logo_url: detectedLogo || null,
+      logo_url: null,
       products: (() => {
         if (detectedProducts.length > 0) {
           return detectedProducts.map(p => ({

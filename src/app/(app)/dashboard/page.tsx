@@ -85,17 +85,22 @@ export default async function DashboardPage() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          {brand.logo_url ? (
-            <img src={brand.logo_url} style={{ height: 48, width: 'auto', objectFit: 'contain', borderRadius: 8 }} alt={brand.name} />
-          ) : (
-            <div style={{
-              width: 48, height: 48, borderRadius: 12, background: `${textOnPrimary}18`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, color: textOnPrimary,
-            }}>
-              {brand.name[0].toUpperCase()}
-            </div>
+          {brand.logo_url && (
+            <img src={brand.logo_url} alt={brand.name}
+              onError={e => {
+                e.currentTarget.style.display = 'none'
+                const sibling = e.currentTarget.nextElementSibling as HTMLElement
+                if (sibling) sibling.style.display = 'flex'
+              }}
+              style={{ height: 48, width: 'auto', objectFit: 'contain', borderRadius: 8 }} />
           )}
+          <div style={{
+            width: 48, height: 48, borderRadius: 12, background: `${textOnPrimary}18`,
+            display: brand.logo_url ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, color: textOnPrimary,
+          }}>
+            {brand.name[0].toUpperCase()}
+          </div>
           <div>
             <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 24, color: textOnPrimary, letterSpacing: '-0.01em', textTransform: 'uppercase' }}>
               {brand.name}
