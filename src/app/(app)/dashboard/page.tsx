@@ -16,21 +16,12 @@ export default async function DashboardPage() {
   if (!brand) redirect('/onboarding')
 
   const completenessFields = [
-    { key: 'logo_url',        label: 'Logo',              href: `/brand-setup/${brand.id}?step=1` },
-    { key: 'mission',         label: 'Brand description', href: `/brand-setup/${brand.id}?step=1` },
-    { key: 'target_audience', label: 'Target audience',   href: `/brand-setup/${brand.id}?step=1` },
-    { key: 'brand_voice',     label: 'Brand voice',       href: `/brand-setup/${brand.id}?step=1` },
-    { key: 'products',        label: 'Product details',   href: `/brand-setup/${brand.id}?step=2` },
+    { key: 'logo_url',        label: 'Logo' },
+    { key: 'mission',         label: 'Brand description' },
+    { key: 'target_audience', label: 'Target audience' },
+    { key: 'brand_voice',     label: 'Brand voice' },
+    { key: 'products',        label: 'Products' },
   ]
-
-  const completedCount = completenessFields.filter(
-    f => {
-      const v = (brand as any)[f.key]
-      if (f.key === 'products') return Array.isArray(v) && v.length > 0
-      return !!v
-    }
-  ).length
-  const completenessPercent = Math.round((completedCount / completenessFields.length) * 100)
 
   const { count: imageCount } = await supabase
     .from('brand_images')
@@ -38,6 +29,16 @@ export default async function DashboardPage() {
     .eq('brand_id', brand.id)
 
   const hasImages = (imageCount || 0) > 0
+  const imageScore = (imageCount || 0) >= 3 ? 1 : 0
+
+  const completedCount = completenessFields.filter(f => {
+    const v = (brand as any)[f.key]
+    if (f.key === 'products') return Array.isArray(v) && v.length > 0
+    return !!v
+  }).length + imageScore
+
+  const totalFields = completenessFields.length + 1
+  const completenessPercent = Math.round((completedCount / totalFields) * 100)
 
   const { data: campaigns } = await supabase
     .from('campaigns')
@@ -109,7 +110,7 @@ export default async function DashboardPage() {
             <div style={{ width: 120, height: 4, background: '#f0f0f0', borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
               <div style={{ height: '100%', width: `${completenessPercent}%`, background: completenessPercent === 100 ? '#00ff97' : primaryColor, borderRadius: 2 }} />
             </div>
-            <div style={{ fontSize: 11, color: 'var(--muted)' }}>{completedCount}/{completenessFields.length}</div>
+            <div style={{ fontSize: 11, color: 'var(--muted)' }}>{completedCount}/{totalFields}</div>
           </div>
           <div style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
           <div style={{ display: 'flex', gap: 8 }}>
@@ -129,7 +130,7 @@ export default async function DashboardPage() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
         }}>
           <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-            Missing:{' '}
+            To reach 100%:{' '}
             {completenessFields
               .filter(f => {
                 const v = (brand as any)[f.key]
@@ -138,10 +139,10 @@ export default async function DashboardPage() {
               })
               .map(f => f.label)
               .join(', ')}
-            {!hasImages && ' · Product images'}
+            {(imageCount || 0) < 3 && ' · 3+ product images'}
           </div>
           <Link href={`/brand-setup/${brand.id}`} style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
-            Complete brand setup →
+            {completenessPercent >= 60 ? 'Almost there — complete your brand →' : 'Get to 100% for better creatives →'}
           </Link>
         </div>
       )}
