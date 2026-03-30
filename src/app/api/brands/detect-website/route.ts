@@ -1,6 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { decodeHtml } from '@/lib/decodeHtml'
 
+function upgradeShopifyUrl(url: string): string {
+  if (url && (url.includes('cdn.shopify.com') || url.includes('shopifycdn.com'))) {
+    try {
+      const u = new URL(url)
+      u.searchParams.delete('width')
+      u.searchParams.delete('height')
+      u.searchParams.delete('crop')
+      u.pathname = u.pathname
+        .replace(/_small\./g, '.').replace(/_medium\./g, '.').replace(/_large\./g, '.')
+        .replace(/_thumb\./g, '.').replace(/_100x\./g, '.').replace(/_200x\./g, '.')
+        .replace(/_300x\./g, '.').replace(/_400x\./g, '.')
+      return u.toString()
+    } catch { return url }
+  }
+  return url
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { url } = await req.json()
@@ -215,7 +232,7 @@ export async function POST(req: NextRequest) {
               name: decodeHtml(p.title) || '',
               description: p.body_html ? p.body_html.replace(/<[^>]*>/g, ' ').trim().slice(0, 200) : null,
               price: p.variants?.[0]?.price || null,
-              image: p.images?.[0]?.src || null,
+              image: p.images?.[0]?.src ? upgradeShopifyUrl(p.images[0].src) : null,
             }))
           }
         }
@@ -277,7 +294,7 @@ export async function POST(req: NextRequest) {
               name: decodeHtml(p.name || ''),
               description: p.short_description ? p.short_description.replace(/<[^>]*>/g, ' ').trim().slice(0, 200) : null,
               price: p.price || null,
-              image: p.images?.[0]?.src || null,
+              image: p.images?.[0]?.src ? upgradeShopifyUrl(p.images[0].src) : null,
             })).filter((p: DetectedProduct) => p.name)
           }
         }
@@ -401,9 +418,17 @@ export async function POST(req: NextRequest) {
       uniqueImages.push({ url, tag, score })
     }
 
+    // Upgrade Shopify CDN URLs to full resolution
+    for (const img of uniqueImages) {
+      img.url = upgradeShopifyUrl(img.url)
+    }
+
+    const finalOgImage = ogImage ? upgradeShopifyUrl(ogImage) : null
+    const finalLogo = logo ? upgradeShopifyUrl(logo) : null
+
     const images = uniqueImages.sort((a, b) => b.score - a.score).slice(0, 12)
 
-    return NextResponse.json({ name, colors, font, fontTransform, letterSpacing, ogImage, logo, platform, products, images })
+    return NextResponse.json({ name, colors, font, fontTransform, letterSpacing, ogImage: finalOgImage, logo: finalLogo, platform, products, images })
   } catch (e) {
     console.error('[detect-website] outer catch:', e)
     return NextResponse.json({ name: null, colors: [], font: null, fontTransform: 'none', letterSpacing: 'normal', ogImage: null, logo: null, platform: 'other', products: [], images: [] })
