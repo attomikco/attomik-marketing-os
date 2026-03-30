@@ -24,7 +24,7 @@ export default function TopNav() {
       padding: '0 40px', height: 72, gap: 4,
     }}>
       <Link href="/dashboard" style={{ marginRight: 20, flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-        <AttomikLogo height={28} color="#000" />
+        <AttomikLogo height={36} color="#000" />
       </Link>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
