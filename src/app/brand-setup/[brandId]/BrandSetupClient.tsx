@@ -80,9 +80,10 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
     return [...base, ...extra]
   })
   const headingFamily = brand.font_heading?.family || brand.font_primary?.split('|')[0] || ''
-  const [fonts, setFonts] = useState<Array<{ label: string; family: string; weight: string; transform: string }>>([
-    { label: 'Heading', family: headingFamily, weight: brand.font_heading?.weight || brand.font_primary?.split('|')[1] || '700', transform: brand.font_heading?.transform || brand.font_primary?.split('|')[2] || 'none' },
-    { label: 'Body', family: brand.font_body?.family || brand.font_secondary?.split('|')[0] || headingFamily, weight: brand.font_body?.weight || '400', transform: 'none' },
+  const bodyFamily = brand.font_body?.family || brand.font_secondary?.split('|')[0] || headingFamily
+  const [fonts, setFonts] = useState<Array<{ label: string; family: string; weight: string }>>([
+    { label: 'Heading', family: headingFamily, weight: brand.font_heading?.weight || '700' },
+    { label: 'Body', family: bodyFamily, weight: brand.font_body?.weight || '400' },
   ])
   const [logoDark, setLogoDark] = useState(brand.logo_url || '')
   const [logoLight, setLogoLight] = useState(tryParse(brand.notes)?.logo_url_light || '')
@@ -151,7 +152,7 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
       }
     }
   }
-  function addFont() { setFonts(prev => [...prev, { label: `Font ${prev.length + 1}`, family: '', weight: '400', transform: 'none' }]) }
+  function addFont() { setFonts(prev => [...prev, { label: `Font ${prev.length + 1}`, family: '', weight: '400' }]) }
   function removeFont(index: number) { if (fonts.length <= 1) return; setFonts(prev => prev.filter((_, i) => i !== index)) }
 
   function updateProduct(index: number, field: string, value: string) {
@@ -223,9 +224,9 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
       tone_keywords: toneKeywords.length ? toneKeywords : null,
       avoid_words: avoidWords.length ? avoidWords : null,
       primary_color: colors[0]?.value || null, secondary_color: colors[1]?.value || null, accent_color: colors[2]?.value || null,
-      font_primary: fonts[0]?.family ? `${fonts[0].family}|${fonts[0].weight}|${fonts[0].transform}` : null,
+      font_primary: fonts[0]?.family ? `${fonts[0].family}|${fonts[0].weight}|none` : null,
       font_secondary: fonts[1]?.family ? `${fonts[1].family}|${fonts[1].weight || '400'}|none` : null,
-      font_heading: fonts[0]?.family ? { family: fonts[0].family, weight: fonts[0].weight || '700', transform: fonts[0].transform || 'none', letterSpacing: 'normal' } : null,
+      font_heading: fonts[0]?.family ? { family: fonts[0].family, weight: fonts[0].weight || '700', transform: 'none', letterSpacing: 'normal' } : null,
       font_body: fonts[1]?.family ? { family: fonts[1].family, weight: fonts[1].weight || '400', transform: 'none', letterSpacing: 'normal' } : null,
       logo_url: logoDark || null,
       notes: JSON.stringify({
