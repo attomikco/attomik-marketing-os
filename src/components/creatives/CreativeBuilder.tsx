@@ -581,7 +581,7 @@ export default function CreativeBuilder({
       {/* MAIN AREA: Preview+Style (left) + Images+Copy (right) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-        {/* LEFT: Preview + Style */}
+        {/* LEFT: Preview + Images + Copy */}
         <div className="lg:col-span-7 space-y-4 overflow-hidden" ref={leftPanelRef}>
           <PreviewCanvas
             templateLabel={template.label}
@@ -613,6 +613,33 @@ export default function CreativeBuilder({
             exportingAll={exportingAll}
           />
 
+          <ImagePicker
+            images={images}
+            selectedImageId={selectedImageId}
+            setSelectedImageId={setSelectedImageId}
+            brandColor={brandColor}
+            getPublicUrl={getPublicUrl}
+          />
+
+          <CopyEditor
+            headline={headline}
+            setHeadline={setHeadline}
+            bodyText={bodyText}
+            setBodyText={setBodyText}
+            ctaText={ctaText}
+            setCtaText={setCtaText}
+            showCta={showCta}
+            setShowCta={setShowCta}
+            brandId={brandId}
+            setExportToast={setExportToast}
+            inputCls={inputCls}
+            generateCopy={generateCopy}
+            generating={generating}
+          />
+        </div>
+
+        {/* RIGHT SIDEBAR: Style + template-specific */}
+        <div className="lg:col-span-5 space-y-4">
           <StylePanel
             templateId={templateId}
             brand={brand}
@@ -660,33 +687,6 @@ export default function CreativeBuilder({
             setCtaColor={setCtaColor}
             ctaFontColor={ctaFontColor}
             setCtaFontColor={setCtaFontColor}
-          />
-        </div>
-
-        {/* RIGHT SIDEBAR */}
-        <div className="lg:col-span-5 space-y-4">
-          <ImagePicker
-            images={images}
-            selectedImageId={selectedImageId}
-            setSelectedImageId={setSelectedImageId}
-            brandColor={brandColor}
-            getPublicUrl={getPublicUrl}
-          />
-
-          <CopyEditor
-            headline={headline}
-            setHeadline={setHeadline}
-            bodyText={bodyText}
-            setBodyText={setBodyText}
-            ctaText={ctaText}
-            setCtaText={setCtaText}
-            showCta={showCta}
-            setShowCta={setShowCta}
-            brandId={brandId}
-            setExportToast={setExportToast}
-            inputCls={inputCls}
-            generateCopy={generateCopy}
-            generating={generating}
           />
 
           {/* Template-specific sidebars */}
