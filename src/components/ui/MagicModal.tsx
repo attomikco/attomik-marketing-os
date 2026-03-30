@@ -79,7 +79,7 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
       setCurrentBlock(count - 1)
       if (count >= 6) {
         clearInterval(buildInterval)
-        let cycle = 0
+        let cycle = -1
         cycleIntervalRef.current = setInterval(() => {
           cycle = (cycle + 1) % 6
           setCurrentBlock(cycle)
