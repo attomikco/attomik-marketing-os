@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   try {
     const res = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'image/*' },
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(10000),
     })
 
     if (!res.ok) return new Response('Failed', { status: 502 })

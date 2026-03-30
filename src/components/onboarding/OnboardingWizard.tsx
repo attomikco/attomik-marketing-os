@@ -42,6 +42,8 @@ export default function OnboardingWizard() {
   const [productImageUrl, setProductImageUrl] = useState<string | null>(null)
   const [targetAudience, setTargetAudience] = useState('')
   const [imageFiles, setImageFiles] = useState<File[]>([])
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadTotal, setUploadTotal] = useState(0)
   const fileRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const autoAnalyzed = useRef(false)
@@ -125,6 +127,13 @@ export default function OnboardingWizard() {
   }
 
   async function uploadImagesInBackground(brandId: string) {
+    const productImageUrls = detectedProducts.map(p => p.image).filter((url): url is string => !!url)
+    const ogEntry: typeof detectedImages = detectedImage ? [{ url: detectedImage, tag: 'lifestyle' as const, score: 10 }] : []
+    const allScraped = [...ogEntry, ...detectedImages].slice(0, 20)
+    const total = (detectedLogo ? 1 : 0) + imageFiles.length + productImageUrls.length + allScraped.length
+    setUploadTotal(total)
+    let done = 0
+
     // Upload detected logo to brand-assets
     if (detectedLogo) {
       try {
@@ -146,6 +155,7 @@ export default function OnboardingWizard() {
       } catch {
         await supabase.from('brands').update({ logo_url: detectedLogo }).eq('id', brandId)
       }
+      done++; setUploadProgress(done)
     }
 
     // Upload manually selected files — parallel
@@ -162,9 +172,9 @@ export default function OnboardingWizard() {
           })
         }
       } catch {}
+      done++; setUploadProgress(done)
     }))
     // Upload ALL detected product images
-    const productImageUrls = detectedProducts.map(p => p.image).filter((url): url is string => !!url)
     await Promise.allSettled(productImageUrls.map(async (imgUrl, idx) => {
       try {
         const imgRes = await fetch('/api/brands/proxy-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: imgUrl }) })
@@ -178,13 +188,10 @@ export default function OnboardingWizard() {
           await supabase.from('brand_images').insert({ brand_id: brandId, file_name: fileName, storage_path: storagePath, tag: 'product', mime_type: blob.type || 'image/jpeg', size_bytes: blob.size })
         }
       } catch {}
+      done++; setUploadProgress(done)
     }))
-    // Upload scraped images from website — parallel (prepend OG image as lifestyle)
-    const ogEntry: typeof detectedImages = detectedImage
-      ? [{ url: detectedImage, tag: 'lifestyle' as const, score: 10 }]
-      : []
-    const allToUpload = [...ogEntry, ...detectedImages].slice(0, 9)
-    await Promise.allSettled(allToUpload.map(async (img) => {
+    // Upload scraped images from website — parallel
+    await Promise.allSettled(allScraped.map(async (img) => {
       try {
         const imgRes = await fetch('/api/brands/proxy-image', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -203,6 +210,7 @@ export default function OnboardingWizard() {
           })
         }
       } catch {}
+      done++; setUploadProgress(done)
     }))
   }
 
@@ -256,11 +264,11 @@ export default function OnboardingWizard() {
     sessionStorage.setItem('attomik_draft_brand_id', brand.id)
     sessionStorage.setItem('attomik_draft_campaign_id', campaign.id)
 
-    // Redirect immediately — images upload silently in background
-    router.push(`/preview/${campaign.id}`)
+    // Upload images BEFORE redirecting
+    await uploadImagesInBackground(brand.id)
 
-    // Fire and forget — user is already seeing MagicModal animations
-    uploadImagesInBackground(brand.id)
+    // Then redirect
+    router.push(`/preview/${campaign.id}`)
   }
 
   // ── Step 1 content ──────────────────────────────────────────────
@@ -654,9 +662,12 @@ export default function OnboardingWizard() {
             ) : (
               <button onClick={submit} disabled={saving}
                 className="flex items-center gap-2 text-sm font-bold px-6 py-2.5 rounded-btn transition-opacity hover:opacity-90 disabled:opacity-50"
-                style={{ background: '#00ff97', color: '#000' }}>
+                style={{ background: '#00ff97', color: '#000', position: 'relative', overflow: 'hidden' }}>
                 {saving && <Loader2 size={14} className="animate-spin" />}
-                {saving ? 'Creating your funnel...' : 'Launch my funnel →'}
+                {saving ? (uploadTotal > 0 ? `Saving images ${uploadProgress}/${uploadTotal}...` : 'Building your funnel...') : 'Launch my funnel →'}
+                {saving && uploadTotal > 0 && (
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, height: 3, borderRadius: 999, background: '#000', width: `${(uploadProgress / uploadTotal) * 100}%`, transition: 'width 0.3s ease' }} />
+                )}
               </button>
             )}
           </div>
