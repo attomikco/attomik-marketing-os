@@ -321,14 +321,10 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
           <input style={inputStyle} value={name} onChange={e => setName(e.target.value)} onFocus={e => e.currentTarget.style.borderColor = '#000'} onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
         </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16, marginBottom: 16 }}>
         <div>
           <label style={labelStyle}>Website</label>
           <input style={inputStyle} value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://yourbrand.com" onFocus={e => e.currentTarget.style.borderColor = '#000'} onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
-        </div>
-        <div>
-          <label style={labelStyle}>Industry</label>
-          <input style={inputStyle} value={brand.industry || ''} readOnly placeholder="Auto-detected" onFocus={e => e.currentTarget.style.borderColor = '#000'} onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
         </div>
       </div>
 
