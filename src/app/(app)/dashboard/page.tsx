@@ -2,7 +2,12 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ brand?: string }>
+}) {
+  const { brand: brandParam } = await searchParams
   const supabase = await createClient()
 
   const { data: brands } = await supabase
@@ -10,10 +15,10 @@ export default async function DashboardPage() {
     .select('*')
     .eq('status', 'active')
     .order('created_at', { ascending: false })
-    .limit(1)
 
-  const brand = brands?.[0]
-  if (!brand) redirect('/onboarding')
+  if (!brands?.length) redirect('/onboarding')
+
+  const brand = brands.find((b: any) => b.id === brandParam) || brands[0]
 
   const completenessFields = [
     { key: 'logo_url',        label: 'Logo' },
@@ -79,6 +84,25 @@ export default async function DashboardPage() {
           Welcome back.
         </h1>
       </div>
+
+      {/* Brand switcher */}
+      {brands.length > 1 && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+          {brands.map((b: any) => {
+            const isActive = b.id === brand.id
+            return (
+              <Link key={b.id} href={`/dashboard?brand=${b.id}`} style={{
+                display: 'flex', alignItems: 'center', gap: 8, padding: '7px 14px',
+                borderRadius: 999, border: isActive ? '2px solid #000' : '1.5px solid var(--border)',
+                background: isActive ? '#000' : '#fff', textDecoration: 'none', transition: 'all 0.15s', flexShrink: 0,
+              }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: b.primary_color || '#000', flexShrink: 0 }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: isActive ? '#fff' : 'var(--ink)', whiteSpace: 'nowrap' }}>{b.name}</span>
+              </Link>
+            )
+          })}
+        </div>
+      )}
 
       {/* Brand card */}
       <div style={{ borderRadius: 20, background: '#fff', border: '1px solid var(--border)', marginBottom: 16, padding: '24px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
