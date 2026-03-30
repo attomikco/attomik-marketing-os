@@ -83,6 +83,8 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
   const [imageUrls, setImageUrls] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState<'dark' | 'light' | null>(null)
+  const [generatingVoice, setGeneratingVoice] = useState(false)
+  const [aiPrefilled, setAiPrefilled] = useState(false)
 
   function updateColor(index: number, value: string) { setColors(prev => prev.map((c, i) => i === index ? { ...c, value } : c)) }
   function updateColorLabel(index: number, label: string) { setColors(prev => prev.map((c, i) => i === index ? { ...c, label } : c)) }
@@ -128,6 +130,34 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
       document.head.appendChild(link)
     })
   }, [])
+
+  // Auto-generate voice if fields are empty
+  useEffect(() => {
+    const isEmpty = !brand.mission && !brand.target_audience && !brand.brand_voice
+    if (isEmpty && brand.website) generateVoice()
+    // Show banner if fields came pre-filled
+    if (brand.mission || brand.target_audience || brand.brand_voice) {
+      const hasSeenBrand = sessionStorage.getItem(`brand-seen-${brand.id}`)
+      if (!hasSeenBrand) { setAiPrefilled(true); sessionStorage.setItem(`brand-seen-${brand.id}`, '1') }
+    }
+  }, [])
+
+  async function generateVoice() {
+    setGeneratingVoice(true)
+    try {
+      const res = await fetch(`/api/brands/${brand.id}/generate-voice`, { method: 'POST' })
+      const data = await res.json()
+      if (data.voice) {
+        if (data.voice.mission) setMission(data.voice.mission)
+        if (data.voice.target_audience) setTargetAudience(data.voice.target_audience)
+        if (data.voice.brand_voice) setBrandVoice(data.voice.brand_voice)
+        if (data.voice.tone_keywords?.length) setToneKeywords(data.voice.tone_keywords)
+        if (data.voice.avoid_words?.length) setAvoidWords(data.voice.avoid_words)
+        setAiPrefilled(true)
+      }
+    } catch {}
+    setGeneratingVoice(false)
+  }
 
   async function saveAll() {
     setSaving(true)
@@ -394,7 +424,30 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
       <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '36px 0' }} />
 
       {/* ── SECTION 3: BRAND VOICE ── */}
-      <SectionHeader title="Brand Voice" subtitle="How your brand communicates" />
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
+        <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Brand Voice</div>
+        <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 400, flex: 1 }}>How your brand communicates</div>
+        <button onClick={generateVoice} disabled={generatingVoice} style={{ background: 'none', border: '1px solid #e0e0e0', borderRadius: 8, padding: '4px 12px', fontSize: 11, fontWeight: 700, color: 'var(--muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+          {generatingVoice ? (<><div style={{ width: 10, height: 10, border: '2px solid #ddd', borderTopColor: '#555', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />Generating...</>) : '✦ AI fill'}
+        </button>
+      </div>
+
+      {generatingVoice && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(0,0,0,0.04)', border: '1px solid #e0e0e0', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: 'var(--muted)' }}>
+          <div style={{ width: 14, height: 14, flexShrink: 0, border: '2px solid #ddd', borderTopColor: '#000', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          Analyzing your website to pre-fill brand voice...
+        </div>
+      )}
+
+      {aiPrefilled && !generatingVoice && (
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, background: 'rgba(0,255,151,0.06)', border: '1px solid rgba(0,255,151,0.2)', borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
+          <div style={{ fontSize: 13, color: '#00a86b', lineHeight: 1.5 }}>
+            <strong>✦ AI pre-filled</strong> — We analyzed your website and made our best guess. Review each field and improve it to get better creatives.
+          </div>
+          <button onClick={generateVoice} style={{ background: 'none', border: 'none', fontSize: 11, fontWeight: 700, color: '#00a86b', cursor: 'pointer', whiteSpace: 'nowrap', padding: 0, flexShrink: 0 }}>Regenerate →</button>
+        </div>
+      )}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <div>
           <label style={labelStyle}>What does your brand do?</label>

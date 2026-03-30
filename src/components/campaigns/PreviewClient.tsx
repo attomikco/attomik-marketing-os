@@ -343,6 +343,15 @@ export default function PreviewClient({
     if (hasContent) return
 
     async function generate() {
+      // Fire voice generation silently in background
+      const needsVoice = !brand.mission && !brand.target_audience && !brand.brand_voice
+      if (needsVoice) {
+        fetch(`/api/brands/${brand.id}/generate-voice`, { method: 'POST' })
+          .then(res => res.json())
+          .then(data => console.log('[Voice] Generated:', data.voice?.mission?.slice(0, 50)))
+          .catch(() => {})
+      }
+
       // Ad copy
       setMagicModal({ mode: 'adcopy', isDone: false })
       try {
