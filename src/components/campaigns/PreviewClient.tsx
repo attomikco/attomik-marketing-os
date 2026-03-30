@@ -107,9 +107,32 @@ export default function PreviewClient({
   const router = useRouter()
   const supabase = createClient()
   const [activating, setActivating] = useState(false)
+  const [removedImageUrls, setRemovedImageUrls] = useState<Set<string>>(new Set())
+
+  async function syncBrandChanges() {
+    if (removedImageUrls.size > 0) {
+      const { data: brandImgs } = await supabase.from('brand_images').select('id, storage_path').eq('brand_id', brand.id)
+      if (brandImgs) {
+        const toDelete = brandImgs.filter(img => {
+          const cleanPath = img.storage_path.replace(/^brand-images\//, '')
+          const url = supabase.storage.from('brand-images').getPublicUrl(cleanPath).data.publicUrl
+          return removedImageUrls.has(url)
+        })
+        if (toDelete.length > 0) {
+          await supabase.from('brand_images').delete().in('id', toDelete.map(i => i.id))
+          await Promise.allSettled(toDelete.map(img => supabase.storage.from('brand-images').remove([img.storage_path])))
+        }
+      }
+    }
+    await supabase.from('brands').update({
+      primary_color: brandPrimary, secondary_color: brandSecondary,
+      accent_color: brandAccent, font_primary: fontFamily || null,
+    }).eq('id', brand.id)
+  }
 
   async function activateBrand() {
     setActivating(true)
+    await syncBrandChanges()
     await supabase.from('brands').update({ status: 'active' }).eq('id', brand.id)
     sessionStorage.removeItem('attomik_draft_brand_id')
     sessionStorage.removeItem('attomik_draft_campaign_id')
@@ -118,6 +141,7 @@ export default function PreviewClient({
 
   async function navigateWithActivation(href: string) {
     if (brand.status === 'draft') {
+      await syncBrandChanges()
       await supabase.from('brands').update({ status: 'active' }).eq('id', brand.id)
       sessionStorage.removeItem('attomik_draft_brand_id')
       sessionStorage.removeItem('attomik_draft_campaign_id')
@@ -653,6 +677,8 @@ export default function PreviewClient({
             setAllImageUrls(prev => [...prev, ...newUrls])
           }}
           onRemoveImage={(index: number) => {
+            const removedUrl = allImageUrls[index]
+            if (removedUrl) setRemovedImageUrls(prev => new Set([...prev, removedUrl]))
             setAllImageUrls(prev => prev.filter((_, i) => i !== index))
           }}
           onSave={saveBrandColors}
