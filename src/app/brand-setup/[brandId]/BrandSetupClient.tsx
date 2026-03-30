@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Brand, BrandImage } from '@/types'
 
@@ -103,6 +103,24 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
   const [uploadingLogo, setUploadingLogo] = useState<'dark' | 'light' | null>(null)
   const [generatingVoice, setGeneratingVoice] = useState(false)
   const [aiPrefilled, setAiPrefilled] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
+  const [fontDropdownOpen, setFontDropdownOpen] = useState<number | null>(null)
+  const [fontSearch, setFontSearch] = useState('')
+
+  const initialRef = useRef({
+    name: brand.name, website: brand.website || '', mission: brand.mission || '',
+    targetAudience: brand.target_audience || '', brandVoice: brand.brand_voice || '',
+    toneKeywords: JSON.stringify(brand.tone_keywords || []), avoidWords: JSON.stringify(brand.avoid_words || []),
+    defaultCta: brand.default_cta || 'Shop Now',
+  })
+
+  useEffect(() => {
+    const i = initialRef.current
+    const hasChanges = name !== i.name || website !== i.website || mission !== i.mission ||
+      targetAudience !== i.targetAudience || brandVoice !== i.brandVoice || defaultCta !== i.defaultCta ||
+      JSON.stringify(toneKeywords) !== i.toneKeywords || JSON.stringify(avoidWords) !== i.avoidWords
+    setIsDirty(hasChanges)
+  }, [name, website, mission, targetAudience, brandVoice, toneKeywords, avoidWords, defaultCta, colors, fonts])
 
   function updateColor(index: number, value: string) { setColors(prev => prev.map((c, i) => i === index ? { ...c, value } : c)) }
   function updateColorLabel(index: number, label: string) { setColors(prev => prev.map((c, i) => i === index ? { ...c, label } : c)) }
@@ -111,10 +129,13 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
 
   function updateFont(index: number, family: string) {
     setFonts(prev => prev.map((f, i) => i === index ? { ...f, family } : f))
-    if (family) {
-      const link = document.createElement('link'); link.rel = 'stylesheet'
-      link.href = `https://fonts.googleapis.com/css2?family=${family.replace(/ /g, '+')}:wght@400;700;900&display=swap`
-      document.head.appendChild(link)
+    if (family && typeof document !== 'undefined') {
+      const id = `gfont-${family.replace(/\s/g, '-')}`
+      if (!document.getElementById(id)) {
+        const link = document.createElement('link'); link.id = id; link.rel = 'stylesheet'
+        link.href = `https://fonts.googleapis.com/css2?family=${family.replace(/ /g, '+')}:wght@400;700;900&display=swap`
+        document.head.appendChild(link)
+      }
     }
   }
   function addFont() { setFonts(prev => [...prev, { label: `Font ${prev.length + 1}`, family: '' }]) }
@@ -201,6 +222,8 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
     }).eq('id', brand.id)
     setSaving(false)
     setSaved(true)
+    setIsDirty(false)
+    initialRef.current = { name, website, mission, targetAudience, brandVoice, defaultCta, toneKeywords: JSON.stringify(toneKeywords), avoidWords: JSON.stringify(avoidWords) }
     setTimeout(() => setSaved(false), 3000)
   }
 
@@ -273,7 +296,7 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
           <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{title}</div>
-          <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 400 }}>{subtitle}</div>
+          <div style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 400 }}>{subtitle}</div>
         </div>
         {action}
       </div>
@@ -281,7 +304,7 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
   }
 
   return (
-    <div style={{ padding: '32px 40px', maxWidth: 800, margin: '0 auto', background: 'var(--cream, #f8f7f4)', color: 'var(--ink, #1a1a1a)', minHeight: '100vh' }}>
+    <div style={{ padding: '32px 40px', paddingBottom: isDirty ? 80 : 32, maxWidth: 800, margin: '0 auto', background: 'var(--cream, #f8f7f4)', color: 'var(--ink, #1a1a1a)', minHeight: '100vh' }}>
 
       {/* Brand banner */}
       {(() => {
@@ -340,8 +363,8 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           {/* Color logo */}
           <div>
-            <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8, fontWeight: 600 }}>
-              Color logo <span style={{ fontWeight: 400, marginLeft: 6, fontSize: 10 }}>for light backgrounds</span>
+            <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 8, fontWeight: 600 }}>
+              Color logo <span style={{ fontWeight: 400, marginLeft: 8, fontSize: 12 }}>for light backgrounds</span>
             </div>
             <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 110, borderRadius: 12, border: '2px dashed var(--border)', background: '#fff', cursor: 'pointer', overflow: 'hidden', transition: 'border-color 0.15s', position: 'relative' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = '#000')} onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
@@ -367,8 +390,8 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
 
           {/* White logo */}
           <div>
-            <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8, fontWeight: 600 }}>
-              White logo <span style={{ fontWeight: 400, marginLeft: 6, fontSize: 10 }}>for dark backgrounds</span>
+            <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 8, fontWeight: 600 }}>
+              White logo <span style={{ fontWeight: 400, marginLeft: 8, fontSize: 12 }}>for dark backgrounds</span>
             </div>
             <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 110, borderRadius: 12, border: '2px dashed #d0d0d0', background: logoLight ? 'repeating-conic-gradient(#e0e0e0 0% 25%, #f5f5f5 0% 50%) 0 0 / 16px 16px' : '#f0f0f0', cursor: 'pointer', overflow: 'hidden', transition: 'border-color 0.15s', position: 'relative' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = '#000')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#d0d0d0')}>
@@ -438,8 +461,22 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
                 <select value={font.label} onChange={e => setFonts(prev => prev.map((f, i) => i === index ? { ...f, label: e.target.value } : f))} style={{ ...inputStyle, width: 130, fontSize: 12, padding: '8px 12px', color: '#555', cursor: 'pointer', appearance: 'none' as const, backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', paddingRight: 28 }}>
                   {['Heading', 'Body', 'Accent', 'Mono', 'Display', 'UI'].map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
-                <input type="text" list={`font-list-${index}`} value={font.family} onChange={e => updateFont(index, e.target.value)} style={{ ...inputStyle, flex: 1, fontFamily: font.family ? `${font.family}, sans-serif` : 'inherit', fontSize: 14, padding: '8px 14px' }} placeholder="Search or type a Google Font..." onFocus={e => (e.target.style.borderColor = '#000')} onBlur={e => (e.target.style.borderColor = '#e0e0e0')} />
-                <datalist id={`font-list-${index}`}>{POPULAR_FONTS.map(f => <option key={f} value={f} />)}</datalist>
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <input type="text" value={fontDropdownOpen === index ? fontSearch : font.family} onChange={e => { setFontSearch(e.target.value); setFontDropdownOpen(index) }} onFocus={() => { setFontSearch(''); setFontDropdownOpen(index) }} onBlur={() => { setTimeout(() => { setFontDropdownOpen(null); setFontSearch('') }, 150) }}
+                    style={{ ...inputStyle, width: '100%', fontFamily: font.family ? `${font.family}, sans-serif` : 'inherit', fontSize: 14, padding: '8px 14px' }} placeholder="Search fonts..." />
+                  {fontDropdownOpen === index && (
+                    <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 100, background: '#fff', border: '1.5px solid #000', borderRadius: 10, maxHeight: 220, overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }}>
+                      {POPULAR_FONTS.filter(f => !fontSearch || f.toLowerCase().includes(fontSearch.toLowerCase())).map(f => (
+                        <div key={f} onMouseDown={() => { updateFont(index, f); setFontDropdownOpen(null); setFontSearch('') }}
+                          style={{ padding: '10px 14px', cursor: 'pointer', fontSize: 14, fontFamily: `${f}, sans-serif`, color: font.family === f ? '#000' : '#333', fontWeight: font.family === f ? 700 : 400, background: font.family === f ? '#f5f5f5' : 'transparent', borderBottom: '1px solid #f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                          onMouseEnter={e => (e.currentTarget.style.background = '#f9f9f9')} onMouseLeave={e => (e.currentTarget.style.background = font.family === f ? '#f5f5f5' : 'transparent')}>
+                          {f}
+                          {font.family === f && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="1.5,6 4.5,9 10.5,3" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 {fonts.length > 1 && (
                   <button onClick={() => removeFont(index)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--muted)', lineHeight: 1, padding: '0 4px', flexShrink: 0 }}>×</button>
                 )}
@@ -504,12 +541,16 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
         </div>
         <div>
           <label style={labelStyle}>Words to avoid</label>
-          <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>Tone guidance — Claude will avoid these when possible.</div>
+          <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 8 }}>Tone guidance — Claude avoids these when possible. <span style={{ color: '#aaa' }}>Type a word and press comma or Enter to add.</span></p>
           <TagInput tags={avoidWords} onChange={setAvoidWords} placeholder="e.g. cheap, basic, discount..." pillColor="#b91c1c" pillBg="rgba(239,68,68,0.08)" />
         </div>
         <div>
-          <label style={labelStyle}>Never use <span style={{ marginLeft: 8, fontSize: 11, background: '#fff0f0', color: '#d00', padding: '2px 8px', borderRadius: 4, fontWeight: 700, letterSpacing: '0.04em' }}>STRICT</span></label>
-          <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>Brand policy — these words will NEVER appear in any generated copy, no exceptions.</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <label style={{ ...labelStyle, marginBottom: 0 }}>Never use</label>
+            <span style={{ fontSize: 10, fontWeight: 800, background: '#fff0f0', color: '#cc0000', padding: '2px 8px', borderRadius: 4, letterSpacing: '0.06em', textTransform: 'uppercase' }}>STRICT</span>
+            <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 400 }}>— optional</span>
+          </div>
+          <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 8 }}>Brand policy — these will NEVER appear in any generated copy. Use for legal or compliance restrictions. <span style={{ color: '#aaa' }}>Type a word and press comma or Enter to add.</span></p>
           <TagInput tags={neverWords} onChange={setNeverWords} placeholder="e.g. THC, guaranteed, FDA approved..." pillColor="#991b1b" pillBg="rgba(220,38,38,0.12)" />
         </div>
       </div>
@@ -527,10 +568,10 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
               const productImgs = images.filter(img => img.tag === 'product')
               const currentImg = product.image || (productImgs[index] ? getImageUrl(productImgs[index]) : null)
               return (
-                <label style={{ width: 96, height: 96, borderRadius: 10, border: currentImg ? '1px solid var(--border)' : '2px dashed var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', background: currentImg ? 'transparent' : '#fafafa', flexShrink: 0, position: 'relative' }}>
+                <label style={{ width: 110, alignSelf: 'stretch', minHeight: 110, borderRadius: 10, border: currentImg ? '1px solid var(--border)' : '2px dashed var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', background: currentImg ? 'transparent' : '#fafafa', flexShrink: 0, position: 'relative' }}>
                   {currentImg ? (
                     <>
-                      <img src={currentImg} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                      <img src={currentImg} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
                       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s', fontSize: 11, fontWeight: 700, color: '#fff' }}
                         onMouseEnter={e => (e.currentTarget.style.opacity = '1')} onMouseLeave={e => (e.currentTarget.style.opacity = '0')}>Change</div>
                     </>
@@ -577,8 +618,12 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
       </button>
 
       <div style={{ marginTop: 16 }}>
-        <label style={labelStyle}>Default CTA text</label>
-        <input style={inputStyle} value={defaultCta} onChange={e => setDefaultCta(e.target.value)} placeholder="e.g. Shop Now, Try It Free, Get Started" onFocus={e => e.currentTarget.style.borderColor = '#000'} onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
+        <label style={labelStyle}>Default CTA</label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: colors[0]?.value || '#000', color: isLight(colors[0]?.value || '#000') ? '#000' : '#fff', borderRadius: 999, padding: '10px 24px', fontFamily: fonts[0]?.family ? `${fonts[0].family}, sans-serif` : 'Barlow, sans-serif', fontWeight: 800, fontSize: 14, whiteSpace: 'nowrap', flexShrink: 0, minWidth: 120, letterSpacing: '0.02em' }}>{defaultCta || 'Shop Now'}</div>
+          <input style={{ ...inputStyle, flex: 1 }} value={defaultCta} onChange={e => setDefaultCta(e.target.value)} placeholder="Shop Now" onFocus={e => e.currentTarget.style.borderColor = '#000'} onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>Used as the default button text on landing pages and ad creatives.</div>
       </div>
 
       <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '36px 0' }} />
@@ -628,13 +673,21 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
         </div>
       </div>
 
-      {/* Sticky save bar */}
-      <div style={{ position: 'sticky', bottom: 0, zIndex: 40, background: 'rgba(248,247,244,0.95)', backdropFilter: 'blur(8px)', borderTop: '1px solid var(--border)', padding: '12px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginTop: 48 }}>
-        <div style={{ fontSize: 12, color: 'var(--muted)' }}>{saved ? '✓ All changes saved' : 'Unsaved changes'}</div>
-        <button onClick={saveAll} disabled={saving} style={{ background: saving ? '#e0e0e0' : '#000', color: saving ? '#999' : '#00ff97', fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 14, padding: '12px 32px', borderRadius: 999, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-          {saving ? 'Saving...' : saved ? '✓ Saved' : 'Save changes'}
-        </button>
-      </div>
+      {/* Dirty save bar */}
+      {isDirty && (
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, background: '#000', borderTop: '1px solid rgba(255,255,255,0.1)', padding: '14px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fbbf24', flexShrink: 0 }} />You have unsaved changes
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => { setName(brand.name); setWebsite(brand.website || ''); setMission(brand.mission || ''); setTargetAudience(brand.target_audience || ''); setBrandVoice(brand.brand_voice || ''); setToneKeywords(brand.tone_keywords || []); setAvoidWords(brand.avoid_words || []); setDefaultCta(brand.default_cta || 'Shop Now'); setIsDirty(false) }}
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.5)', borderRadius: 999, padding: '9px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Discard</button>
+            <button onClick={saveAll} disabled={saving} style={{ background: saving ? '#555' : '#00ff97', color: '#000', fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 13, padding: '9px 28px', borderRadius: 999, border: 'none', cursor: saving ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+              {saving ? 'Saving...' : 'Save changes'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Floating save toast */}
       {saved && (
