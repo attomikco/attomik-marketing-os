@@ -678,7 +678,7 @@ export default function PreviewClient({
           }}
           onRemoveImage={(index: number) => {
             const removedUrl = allImageUrls[index]
-            if (removedUrl) setRemovedImageUrls(prev => new Set([...prev, removedUrl]))
+            if (removedUrl) setRemovedImageUrls(prev => { const next = new Set(Array.from(prev)); next.add(removedUrl); return next })
             setAllImageUrls(prev => prev.filter((_, i) => i !== index))
           }}
           onSave={saveBrandColors}
