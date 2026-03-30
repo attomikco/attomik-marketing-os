@@ -1,5 +1,5 @@
 'use client'
-import { Download, Bookmark } from 'lucide-react'
+import { Bookmark } from 'lucide-react'
 import { TEMPLATES } from '../templates/registry'
 import type { Variation, Draft } from '../types'
 import type { BrandImage } from '@/types'
@@ -26,28 +26,41 @@ export default function VariationStrip({
   if (variations.length === 0) return null
 
   return (
-    <div className="bg-paper border border-border rounded-card p-4 mt-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="label">Generated ({variations.length})</div>
-        <button onClick={exportAllVariations} disabled={exportingAll}
-          className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted hover:text-ink transition-colors disabled:opacity-40">
-          <Download size={11} /> Download all ({size.w}&times;{size.h})
+    <div style={{ background: '#000', borderRadius: 16, padding: '16px 20px', marginTop: 16 }}>
+      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div>
+          <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 14, color: '#fff', textTransform: 'uppercase' }}>
+            {variations.length} Variations Ready
+          </div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Click to load · bookmark to save</div>
+        </div>
+        <button onClick={exportAllVariations} disabled={exportingAll} style={{
+          background: exportingAll ? '#333' : '#00ff97', color: '#000',
+          fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 12,
+          padding: '8px 18px', borderRadius: 999, border: 'none',
+          cursor: exportingAll ? 'wait' : 'pointer',
+          display: 'flex', alignItems: 'center', gap: 6,
+        }}>
+          {exportingAll ? (
+            <><div style={{ width: 10, height: 10, border: '2px solid rgba(0,0,0,0.2)', borderTopColor: '#000', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />Exporting...</>
+          ) : `↓ Download all ${variations.length}`}
         </button>
       </div>
-      <div className="flex flex-wrap gap-1.5">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         {variations.map((v, i) => {
           const vImg = images.find(img => img.id === v.imageId)
           const vImgUrl = vImg ? getPublicUrl(vImg.storage_path) : null
           const VTemplate = TEMPLATES.find(t => t.id === v.templateId)!.component
           const isSaved = savedDrafts.some(d => d.headline === v.headline && d.imageId === v.imageId)
-          const thumbW = 80
+          const thumbW = 100
           const thumbScale = thumbW / size.w
           const thumbH = Math.round(size.h * thumbScale)
           return (
             <div key={i} className="relative group">
               <button onClick={() => loadVariation(i)}
-                className="rounded-[3px] overflow-hidden transition-all hover:opacity-90"
-                style={{ width: thumbW, height: thumbH, border: activeVariation === i ? '2px solid #4ade80' : '1px solid #e0e0e0', display: 'block' }}>
+                className="rounded-[4px] overflow-hidden transition-all hover:opacity-90"
+                style={{ width: thumbW, height: thumbH, border: activeVariation === i ? '2px solid #4ade80' : '1px solid rgba(255,255,255,0.1)', display: 'block' }}>
                 <div style={{ width: size.w, height: size.h, transform: `scale(${thumbScale})`, transformOrigin: 'top left' }}>
                   <VTemplate {...thumbProps(v, vImgUrl) as any} />
                 </div>
