@@ -345,7 +345,9 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
                 <input type="color" value={color.value} onChange={e => updateColor(index, e.target.value)} style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer', top: 0, left: 0 }} />
               </label>
               <input type="text" value={color.value.toUpperCase()} onChange={e => { const v = e.target.value; if (/^#[0-9A-Fa-f]{0,6}$/.test(v)) updateColor(index, v) }} onBlur={() => { if (!/^#[0-9A-Fa-f]{6}$/.test(color.value)) updateColor(index, colors[index].value) }} style={{ ...inputStyle, width: 110, fontFamily: 'monospace', fontSize: 13, padding: '8px 12px', textTransform: 'uppercase' }} maxLength={7} placeholder="#000000" onFocus={e => (e.target.style.borderColor = '#000')} />
-              <input type="text" value={color.label} onChange={e => updateColorLabel(index, e.target.value)} style={{ ...inputStyle, flex: 1, fontSize: 13, padding: '8px 12px', color: '#666' }} placeholder="e.g. Primary, Background, CTA..." onFocus={e => (e.target.style.borderColor = '#000')} onBlur={e => (e.target.style.borderColor = '#e0e0e0')} />
+              <select value={color.label} onChange={e => updateColorLabel(index, e.target.value)} style={{ ...inputStyle, flex: 1, fontSize: 13, padding: '8px 12px', color: '#555', cursor: 'pointer', appearance: 'none' as const, backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', paddingRight: 32 }}>
+                {['Primary', 'Secondary', 'Accent', 'Background', 'Text', 'Button', 'Button Text', 'Border', 'Surface', 'Dark', 'Light', 'Custom'].map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
               {colors.length > 1 && (
                 <button onClick={() => removeColor(index)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--muted)', lineHeight: 1, padding: '0 4px', flexShrink: 0 }}>×</button>
               )}
@@ -366,7 +368,9 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
           {fonts.map((font, index) => (
             <div key={index}>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: font.family ? 6 : 0 }}>
-                <input type="text" value={font.label} onChange={e => setFonts(prev => prev.map((f, i) => i === index ? { ...f, label: e.target.value } : f))} style={{ ...inputStyle, width: 110, fontSize: 12, padding: '8px 12px', color: '#666' }} placeholder="Heading" onFocus={e => (e.target.style.borderColor = '#000')} onBlur={e => (e.target.style.borderColor = '#e0e0e0')} />
+                <select value={font.label} onChange={e => setFonts(prev => prev.map((f, i) => i === index ? { ...f, label: e.target.value } : f))} style={{ ...inputStyle, width: 130, fontSize: 12, padding: '8px 12px', color: '#555', cursor: 'pointer', appearance: 'none' as const, backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', paddingRight: 28 }}>
+                  {['Heading', 'Body', 'Accent', 'Mono', 'Display', 'UI'].map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
                 <input type="text" value={font.family} onChange={e => updateFont(index, e.target.value)} style={{ ...inputStyle, flex: 1, fontFamily: font.family || 'inherit', fontSize: 14, padding: '8px 14px' }} placeholder="e.g. Barlow, Montserrat, Fraunces..." onFocus={e => (e.target.style.borderColor = '#000')} onBlur={e => (e.target.style.borderColor = '#e0e0e0')} />
                 {fonts.length > 1 && (
                   <button onClick={() => removeFont(index)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--muted)', lineHeight: 1, padding: '0 4px', flexShrink: 0 }}>×</button>
