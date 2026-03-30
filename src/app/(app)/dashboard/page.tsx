@@ -80,64 +80,44 @@ export default async function DashboardPage() {
       </div>
 
       {/* Brand card */}
-      <div style={{ borderRadius: 20, overflow: 'hidden', marginBottom: 20, background: primaryColor, position: 'relative' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: `radial-gradient(circle at 80% 50%, ${textOnPrimary}08 0%, transparent 60%)`, pointerEvents: 'none' }} />
-        <div style={{ padding: '32px 36px', display: 'flex', alignItems: 'stretch', justifyContent: 'space-between', gap: 32, position: 'relative', zIndex: 1, flexWrap: 'wrap' }}>
-          {/* Left: identity */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+      <div style={{ borderRadius: 20, background: '#fff', border: '1px solid var(--border)', marginBottom: 16, padding: '24px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
+        {/* Left: color accent + logo + name + meta */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 0 }}>
+          <div style={{ width: 4, height: 44, borderRadius: 2, background: primaryColor, flexShrink: 0 }} />
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f5f5f5', border: '1.5px solid #e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 20, color: 'var(--ink)', flexShrink: 0 }}>
             {brand.logo_url ? (
               /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={brand.logo_url} alt={brand.name} style={{ height: 56, width: 'auto', objectFit: 'contain', maxWidth: 140, filter: isLight(primaryColor) ? 'none' : 'brightness(0) invert(1)' }} />
-            ) : (
-              <div style={{ width: 56, height: 56, borderRadius: 14, background: `${textOnPrimary}15`, border: `1.5px solid ${textOnPrimary}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 26, color: textOnPrimary, flexShrink: 0 }}>
-                {brand.name[0].toUpperCase()}
-              </div>
-            )}
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: `${textOnPrimary}55`, marginBottom: 4 }}>Active brand</div>
-              <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 'clamp(20px, 3vw, 32px)', color: textOnPrimary, letterSpacing: '-0.02em', textTransform: 'uppercase', lineHeight: 1, marginBottom: 6 }}>{brand.name}</div>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: `${textOnPrimary}10`, borderRadius: 999, padding: '3px 10px', fontSize: 11, color: `${textOnPrimary}70`, fontWeight: 500 }}>
-                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#00ff97', flexShrink: 0 }} />
-                {brand.website?.replace(/https?:\/\//, '') || 'No website'}
-              </div>
-            </div>
+              <img src={brand.logo_url} style={{ width: 28, height: 28, objectFit: 'contain' }} alt="" />
+            ) : brand.name[0].toUpperCase()}
           </div>
-
-          {/* Right: completeness + actions */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, minWidth: 200 }}>
-            <div style={{ width: '100%' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: `${textOnPrimary}60` }}>Brand strength</span>
-                <span style={{ fontSize: 13, fontWeight: 800, color: textOnPrimary }}>{completenessPercent}%</span>
-              </div>
-              <div style={{ height: 6, borderRadius: 3, background: `${textOnPrimary}18`, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${completenessPercent}%`, background: completenessPercent === 100 ? '#00ff97' : `${textOnPrimary}90`, borderRadius: 3, transition: 'width 0.8s ease' }} />
-              </div>
-              {completenessPercent < 100 && (
-                <div style={{ fontSize: 11, color: `${textOnPrimary}50`, marginTop: 6 }}>{completedCount}/{completenessFields.length} fields complete</div>
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Link href={`/brand-setup/${brand.id}`} style={{ fontSize: 12, fontWeight: 700, color: textOnPrimary, textDecoration: 'none', padding: '7px 14px', borderRadius: 999, border: `1px solid ${textOnPrimary}25`, background: `${textOnPrimary}10`, whiteSpace: 'nowrap' }}>Edit brand</Link>
-              {latestCampaign && (
-                <Link href={`/preview/${latestCampaign.id}`} style={{ fontSize: 12, fontWeight: 700, color: primaryColor, textDecoration: 'none', padding: '7px 14px', borderRadius: 999, background: textOnPrimary, whiteSpace: 'nowrap' }}>View funnel →</Link>
-              )}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, color: 'var(--ink)', letterSpacing: '-0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{brand.name}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
+              <span style={{ fontSize: 12, color: 'var(--muted)' }}>{brand.website?.replace(/https?:\/\//, '') || '—'}</span>
+              <span style={{ fontSize: 10, color: '#ddd' }}>·</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)' }}>{campaigns?.length || 0} campaign{(campaigns?.length || 0) !== 1 ? 's' : ''}</span>
+              <span style={{ fontSize: 10, color: '#ddd' }}>·</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)' }}>{imageCount || 0} images</span>
             </div>
           </div>
         </div>
 
-        {/* Bottom strip */}
-        <div style={{ borderTop: `1px solid ${textOnPrimary}12`, padding: '12px 36px', display: 'flex', gap: 24, position: 'relative', zIndex: 1 }}>
-          {[
-            { label: 'Campaigns', value: campaigns?.length || 0 },
-            { label: 'Images', value: imageCount || 0 },
-            { label: 'Products', value: (brand as any).products?.length || 0 },
-          ].map(({ label, value }) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 16, color: textOnPrimary }}>{value}</span>
-              <span style={{ fontSize: 11, fontWeight: 600, color: `${textOnPrimary}50`, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+        {/* Right: completeness + actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>Brand strength</div>
+            <div style={{ width: 120, height: 4, background: '#f0f0f0', borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
+              <div style={{ height: '100%', width: `${completenessPercent}%`, background: completenessPercent === 100 ? '#00ff97' : primaryColor, borderRadius: 2 }} />
             </div>
-          ))}
+            <div style={{ fontSize: 11, color: 'var(--muted)' }}>{completedCount}/{completenessFields.length}</div>
+          </div>
+          <div style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Link href={`/brand-setup/${brand.id}`} style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)', textDecoration: 'none', padding: '7px 14px', borderRadius: 999, border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>Edit →</Link>
+            {latestCampaign && (
+              <Link href={`/preview/${latestCampaign.id}`} style={{ fontSize: 12, fontWeight: 700, color: textOnPrimary, textDecoration: 'none', padding: '7px 14px', borderRadius: 999, background: primaryColor, whiteSpace: 'nowrap' }}>View funnel →</Link>
+            )}
+          </div>
         </div>
       </div>
 
@@ -205,21 +185,20 @@ export default async function DashboardPage() {
         {/* Creative Studio */}
         <Link href={latestCampaign ? `/creatives?brand=${brand.id}&campaign=${latestCampaign.id}` : `/creatives?brand=${brand.id}`} style={{ textDecoration: 'none' }}>
           <div style={{
-            background: '#000', borderRadius: 20, padding: '28px 24px', height: '100%',
-            cursor: 'pointer', transition: 'transform 0.2s',
-            display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden',
+            background: '#fff', border: '1px solid var(--border)', borderRadius: 20, padding: '28px 24px', height: '100%',
+            cursor: 'pointer', transition: 'box-shadow 0.2s, transform 0.2s',
+            display: 'flex', flexDirection: 'column',
           }}>
-            <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'rgba(0,255,151,0.06)', pointerEvents: 'none' }} />
             <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, fontSize: 22 }}>▦</div>
-            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 20, textTransform: 'uppercase', letterSpacing: '0.02em', color: '#fff', marginBottom: 10 }}>Creative Studio</div>
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6, marginBottom: 24, flex: 1 }}>
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 20, textTransform: 'uppercase', letterSpacing: '0.02em', color: '#000', marginBottom: 10 }}>Creative Studio</div>
+            <div style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.6, marginBottom: 24, flex: 1 }}>
               9 templates, batch generation, Meta-ready exports. Your brand applied automatically.
             </div>
-            <div style={{ display: 'flex', gap: 16, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ display: 'flex', gap: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
               {[{ num: '9', label: 'Templates' }, { num: '3', label: 'Sizes' }, { num: '∞', label: 'Variations' }].map(({ num, label }) => (
                 <div key={label}>
-                  <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 18, color: '#00ff97', lineHeight: 1 }}>{num}</div>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>{label}</div>
+                  <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 18, color: primaryColor, lineHeight: 1 }}>{num}</div>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>{label}</div>
                 </div>
               ))}
             </div>
