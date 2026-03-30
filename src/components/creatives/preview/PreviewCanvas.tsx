@@ -47,66 +47,15 @@ export default function PreviewCanvas({
   const previewRef = useRef<HTMLDivElement>(null)
 
   return (
-    <div className="bg-paper border border-border rounded-card p-4">
+    <div className="bg-paper border border-border rounded-card p-5">
       <style>{`
         @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
         @keyframes batchPulse{0%,100%{opacity:0.5}50%{opacity:1}}
         @keyframes activePulse{0%,100%{border-color:rgba(0,255,151,0.2)}50%{border-color:rgba(0,255,151,0.6)}}
       `}</style>
-      {/* Preview label */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted">{templateLabel} &middot; {size.w}&times;{size.h}</span>
-          <button onClick={saveCurrentAsDraft}
-            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-pill transition-all hover:opacity-80"
-            style={{ background: '#111', color: '#4ade80' }}>
-            <Bookmark size={11} /> Save
-          </button>
-          <button onClick={exportPng} disabled={exporting || exportingAll}
-            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-pill hover:border-ink transition-all disabled:opacity-40"
-            style={{ border: '1px solid #ddd', color: '#333' }}>
-            {exporting ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
-            PNG
-          </button>
-          <button onClick={exportAllSizes} disabled={exporting || exportingAll}
-            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-pill hover:opacity-80 transition-all disabled:opacity-40"
-            style={{ background: '#111', color: '#4ade80' }}>
-            {exportingAll ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
-            {exportingAll ? 'Generating...' : 'All sizes'}
-          </button>
-        </div>
-      </div>
 
-      {/* Preview canvas + FB copy */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start" ref={previewRef}>
-        <div className="rounded-btn overflow-hidden border border-border shadow-sm flex-shrink-0 mx-auto sm:mx-0" style={{ width: previewW, height: previewH }}>
-          <div style={{ width: size.w, height: size.h, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
-            <TemplateComponent {...templateProps} width={size.w} height={size.h} />
-          </div>
-        </div>
-        {/* FB Ad copy preview */}
-        <div className="flex-1 min-w-0 text-sm space-y-3 pt-1" style={{ fontFamily: ff(bodyFont) }}>
-          {[
-            { label: 'Primary Text', value: fbPrimaryText || bodyText || 'Body text goes here' },
-            { label: 'Headline', value: fbHeadline || headline || 'Your headline here' },
-            { label: 'Description', value: fbDescription || ctaText || 'Shop Now' },
-          ].map(({ label, value }) => (
-            <div key={label} className={label !== 'Primary Text' ? 'border-t border-border pt-3' : ''}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-muted uppercase tracking-wide font-semibold">{label}</span>
-                <button onClick={() => { navigator.clipboard.writeText(value); setExportToast(`${label} copied`); setTimeout(() => setExportToast(null), 1500) }}
-                  className="text-[10px] text-muted hover:text-ink transition-colors font-medium px-1.5 py-0.5 rounded hover:bg-black/5">
-                  Copy
-                </button>
-              </div>
-              <p className="text-ink text-[13px] leading-relaxed">{value}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Batch generate */}
-      <div style={{ marginTop: 16 }}>
+      {/* Batch generate — FIRST */}
+      <div style={{ marginBottom: 0 }}>
         {!batchGenerating ? (
           <div style={{ background: '#000', borderRadius: 16, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
             <div>
@@ -180,6 +129,59 @@ export default function PreviewCanvas({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Divider */}
+      <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '16px 0' }} />
+
+      {/* Preview canvas + FB copy */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start" ref={previewRef}>
+        <div className="rounded-btn overflow-hidden border border-border shadow-sm flex-shrink-0 mx-auto sm:mx-0" style={{ width: previewW, height: previewH }}>
+          <div style={{ width: size.w, height: size.h, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+            <TemplateComponent {...templateProps} width={size.w} height={size.h} />
+          </div>
+        </div>
+        {/* FB Ad copy preview */}
+        <div className="flex-1 min-w-0 text-sm space-y-3 pt-1" style={{ fontFamily: ff(bodyFont) }}>
+          {[
+            { label: 'Primary Text', value: fbPrimaryText || bodyText || 'Body text goes here' },
+            { label: 'Headline', value: fbHeadline || headline || 'Your headline here' },
+            { label: 'Description', value: fbDescription || ctaText || 'Shop Now' },
+          ].map(({ label, value }) => (
+            <div key={label} className={label !== 'Primary Text' ? 'border-t border-border pt-3' : ''}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] text-muted uppercase tracking-wide font-semibold">{label}</span>
+                <button onClick={() => { navigator.clipboard.writeText(value); setExportToast(`${label} copied`); setTimeout(() => setExportToast(null), 1500) }}
+                  className="text-[10px] text-muted hover:text-ink transition-colors font-medium px-1.5 py-0.5 rounded hover:bg-black/5">
+                  Copy
+                </button>
+              </div>
+              <p className="text-ink text-[13px] leading-relaxed">{value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Preview label */}
+      <div className="flex items-center gap-2 mt-3">
+        <span className="text-xs text-muted">{templateLabel} &middot; {size.w}&times;{size.h}</span>
+        <button onClick={saveCurrentAsDraft}
+          className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-pill transition-all hover:opacity-80"
+          style={{ background: '#111', color: '#4ade80' }}>
+          <Bookmark size={11} /> Save
+        </button>
+        <button onClick={exportPng} disabled={exporting || exportingAll}
+          className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-pill hover:border-ink transition-all disabled:opacity-40"
+          style={{ border: '1px solid #ddd', color: '#333' }}>
+          {exporting ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
+          PNG
+        </button>
+        <button onClick={exportAllSizes} disabled={exporting || exportingAll}
+          className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-pill hover:opacity-80 transition-all disabled:opacity-40"
+          style={{ background: '#111', color: '#4ade80' }}>
+          {exportingAll ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
+          {exportingAll ? 'Generating...' : 'All sizes'}
+        </button>
       </div>
     </div>
   )
