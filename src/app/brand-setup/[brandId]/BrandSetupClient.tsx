@@ -80,9 +80,9 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
     return [...base, ...extra]
   })
   const headingFamily = brand.font_heading?.family || brand.font_primary?.split('|')[0] || ''
-  const [fonts, setFonts] = useState<Array<{ label: string; family: string }>>([
-    { label: 'Heading', family: headingFamily },
-    { label: 'Body', family: brand.font_body?.family || brand.font_secondary?.split('|')[0] || headingFamily },
+  const [fonts, setFonts] = useState<Array<{ label: string; family: string; weight: string; transform: string }>>([
+    { label: 'Heading', family: headingFamily, weight: brand.font_heading?.weight || brand.font_primary?.split('|')[1] || '700', transform: brand.font_heading?.transform || brand.font_primary?.split('|')[2] || 'none' },
+    { label: 'Body', family: brand.font_body?.family || brand.font_secondary?.split('|')[0] || headingFamily, weight: brand.font_body?.weight || '400', transform: 'none' },
   ])
   const [logoDark, setLogoDark] = useState(brand.logo_url || '')
   const [logoLight, setLogoLight] = useState(tryParse(brand.notes)?.logo_url_light || '')
@@ -119,16 +119,21 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
     name: brand.name, website: brand.website || '', mission: brand.mission || '',
     targetAudience: brand.target_audience || '', brandVoice: brand.brand_voice || '',
     toneKeywords: JSON.stringify(brand.tone_keywords || []), avoidWords: JSON.stringify(brand.avoid_words || []),
+    neverWords: JSON.stringify(tryParse(brand.notes)?.never_words || []),
     defaultCta: brand.default_cta || 'Shop Now',
+    colors: JSON.stringify(colors), fonts: JSON.stringify(fonts),
+    products: JSON.stringify(brand.products || []),
   })
 
   useEffect(() => {
     const i = initialRef.current
-    const hasChanges = name !== i.name || website !== i.website || mission !== i.mission ||
+    const dirty = name !== i.name || website !== i.website || mission !== i.mission ||
       targetAudience !== i.targetAudience || brandVoice !== i.brandVoice || defaultCta !== i.defaultCta ||
-      JSON.stringify(toneKeywords) !== i.toneKeywords || JSON.stringify(avoidWords) !== i.avoidWords
-    setIsDirty(hasChanges)
-  }, [name, website, mission, targetAudience, brandVoice, toneKeywords, avoidWords, defaultCta, colors, fonts])
+      JSON.stringify(toneKeywords) !== i.toneKeywords || JSON.stringify(avoidWords) !== i.avoidWords ||
+      JSON.stringify(neverWords) !== i.neverWords || JSON.stringify(colors) !== i.colors ||
+      JSON.stringify(fonts) !== i.fonts || JSON.stringify(products) !== i.products
+    setIsDirty(dirty)
+  }, [name, website, mission, targetAudience, brandVoice, toneKeywords, avoidWords, neverWords, defaultCta, colors, fonts, products])
 
   function updateColor(index: number, value: string) { setColors(prev => prev.map((c, i) => i === index ? { ...c, value } : c)) }
   function updateColorLabel(index: number, label: string) { setColors(prev => prev.map((c, i) => i === index ? { ...c, label } : c)) }
@@ -146,7 +151,7 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
       }
     }
   }
-  function addFont() { setFonts(prev => [...prev, { label: `Font ${prev.length + 1}`, family: '' }]) }
+  function addFont() { setFonts(prev => [...prev, { label: `Font ${prev.length + 1}`, family: '', weight: '400', transform: 'none' }]) }
   function removeFont(index: number) { if (fonts.length <= 1) return; setFonts(prev => prev.filter((_, i) => i !== index)) }
 
   function updateProduct(index: number, field: string, value: string) {
@@ -218,7 +223,10 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
       tone_keywords: toneKeywords.length ? toneKeywords : null,
       avoid_words: avoidWords.length ? avoidWords : null,
       primary_color: colors[0]?.value || null, secondary_color: colors[1]?.value || null, accent_color: colors[2]?.value || null,
-      font_primary: fonts[0]?.family || null, font_secondary: fonts[1]?.family || null,
+      font_primary: fonts[0]?.family ? `${fonts[0].family}|${fonts[0].weight}|${fonts[0].transform}` : null,
+      font_secondary: fonts[1]?.family ? `${fonts[1].family}|${fonts[1].weight || '400'}|none` : null,
+      font_heading: fonts[0]?.family ? { family: fonts[0].family, weight: fonts[0].weight || '700', transform: fonts[0].transform || 'none', letterSpacing: 'normal' } : null,
+      font_body: fonts[1]?.family ? { family: fonts[1].family, weight: fonts[1].weight || '400', transform: 'none', letterSpacing: 'normal' } : null,
       logo_url: logoDark || null,
       notes: JSON.stringify({
         ...tryParse(brand.notes),
@@ -231,7 +239,7 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
     setSaving(false)
     setSaved(true)
     setIsDirty(false)
-    initialRef.current = { name, website, mission, targetAudience, brandVoice, defaultCta, toneKeywords: JSON.stringify(toneKeywords), avoidWords: JSON.stringify(avoidWords) }
+    initialRef.current = { name, website, mission, targetAudience, brandVoice, defaultCta, toneKeywords: JSON.stringify(toneKeywords), avoidWords: JSON.stringify(avoidWords), neverWords: JSON.stringify(neverWords), colors: JSON.stringify(colors), fonts: JSON.stringify(fonts), products: JSON.stringify(products) }
     setTimeout(() => setSaved(false), 3000)
   }
 
@@ -504,12 +512,16 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
                     </div>
                   )}
                 </div>
+                <select value={font.weight} onChange={e => setFonts(prev => prev.map((f, i) => i === index ? { ...f, weight: e.target.value } : f))}
+                  style={{ ...inputStyle, width: 90, fontSize: 12, padding: '8px 10px', color: '#555', cursor: 'pointer', appearance: 'none' as const, backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', paddingRight: 24, flexShrink: 0 }}>
+                  {[['300','Light'],['400','Regular'],['500','Medium'],['600','Semi'],['700','Bold'],['800','ExBold'],['900','Black']].map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
                 {fonts.length > 1 && (
                   <button onClick={() => removeFont(index)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--muted)', lineHeight: 1, padding: '0 4px', flexShrink: 0 }}>×</button>
                 )}
               </div>
               {font.family && (
-                <div style={{ fontSize: 14, fontFamily: `${font.family}, sans-serif`, color: 'var(--muted)', paddingTop: 6 }}>
+                <div style={{ fontSize: 15, fontFamily: `${font.family}, sans-serif`, fontWeight: parseInt(font.weight) || 700, color: 'var(--muted)', paddingTop: 6 }}>
                   The quick brown fox jumps over the lazy dog
                 </div>
               )}
