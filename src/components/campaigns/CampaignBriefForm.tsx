@@ -127,6 +127,7 @@ export default function CampaignBriefForm({ brands, defaultBrandId }: { brands: 
     Promise.all([
       fetch(`/api/campaigns/${campaign.id}/ad-copy`, { method: 'POST' }),
       fetch(`/api/campaigns/${campaign.id}/landing-brief`, { method: 'POST' }),
+      fetch(`/api/campaigns/${campaign.id}/email`, { method: 'POST' }),
     ]).catch(() => {})
 
     router.push(`/preview/${campaign.id}`)
