@@ -141,13 +141,19 @@ export default function OnboardingWizard() {
     const allScraped = [...ogEntry, ...detectedImages].slice(0, 20)
     const total = (detectedLogo ? 1 : 0) + imageFiles.length + productImageUrls.length + allScraped.length
     setUploadTotal(total)
-    let done = 0
 
-    // Upload detected logo to brand-assets
+    const uploadTasks: Promise<void>[] = []
+    const imageRows: { brand_id: string; file_name: string; storage_path: string; tag: string; mime_type: string; size_bytes?: number }[] = []
+
+    // Logo upload task
     if (detectedLogo) {
-      try {
-        const logoRes = await fetch('/api/brands/proxy-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: detectedLogo }) })
-        if (logoRes.ok) {
+      uploadTasks.push((async () => {
+        try {
+          const logoRes = await fetch('/api/brands/proxy-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: detectedLogo }) })
+          if (!logoRes.ok) {
+            await supabase.from('brands').update({ logo_url: detectedLogo }).eq('id', brandId)
+            return
+          }
           const blob = await logoRes.blob()
           const ext = detectedLogo.split('.').pop()?.split('?')[0]?.slice(0, 4) || 'png'
           const path = `${brandId}/logo_dark.${ext}`
@@ -158,69 +164,77 @@ export default function OnboardingWizard() {
           } else {
             await supabase.from('brands').update({ logo_url: detectedLogo }).eq('id', brandId)
           }
-        } else {
+        } catch {
           await supabase.from('brands').update({ logo_url: detectedLogo }).eq('id', brandId)
         }
-      } catch {
-        await supabase.from('brands').update({ logo_url: detectedLogo }).eq('id', brandId)
-      }
-      done++; setUploadProgress(done)
+        setUploadProgress(prev => prev + 1)
+      })())
     }
 
-    // Upload manually selected files — parallel
-    await Promise.allSettled(imageFiles.map(async (file) => {
-      try {
-        const ext = file.name.split('.').pop() || 'jpg'
-        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-        const storagePath = `${brandId}/${fileName}`
-        const { error: uploadErr } = await supabase.storage.from('brand-images').upload(storagePath, file, { contentType: file.type })
-        if (!uploadErr) {
-          await supabase.from('brand_images').insert({
-            brand_id: brandId, file_name: file.name, storage_path: storagePath,
-            tag: 'product', mime_type: file.type, size_bytes: file.size,
-          })
-        }
-      } catch {}
-      done++; setUploadProgress(done)
-    }))
-    // Upload ALL detected product images
-    await Promise.allSettled(productImageUrls.map(async (imgUrl, idx) => {
-      try {
-        const imgRes = await fetch('/api/brands/proxy-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: imgUrl }) })
-        if (!imgRes.ok) return
-        const blob = await imgRes.blob()
-        const ext = imgUrl.split('.').pop()?.split('?')[0]?.slice(0, 4) || 'jpg'
-        const fileName = `product_${idx}_${Date.now()}.${ext}`
-        const storagePath = `${brandId}/${fileName}`
-        const { error: uploadErr } = await supabase.storage.from('brand-images').upload(storagePath, blob, { contentType: blob.type || 'image/jpeg' })
-        if (!uploadErr) {
-          await supabase.from('brand_images').insert({ brand_id: brandId, file_name: fileName, storage_path: storagePath, tag: 'product', mime_type: blob.type || 'image/jpeg', size_bytes: blob.size })
-        }
-      } catch {}
-      done++; setUploadProgress(done)
-    }))
-    // Upload scraped images from website — parallel
-    await Promise.allSettled(allScraped.map(async (img) => {
-      try {
-        const imgRes = await fetch('/api/brands/proxy-image', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: img.url }),
-        })
-        if (!imgRes.ok) return
-        const blob = await imgRes.blob()
-        const ext = img.url.split('.').pop()?.split('?')[0]?.slice(0, 4) || 'jpg'
-        const filename = `scraped_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
-        const path = `${brandId}/${filename}`
-        const { error: upErr } = await supabase.storage.from('brand-images').upload(path, blob, { contentType: blob.type || 'image/jpeg' })
-        if (!upErr) {
-          await supabase.from('brand_images').insert({
-            brand_id: brandId, file_name: filename, storage_path: path,
-            mime_type: blob.type || 'image/jpeg', tag: img.tag, size_bytes: blob.size,
-          })
-        }
-      } catch {}
-      done++; setUploadProgress(done)
-    }))
+    // Manual file upload tasks — all parallel
+    imageFiles.forEach((file) => {
+      uploadTasks.push((async () => {
+        try {
+          const ext = file.name.split('.').pop() || 'jpg'
+          const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+          const storagePath = `${brandId}/${fileName}`
+          const { error: uploadErr } = await supabase.storage.from('brand-images').upload(storagePath, file, { contentType: file.type })
+          if (!uploadErr) {
+            imageRows.push({ brand_id: brandId, file_name: file.name, storage_path: storagePath, tag: 'product', mime_type: file.type, size_bytes: file.size })
+          }
+        } catch {}
+        setUploadProgress(prev => prev + 1)
+      })())
+    })
+
+    // Product image tasks — all parallel
+    productImageUrls.forEach((imgUrl, idx) => {
+      uploadTasks.push((async () => {
+        try {
+          const res = await fetch('/api/brands/proxy-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: imgUrl }) })
+          if (!res.ok) return
+          const blob = await res.blob()
+          const ext = imgUrl.split('.').pop()?.split('?')[0]?.slice(0, 4) || 'jpg'
+          const fileName = `product_${idx}_${Date.now()}.${ext}`
+          const storagePath = `${brandId}/${fileName}`
+          const { error } = await supabase.storage.from('brand-images').upload(storagePath, blob, { contentType: blob.type || 'image/jpeg' })
+          if (!error) {
+            imageRows.push({ brand_id: brandId, file_name: fileName, storage_path: storagePath, tag: 'product', mime_type: blob.type || 'image/jpeg', size_bytes: blob.size })
+          }
+        } catch {}
+        setUploadProgress(prev => prev + 1)
+      })())
+    })
+
+    // Scraped image tasks — all parallel
+    allScraped.forEach((img, idx) => {
+      uploadTasks.push((async () => {
+        try {
+          const res = await fetch('/api/brands/proxy-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: img.url }) })
+          if (!res.ok) return
+          const blob = await res.blob()
+          const ext = img.url.split('.').pop()?.split('?')[0]?.slice(0, 4) || 'jpg'
+          const filename = `scraped_${idx}_${Date.now()}.${ext}`
+          const path = `${brandId}/${filename}`
+          const { error } = await supabase.storage.from('brand-images').upload(path, blob, { contentType: blob.type || 'image/jpeg' })
+          if (!error) {
+            imageRows.push({ brand_id: brandId, file_name: filename, storage_path: path, tag: img.tag, mime_type: blob.type || 'image/jpeg', size_bytes: blob.size })
+          }
+        } catch {}
+        setUploadProgress(prev => prev + 1)
+      })())
+    })
+
+    // Process in batches of 10 to avoid overwhelming the proxy route
+    const BATCH_SIZE = 10
+    for (let i = 0; i < uploadTasks.length; i += BATCH_SIZE) {
+      await Promise.allSettled(uploadTasks.slice(i, i + BATCH_SIZE))
+    }
+
+    // Batch insert all image rows at once
+    if (imageRows.length > 0) {
+      await supabase.from('brand_images').insert(imageRows)
+    }
   }
 
   async function submit() {
