@@ -393,6 +393,57 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
         )
       })()}
 
+      {/* ── BRAND KNOWLEDGE REVEAL ── */}
+      {(brand.mission || brand.brand_voice || brand.target_audience) && (
+        <div style={{ background: '#000', borderRadius: 20, padding: '40px 44px', marginBottom: 32, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: -60, right: -60, width: 240, height: 240, borderRadius: '50%', background: 'rgba(0,255,151,0.06)', pointerEvents: 'none' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#00ff97', boxShadow: '0 0 8px rgba(0,255,151,0.6)' }} />
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>
+              What Attomik learned from {brand.website?.replace(/https?:\/\//, '') || 'your website'}
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 32 }}>
+            {brand.mission && (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 10 }}>What you do</div>
+                <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 700, fontSize: 20, color: '#fff', lineHeight: 1.4 }}>{brand.mission}</div>
+              </div>
+            )}
+            {brand.target_audience && (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 10 }}>Who buys from you</div>
+                <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 700, fontSize: 20, color: '#fff', lineHeight: 1.4 }}>{brand.target_audience}</div>
+              </div>
+            )}
+            {brand.brand_voice && (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 10 }}>How you sound</div>
+                <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 700, fontSize: 20, color: '#fff', lineHeight: 1.4 }}>{brand.brand_voice}</div>
+              </div>
+            )}
+          </div>
+          {brand.tone_keywords && brand.tone_keywords.length > 0 && (
+            <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.08em', textTransform: 'uppercase', marginRight: 4 }}>Tone</span>
+              {brand.tone_keywords.map((kw: string, i: number) => (
+                <span key={i} style={{ fontSize: 13, fontWeight: 700, color: '#00ff97', background: 'rgba(0,255,151,0.08)', border: '1px solid rgba(0,255,151,0.2)', padding: '4px 12px', borderRadius: 999 }}>{kw}</span>
+              ))}
+            </div>
+          )}
+          <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', lineHeight: 1.5 }}>
+              {aiPrefilled ? '✦ AI-generated from your website — review and improve below for better results.' : 'Review and improve below to get better creatives.'}
+            </div>
+            {brand.website && (
+              <a href={brand.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.2)', textDecoration: 'none', flexShrink: 0 }}>
+                {brand.website.replace(/https?:\/\//, '')} ↗
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Page header */}
       <div style={{ marginBottom: 32 }}>
         <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, textTransform: 'uppercase', letterSpacing: '-0.01em' }}>Brand Hub</div>
