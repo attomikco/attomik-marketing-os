@@ -44,7 +44,8 @@ export default function EmailActions({ campaignId, content }: { campaignId: stri
       <button
         onClick={sendToKlaviyo}
         disabled={sending}
-        style={{ fontSize: 12, fontWeight: 700, color: '#000', background: sent ? '#00ff97' : '#f0f0f0', padding: '6px 14px', borderRadius: 999, border: 'none', cursor: sending ? 'wait' : 'pointer' }}
+        title="Add your Klaviyo API key in Brand Hub → Integrations to enable"
+        style={{ fontSize: 12, fontWeight: 700, color: sent ? '#000' : '#888', background: sent ? '#00ff97' : '#f0f0f0', padding: '6px 14px', borderRadius: 999, border: 'none', cursor: sending ? 'wait' : 'pointer' }}
       >
         {sent ? '✓ Sent' : sending ? '...' : 'Klaviyo →'}
       </button>

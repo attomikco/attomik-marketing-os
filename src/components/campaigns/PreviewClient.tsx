@@ -232,9 +232,6 @@ export default function PreviewClient({
   const [fontFamily, setFontFamily] = useState(fh?.family || brand.font_primary?.split('|')[0] || '')
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [savingBrand, setSavingBrand] = useState(false)
-  const [sendingToKlaviyo, setSendingToKlaviyo] = useState(false)
-  const [klaviyoSuccess, setKlaviyoSuccess] = useState(false)
-  const [klaviyoError, setKlaviyoError] = useState('')
   const [emailHtml, setEmailHtml] = useState<string | null>(null)
   const [emailSubject, setEmailSubject] = useState('')
   const [generatingEmail, setGeneratingEmail] = useState(false)
@@ -249,24 +246,6 @@ export default function PreviewClient({
       font_primary: fontFamily,
     }).eq('id', brand.id)
     setSavingBrand(false)
-  }
-
-  async function sendToKlaviyo() {
-    setSendingToKlaviyo(true)
-    setKlaviyoError('')
-    try {
-      const res = await fetch(`/api/campaigns/${campaign.id}/email/klaviyo`, { method: 'POST' })
-      const data = await res.json()
-      if (data.success) {
-        setKlaviyoSuccess(true)
-        setTimeout(() => setKlaviyoSuccess(false), 4000)
-      } else {
-        setKlaviyoError(data.error || 'Failed to send to Klaviyo')
-      }
-    } catch {
-      setKlaviyoError('Something went wrong')
-    }
-    setSendingToKlaviyo(false)
   }
 
   // Fetch existing email on mount
@@ -1136,25 +1115,13 @@ export default function PreviewClient({
               <span style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 26, textTransform: 'uppercase', letterSpacing: '-0.01em', color: '#000' }}>Landing Page</span>
             </div>
             {brand.status === 'active' && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
-                <button
-                  onClick={sendToKlaviyo}
-                  disabled={sendingToKlaviyo}
-                  style={{ fontSize: 12, fontWeight: 700, color: '#000', padding: '8px 16px', background: klaviyoSuccess ? '#00ff97' : sendingToKlaviyo ? '#e0e0e0' : '#00ff97', borderRadius: 999, border: 'none', cursor: sendingToKlaviyo ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
-                >
-                  {klaviyoSuccess ? '✓ Sent to Klaviyo' : sendingToKlaviyo ? 'Sending...' : 'Send to Klaviyo →'}
-                </button>
-                <a
-                  href={`/api/campaigns/${campaign.id}/landing-html`}
-                  download={`${brand.name.toLowerCase().replace(/\s+/g, '-')}-landing-page.html`}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#000', color: '#00ff97', fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 999, textDecoration: 'none', border: 'none' }}
-                >
-                  ↓ Download HTML
-                </a>
-                {klaviyoError && (
-                  <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 6, fontSize: 11, color: '#ef4444', fontWeight: 600, whiteSpace: 'nowrap' }}>{klaviyoError}</div>
-                )}
-              </div>
+              <a
+                href={`/api/campaigns/${campaign.id}/landing-html`}
+                download={`${brand.name.toLowerCase().replace(/\s+/g, '-')}-landing-page.html`}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#000', color: '#00ff97', fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 999, textDecoration: 'none', border: 'none' }}
+              >
+                ↓ Download HTML
+              </a>
             )}
           </div>
           {landingBrief ? (
@@ -1229,17 +1196,10 @@ export default function PreviewClient({
                 <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>Campaign email · Klaviyo ready</span>
               </div>
               {emailGenerated && (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                  {klaviyoError && <span style={{ fontSize: 11, color: '#ef4444' }}>{klaviyoError}</span>}
-                  <a href={`data:text/html;charset=utf-8,${encodeURIComponent(emailHtml || '')}`} download={`${brand.name.toLowerCase().replace(/\s+/g, '-')}-email.html`}
-                    style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', padding: '8px 16px', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 999, background: 'rgba(255,255,255,0.05)' }}>
-                    ↓ Download HTML
-                  </a>
-                  <button onClick={sendToKlaviyo} disabled={sendingToKlaviyo}
-                    style={{ fontSize: 12, fontWeight: 700, color: '#000', background: klaviyoSuccess ? '#00ff97' : sendingToKlaviyo ? '#e0e0e0' : '#00ff97', padding: '8px 16px', borderRadius: 999, border: 'none', cursor: sendingToKlaviyo ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {klaviyoSuccess ? '✓ Sent to Klaviyo' : sendingToKlaviyo ? 'Sending...' : 'Send to Klaviyo →'}
-                  </button>
-                </div>
+                <a href={`data:text/html;charset=utf-8,${encodeURIComponent(emailHtml || '')}`} download={`${brand.name.toLowerCase().replace(/\s+/g, '-')}-email.html`}
+                  style={{ fontSize: 12, fontWeight: 700, color: '#000', textDecoration: 'none', padding: '8px 20px', background: '#00ff97', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  ↓ Download HTML
+                </a>
               )}
             </div>
 
