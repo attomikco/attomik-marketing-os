@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { href: '/creatives', label: 'Creative Studio' },
   { href: '/copy', label: 'Copy Creator' },
   { href: '/campaigns', label: 'Campaigns' },
+  { href: '/newsletter', label: 'Email' },
 ]
 
 export default function TopNav() {
@@ -60,6 +61,7 @@ export default function TopNav() {
     if (href === '/creatives') return `/creatives?brand=${activeBrand.id}`
     if (href === '/dashboard') return `/dashboard?brand=${activeBrand.id}`
     if (href === '/campaigns') return `/campaigns?brand=${activeBrand.id}`
+    if (href === '/newsletter') return `/newsletter?brand=${activeBrand.id}`
     return href
   }
 

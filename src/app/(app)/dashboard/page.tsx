@@ -69,7 +69,7 @@ export default async function DashboardPage({
       <style>{`
         @media (max-width: 768px) {
           .pv-dash { padding: 20px 16px !important; }
-          .pv-dash-pillars { grid-template-columns: 1fr !important; }
+          .pv-dash-pillars { grid-template-columns: repeat(2, 1fr) !important; }
           .pv-dash-brand { flex-direction: column !important; }
         }
         .dash-card { transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important; }
@@ -175,7 +175,7 @@ export default async function DashboardPage({
       )}
 
       {/* Three pillars */}
-      <div className="pv-dash-pillars" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32 }}>
+      <div className="pv-dash-pillars" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
 
         {/* Brand Hub */}
         <Link href={`/brand-setup/${brand.id}`} style={{ textDecoration: 'none' }}>
@@ -260,6 +260,16 @@ export default async function DashboardPage({
                 <div style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic' }}>No campaigns yet — create your first</div>
               )}
             </div>
+          </div>
+        </Link>
+
+        {/* Email */}
+        <Link href="/newsletter" style={{ textDecoration: 'none' }}>
+          <div className="dash-card" style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 20, padding: '28px 24px', height: '100%', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, fontSize: 22 }}>✉</div>
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 20, textTransform: 'uppercase', letterSpacing: '0.02em', color: '#000', marginBottom: 10 }}>Email</div>
+            <div style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.6, marginBottom: 24, flex: 1 }}>Generate campaign emails from your brief. Export HTML or push directly to Klaviyo.</div>
+            <div style={{ paddingTop: 16, borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>Klaviyo ready</div>
           </div>
         </Link>
       </div>
