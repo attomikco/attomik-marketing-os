@@ -235,6 +235,10 @@ export default function PreviewClient({
   const [sendingToKlaviyo, setSendingToKlaviyo] = useState(false)
   const [klaviyoSuccess, setKlaviyoSuccess] = useState(false)
   const [klaviyoError, setKlaviyoError] = useState('')
+  const [emailHtml, setEmailHtml] = useState<string | null>(null)
+  const [emailSubject, setEmailSubject] = useState('')
+  const [generatingEmail, setGeneratingEmail] = useState(false)
+  const [emailGenerated, setEmailGenerated] = useState(false)
 
   async function saveBrandColors() {
     setSavingBrand(true)
@@ -263,6 +267,24 @@ export default function PreviewClient({
       setKlaviyoError('Something went wrong')
     }
     setSendingToKlaviyo(false)
+  }
+
+  // Fetch existing email on mount
+  useEffect(() => {
+    fetch(`/api/campaigns/${campaign.id}/email`)
+      .then(r => r.json())
+      .then(data => { if (data.html) { setEmailHtml(data.html); setEmailSubject(data.subject || ''); setEmailGenerated(true) } })
+      .catch(() => {})
+  }, [campaign.id])
+
+  async function generateEmail() {
+    setGeneratingEmail(true)
+    try {
+      const res = await fetch(`/api/campaigns/${campaign.id}/email`, { method: 'POST' })
+      const data = await res.json()
+      if (data.html) { setEmailHtml(data.html); setEmailSubject(data.subject || ''); setEmailGenerated(true) }
+    } catch {}
+    setGeneratingEmail(false)
   }
 
   // Load Google Font
@@ -627,6 +649,8 @@ export default function PreviewClient({
               { num: '3', label: 'COPY VARIATIONS', desc: 'Three distinct angles — different hooks, different audiences. Find the message that resonates.', color: '#34d399' },
               null,
               { num: '1', label: 'LANDING PAGE', desc: 'A full conversion page matched to your ad message. Same brand. Same promise. No bounce.', color: '#fbbf24' },
+              null,
+              { num: '1', label: 'EMAIL', desc: 'Campaign email ready for Klaviyo. Brand-matched, fully rendered.', color: '#60a5fa' },
             ] as (null | { num: string; label: string; desc: string; color: string })[]).map((item, i) =>
               item === null ? (
                 <div key={i} className="pv-arrow" style={{ alignSelf: 'flex-start', marginTop: 40, padding: '0 8px', color: 'rgba(255,255,255,0.3)', fontSize: 28, flexShrink: 0 }}>→</div>
@@ -1192,6 +1216,76 @@ export default function PreviewClient({
           ) : (
             <div className={skeleton + ' w-full h-64 rounded-card'} />
           )}
+        </div>
+
+        {/* ═══ SECTION 4: EMAIL ═══ */}
+        <div style={{ background: '#000', padding: '64px 32px 48px' }}>
+          <div style={{ maxWidth: 960, margin: '0 auto' }}>
+            <div className="pv-section-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#60a5fa', flexShrink: 0 }} />
+                <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#fff', color: '#60a5fa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>4</span>
+                <span style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#fff' }}>Email</span>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>Campaign email · Klaviyo ready</span>
+              </div>
+              {emailGenerated && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  {klaviyoError && <span style={{ fontSize: 11, color: '#ef4444' }}>{klaviyoError}</span>}
+                  <a href={`data:text/html;charset=utf-8,${encodeURIComponent(emailHtml || '')}`} download={`${brand.name.toLowerCase().replace(/\s+/g, '-')}-email.html`}
+                    style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', padding: '8px 16px', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 999, background: 'rgba(255,255,255,0.05)' }}>
+                    ↓ Download HTML
+                  </a>
+                  <button onClick={sendToKlaviyo} disabled={sendingToKlaviyo}
+                    style={{ fontSize: 12, fontWeight: 700, color: '#000', background: klaviyoSuccess ? '#00ff97' : sendingToKlaviyo ? '#e0e0e0' : '#00ff97', padding: '8px 16px', borderRadius: 999, border: 'none', cursor: sendingToKlaviyo ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {klaviyoSuccess ? '✓ Sent to Klaviyo' : sendingToKlaviyo ? 'Sending...' : 'Send to Klaviyo →'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {!emailGenerated ? (
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: '48px 40px', textAlign: 'center' }}>
+                {generatingEmail ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+                    <div style={{ width: 40, height: 40, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#60a5fa', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                    <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 18, color: '#fff', textTransform: 'uppercase' }}>Writing your email...</div>
+                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Generating campaign email from your brief</div>
+                    <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 36, marginBottom: 16 }}>✉</div>
+                    <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, color: '#fff', textTransform: 'uppercase', marginBottom: 8 }}>Generate campaign email</div>
+                    <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', marginBottom: 28, maxWidth: 400, margin: '0 auto 28px', lineHeight: 1.6 }}>
+                      AI generates a complete email using your campaign brief and brand template. Export HTML or push directly to Klaviyo.
+                    </div>
+                    <button onClick={generateEmail}
+                      style={{ background: '#60a5fa', color: '#000', fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 14, padding: '12px 32px', borderRadius: 999, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      ✉ Generate email →
+                    </button>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div>
+                {emailSubject && (
+                  <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>Subject:</span>
+                    <span style={{ fontSize: 14, color: '#fff', fontWeight: 500 }}>{emailSubject}</span>
+                  </div>
+                )}
+                <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, overflow: 'hidden', background: '#fff' }}>
+                  <iframe srcDoc={emailHtml || ''} style={{ width: '100%', height: 900, border: 'none', display: 'block' }} title="Email preview" />
+                </div>
+                <div style={{ textAlign: 'center', marginTop: 16 }}>
+                  <button onClick={generateEmail} disabled={generatingEmail}
+                    style={{ background: 'none', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.4)', borderRadius: 999, padding: '7px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                    {generatingEmail ? 'Regenerating...' : '↺ Regenerate email'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ═══ Context banner ═══ */}
