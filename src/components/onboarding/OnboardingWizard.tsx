@@ -262,7 +262,7 @@ export default function OnboardingWizard() {
         }
         return null
       })(),
-      status: 'draft',
+      status: 'active',
     }).select('id').single()
 
     if (brandErr || !brand) {
@@ -280,9 +280,6 @@ export default function OnboardingWizard() {
       setSaving(false)
       return
     }
-
-    sessionStorage.setItem('attomik_draft_brand_id', brand.id)
-    sessionStorage.setItem('attomik_draft_campaign_id', campaign.id)
 
     // Redirect immediately — uploads continue in background
     router.push(`/preview/${campaign.id}`)
