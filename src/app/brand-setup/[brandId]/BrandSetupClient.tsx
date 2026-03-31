@@ -102,6 +102,7 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
   const [toneKeywords, setToneKeywords] = useState<string[]>(brand.tone_keywords || [])
   const [avoidWords, setAvoidWords] = useState<string[]>(brand.avoid_words || [])
   const [neverWords, setNeverWords] = useState<string[]>(tryParse(brand.notes)?.never_words || [])
+  const [klaviyoKey, setKlaviyoKey] = useState(tryParse(brand.notes)?.klaviyo_api_key || '')
   const [colors, setColors] = useState<Array<{ label: string; value: string }>>(() => {
     const base = [
       { label: 'Primary', value: brand.primary_color || '#000000' },
@@ -266,6 +267,7 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
         logo_url_light: logoLight || null,
         never_words: neverWords.length ? neverWords : null,
         extra_colors: colors.slice(3).map(c => ({ label: c.label, value: c.value })),
+        klaviyo_api_key: klaviyoKey || null,
       }),
       default_cta: defaultCta || null, products: savedProducts.length ? savedProducts : null,
     }).eq('id', brand.id)
@@ -748,6 +750,37 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
             <span style={{ fontSize: 20, lineHeight: 1 }}>+</span>Add
             <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => { const f = Array.from(e.target.files || []); if (f.length) handleImageUpload(f, 'lifestyle'); e.target.value = '' }} />
           </label>
+        </div>
+      </div>
+
+      <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '36px 0' }} />
+
+      {/* ── SECTION 6: INTEGRATIONS ── */}
+      <SectionHeader title="Integrations" subtitle="Connect your marketing tools" />
+
+      <div style={{ marginBottom: 20 }}>
+        <label style={labelStyle}>
+          Klaviyo Private API Key
+          <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 400, color: 'var(--muted)' }}>optional</span>
+        </label>
+        <div style={{ position: 'relative' }}>
+          <input
+            type="password"
+            value={klaviyoKey}
+            onChange={e => { setKlaviyoKey(e.target.value); setIsDirty(true) }}
+            placeholder="pk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            style={{ ...inputStyle, paddingRight: 100 }}
+            onFocus={e => { e.currentTarget.style.borderColor = '#000' }}
+            onBlur={e => { e.currentTarget.style.borderColor = '#e0e0e0' }}
+          />
+          {klaviyoKey && (
+            <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 11, fontWeight: 700, color: '#00a86b' }}>
+              ✓ Connected
+            </div>
+          )}
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>
+          Find in Klaviyo → Account → Settings → API Keys. Used to push email templates directly to your account.
         </div>
       </div>
 

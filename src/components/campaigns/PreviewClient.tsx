@@ -232,6 +232,9 @@ export default function PreviewClient({
   const [fontFamily, setFontFamily] = useState(fh?.family || brand.font_primary?.split('|')[0] || '')
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [savingBrand, setSavingBrand] = useState(false)
+  const [sendingToKlaviyo, setSendingToKlaviyo] = useState(false)
+  const [klaviyoSuccess, setKlaviyoSuccess] = useState(false)
+  const [klaviyoError, setKlaviyoError] = useState('')
 
   async function saveBrandColors() {
     setSavingBrand(true)
@@ -242,6 +245,24 @@ export default function PreviewClient({
       font_primary: fontFamily,
     }).eq('id', brand.id)
     setSavingBrand(false)
+  }
+
+  async function sendToKlaviyo() {
+    setSendingToKlaviyo(true)
+    setKlaviyoError('')
+    try {
+      const res = await fetch(`/api/campaigns/${campaign.id}/email/klaviyo`, { method: 'POST' })
+      const data = await res.json()
+      if (data.success) {
+        setKlaviyoSuccess(true)
+        setTimeout(() => setKlaviyoSuccess(false), 4000)
+      } else {
+        setKlaviyoError(data.error || 'Failed to send to Klaviyo')
+      }
+    } catch {
+      setKlaviyoError('Something went wrong')
+    }
+    setSendingToKlaviyo(false)
   }
 
   // Load Google Font
@@ -1091,13 +1112,25 @@ export default function PreviewClient({
               <span style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 26, textTransform: 'uppercase', letterSpacing: '-0.01em', color: '#000' }}>Landing Page</span>
             </div>
             {brand.status === 'active' && (
-              <a
-                href={`/api/campaigns/${campaign.id}/landing-html`}
-                download={`${brand.name.toLowerCase().replace(/\s+/g, '-')}-landing-page.html`}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#000', color: '#00ff97', fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 999, textDecoration: 'none', border: 'none' }}
-              >
-                ↓ Download HTML
-              </a>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+                <button
+                  onClick={sendToKlaviyo}
+                  disabled={sendingToKlaviyo}
+                  style={{ fontSize: 12, fontWeight: 700, color: '#000', padding: '8px 16px', background: klaviyoSuccess ? '#00ff97' : sendingToKlaviyo ? '#e0e0e0' : '#00ff97', borderRadius: 999, border: 'none', cursor: sendingToKlaviyo ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  {klaviyoSuccess ? '✓ Sent to Klaviyo' : sendingToKlaviyo ? 'Sending...' : 'Send to Klaviyo →'}
+                </button>
+                <a
+                  href={`/api/campaigns/${campaign.id}/landing-html`}
+                  download={`${brand.name.toLowerCase().replace(/\s+/g, '-')}-landing-page.html`}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#000', color: '#00ff97', fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 999, textDecoration: 'none', border: 'none' }}
+                >
+                  ↓ Download HTML
+                </a>
+                {klaviyoError && (
+                  <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 6, fontSize: 11, color: '#ef4444', fontWeight: 600, whiteSpace: 'nowrap' }}>{klaviyoError}</div>
+                )}
+              </div>
             )}
           </div>
           {landingBrief ? (
