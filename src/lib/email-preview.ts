@@ -52,6 +52,7 @@ interface BrandPreviewData {
   website: string
   logoUrl: string
   products: Array<{ name: string; price: string; image: string }>
+  lifestyleImages?: string[]
 }
 
 export function buildPreviewHtml(config: EmailConfig, brand: BrandPreviewData): string {
@@ -59,13 +60,19 @@ export function buildPreviewHtml(config: EmailConfig, brand: BrandPreviewData): 
   const textOnPrimary = isLight(primaryColor) ? '#000' : '#fff'
   const blocks: string[] = []
 
+  const lifestyleImgs = brand.lifestyleImages || []
+
   // Hero
   if (config.blocks.hero) {
+    const heroBg = lifestyleImgs[0]
+      ? `background:linear-gradient(rgba(0,0,0,0.55),rgba(0,0,0,0.55)),url(${lifestyleImgs[0]});background-size:cover;background-position:center`
+      : `background:${primaryColor}`
+    const heroTextColor = lifestyleImgs[0] ? '#fff' : textOnPrimary
     blocks.push(`
-      <tr><td style="background:${primaryColor};padding:48px 32px;text-align:center">
-        ${brand.logoUrl ? `<img src="${brand.logoUrl}" alt="${brand.name}" style="height:28px;margin-bottom:20px;display:inline-block" />` : `<div style="font-family:${headingFont};font-size:20px;font-weight:900;color:${textOnPrimary};margin-bottom:20px">${brand.name}</div>`}
-        <div style="font-family:${headingFont};font-size:32px;font-weight:900;color:${textOnPrimary};line-height:1.1;margin-bottom:12px">Your Campaign<br>Headline Here</div>
-        <div style="font-size:15px;color:${textOnPrimary};opacity:0.7;margin-bottom:24px;max-width:400px;margin-left:auto;margin-right:auto;line-height:1.5">Your hero subheadline goes here. This is where the campaign message will appear.</div>
+      <tr><td style="${heroBg};padding:48px 32px;text-align:center">
+        ${brand.logoUrl ? `<img src="${brand.logoUrl}" alt="${brand.name}" style="height:28px;margin-bottom:20px;display:inline-block" />` : `<div style="font-family:${headingFont};font-size:20px;font-weight:900;color:${heroTextColor};margin-bottom:20px">${brand.name}</div>`}
+        <div style="font-family:${headingFont};font-size:32px;font-weight:900;color:${heroTextColor};line-height:1.1;margin-bottom:12px">Your Campaign<br>Headline Here</div>
+        <div style="font-size:15px;color:${heroTextColor};opacity:0.8;margin-bottom:24px;max-width:400px;margin-left:auto;margin-right:auto;line-height:1.5">Your hero subheadline goes here. This is where the campaign message will appear.</div>
         <a href="${brand.website}" style="display:inline-block;background:${accentColor};color:${isLight(accentColor) ? '#000' : '#fff'};font-family:${headingFont};font-weight:800;font-size:14px;padding:14px 32px;border-radius:999px;text-decoration:none">Shop Now</a>
       </td></tr>`)
   }
@@ -132,8 +139,10 @@ export function buildPreviewHtml(config: EmailConfig, brand: BrandPreviewData): 
 
   // Experience
   if (config.blocks.experience) {
+    const expImg = lifestyleImgs[1] || lifestyleImgs[0]
     blocks.push(`
       <tr><td style="padding:32px;text-align:center">
+        ${expImg ? `<img src="${expImg}" alt="Lifestyle" style="width:100%;border-radius:12px;margin-bottom:20px;display:block" />` : ''}
         <div style="font-family:${headingFont};font-size:22px;font-weight:900;color:${primaryColor};margin-bottom:12px">How It Makes You Feel</div>
         <div style="font-size:14px;color:#666;line-height:1.7;max-width:440px;margin:0 auto">This section describes the product experience. It will be customized for each campaign you generate.</div>
       </td></tr>`)
@@ -198,7 +207,15 @@ export function buildPreviewHtml(config: EmailConfig, brand: BrandPreviewData): 
       <a href="#" style="font-size:11px;color:#bbb;text-decoration:underline">${config.unsubscribeText || 'Unsubscribe'}</a>
     </td></tr>`
 
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+  // Build Google Fonts link if not a system font
+  const systemFonts = ['arial', 'helvetica', 'verdana', 'georgia', 'times new roman', 'courier new']
+  const fontName = headingFont.split(',')[0].trim()
+  const needsGoogleFont = fontName && !systemFonts.includes(fontName.toLowerCase())
+  const fontLink = needsGoogleFont
+    ? `<link href="https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@400;600;700;800;900&display=swap" rel="stylesheet">`
+    : ''
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${fontLink}</head>
 <body style="margin:0;padding:0;background:${bgColor};font-family:Arial,sans-serif">
 <center><table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#fff">
 ${blocks.join('\n')}

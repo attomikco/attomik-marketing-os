@@ -25,10 +25,12 @@ interface Brand {
   products: any[] | null; notes: string | null
 }
 
-export default function EmailTemplateClient({ brand, initialConfig, emails }: {
+export default function EmailTemplateClient({ brand, initialConfig, emails, lifestyleImages = [], productImages = [] }: {
   brand: Brand
   initialConfig: EmailConfig | null
   emails: any[]
+  lifestyleImages?: string[]
+  productImages?: string[]
 }) {
   const supabase = createClient()
   const [activeTab, setActiveTab] = useState<'Template' | 'Sent emails'>('Template')
@@ -48,10 +50,11 @@ export default function EmailTemplateClient({ brand, initialConfig, emails }: {
     name: brand.name,
     website: brand.website || '#',
     logoUrl: brand.logo_url || '',
-    products: (brand.products || []).slice(0, 3).map((p: any) => ({
-      name: p.name, price: p.price_range || '', image: p.image || '',
+    products: (brand.products || []).slice(0, 3).map((p: any, i: number) => ({
+      name: p.name, price: p.price_range || '', image: p.image || productImages[i] || '',
     })),
-  }), [brand])
+    lifestyleImages,
+  }), [brand, lifestyleImages, productImages])
 
   const previewHtml = useMemo(() => buildPreviewHtml(config, brandPreview), [config, brandPreview])
 

@@ -28,6 +28,22 @@ export default async function EmailPage({
     emailConfig = notes.email_config || null
   } catch {}
 
+  // Fetch brand images for preview
+  const { data: brandImages } = await supabase
+    .from('brand_images')
+    .select('storage_path, tag')
+    .eq('brand_id', activeBrandId)
+    .order('created_at')
+
+  const lifestyleImages: string[] = []
+  const productImages: string[] = []
+  for (const img of brandImages || []) {
+    const cleanPath = img.storage_path.replace(/^brand-images\//, '')
+    const { data: urlData } = supabase.storage.from('brand-images').getPublicUrl(cleanPath)
+    if (img.tag === 'lifestyle' || img.tag === 'background') lifestyleImages.push(urlData.publicUrl)
+    else if (img.tag === 'product') productImages.push(urlData.publicUrl)
+  }
+
   // Fetch generated emails for this brand
   const { data: emails } = await supabase
     .from('generated_content')
@@ -36,5 +52,5 @@ export default async function EmailPage({
     .eq('type', 'email')
     .order('created_at', { ascending: false })
 
-  return <EmailTemplateClient brand={brand} initialConfig={emailConfig} emails={emails || []} />
+  return <EmailTemplateClient brand={brand} initialConfig={emailConfig} emails={emails || []} lifestyleImages={lifestyleImages} productImages={productImages} />
 }
