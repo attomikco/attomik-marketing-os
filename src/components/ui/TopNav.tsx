@@ -74,7 +74,7 @@ export default function TopNav() {
   return (
     <nav style={{ position: 'sticky', top: 0, zIndex: 40, background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', padding: '0 32px', height: 72, gap: 0 }}>
       <Link href="/dashboard" style={{ marginRight: 24, flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-        <AttomikLogo height={24} color="#000" />
+        <AttomikLogo height={30} color="#000" />
       </Link>
 
       <div style={{ width: 1, height: 24, background: 'var(--border)', marginRight: 24, flexShrink: 0 }} />
