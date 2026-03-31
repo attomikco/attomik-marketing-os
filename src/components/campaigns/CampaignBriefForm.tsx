@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -30,6 +30,24 @@ const HOOK_PLACEHOLDERS: Record<string, string> = {
   cold_traffic: 'e.g. What if you could socialize without alcohol?',
 }
 
+const DEFAULT_ANGLES: Record<string, string> = {
+  new_product: 'benefit',
+  offer: 'direct',
+  seasonal: 'curiosity',
+  awareness: 'problem',
+  retargeting: 'social_proof',
+  cold_traffic: 'problem',
+}
+
+const HOOK_SUGGESTIONS: Record<string, string[]> = {
+  new_product: ['Introducing [Product Name]', 'New flavor just dropped', 'We made something new'],
+  offer: ['20% off this weekend only', 'Buy 2 get 1 free — this week', 'Last chance: sale ends Sunday'],
+  seasonal: ['Dry January starts now', 'Summer is here', 'New year, new you'],
+  awareness: ['The hangover-free social drink', 'Finally, a [category] that actually works', 'This is what we do'],
+  retargeting: ['Still thinking about it?', 'You left something behind', "Come back — here's 10% off"],
+  cold_traffic: ['What if you could [outcome]?', "Most people don't know this exists", 'The alternative to [old solution]'],
+}
+
 interface Brand {
   id: string
   name: string
@@ -57,16 +75,28 @@ export default function CampaignBriefForm({ brands, defaultBrandId }: { brands: 
 
   const brand = brands.find(b => b.id === brandId)
 
+  // Auto-select best angle when campaign type changes
+  useEffect(() => {
+    if (campaignType && DEFAULT_ANGLES[campaignType]) {
+      setAngle(DEFAULT_ANGLES[campaignType])
+    }
+  }, [campaignType])
+
+  // Derived campaign name — updates live
+  const suggestedName = (() => {
+    const brandName = brand?.name || ''
+    const typeLabel = CAMPAIGN_TYPES.find(t => t.id === campaignType)?.label || ''
+    if (hook.trim()) return `${brandName} — ${hook.trim()}`
+    if (campaignType) return `${brandName} — ${typeLabel}`
+    return `${brandName} — New Campaign`
+  })()
+
   async function submit() {
     if (!brandId || !campaignType) return
     setSaving(true)
     setStep(2)
 
     const typeConfig = CAMPAIGN_TYPES.find(t => t.id === campaignType)
-    const campaignName = hook.trim()
-      ? `${brand?.name} — ${hook.trim()}`
-      : `${brand?.name} — ${typeConfig?.label}`
-
     const products = brand?.products || []
     const offerContext = productFocus === 'all'
       ? products.map((p: any) => p.name).join(', ')
@@ -76,7 +106,7 @@ export default function CampaignBriefForm({ brands, defaultBrandId }: { brands: 
       .from('campaigns')
       .insert({
         brand_id: brandId,
-        name: campaignName,
+        name: suggestedName,
         type: 'funnel',
         status: 'active',
         goal: typeConfig?.label || campaignType,
@@ -168,6 +198,26 @@ export default function CampaignBriefForm({ brands, defaultBrandId }: { brands: 
               onFocus={e => { e.currentTarget.style.borderColor = '#000' }}
               onBlur={e => { e.currentTarget.style.borderColor = '#e0e0e0' }}
             />
+            {/* Hook suggestions */}
+            {!hook.trim() && campaignType && HOOK_SUGGESTIONS[campaignType] && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                <span style={{ fontSize: 11, color: '#bbb', fontWeight: 600, alignSelf: 'center' }}>Try:</span>
+                {HOOK_SUGGESTIONS[campaignType].map((s, i) => (
+                  <button key={i} onClick={() => setHook(s)}
+                    style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', background: '#f5f5f5', border: '1px solid var(--border)', borderRadius: 999, padding: '3px 10px', cursor: 'pointer', transition: 'all 0.15s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#000'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#000' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = 'var(--muted)'; e.currentTarget.style.borderColor = 'var(--border)' }}
+                  >{s}</button>
+                ))}
+              </div>
+            )}
+            {/* Live campaign name */}
+            {campaignType && (
+              <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#bbb', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Campaign name:</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{suggestedName}</span>
+              </div>
+            )}
           </div>
 
           {/* Product focus */}
@@ -210,7 +260,49 @@ export default function CampaignBriefForm({ brands, defaultBrandId }: { brands: 
           </div>
         </div>
 
-        <div style={{ marginTop: 32 }}>
+        {/* Live brief preview */}
+        <div style={{ background: '#000', borderRadius: 14, padding: '20px 22px', marginTop: 32, marginBottom: 20 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 14 }}>Campaign brief</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em', width: 80, flexShrink: 0 }}>Brand</span>
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>{brand?.name || '—'}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em', width: 80, flexShrink: 0 }}>Goal</span>
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>{typeConfig.label}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em', width: 80, flexShrink: 0 }}>Hook</span>
+              <span style={{ fontSize: 13, color: hook.trim() ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.2)', fontWeight: hook.trim() ? 600 : 400, fontStyle: hook.trim() ? 'normal' : 'italic' }}>{hook.trim() || 'Add a hook for better copy'}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em', width: 80, flexShrink: 0 }}>Angle</span>
+              <span style={{ fontSize: 13, color: '#00ff97', fontWeight: 600 }}>{AUDIENCE_ANGLES.find(a => a.id === angle)?.label || '—'}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em', width: 80, flexShrink: 0 }}>Audience</span>
+              <span style={{ fontSize: 13, color: (audienceOverride || brand?.target_audience) ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)', fontWeight: 400, fontStyle: (audienceOverride || brand?.target_audience) ? 'normal' : 'italic' }}>{audienceOverride || brand?.target_audience || 'Add audience in Brand Hub'}</span>
+            </div>
+            {brand?.products && brand.products.length > 0 && (
+              <div style={{ display: 'flex', gap: 10 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em', width: 80, flexShrink: 0 }}>Product</span>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: 400 }}>{productFocus === 'all' ? `All products (${brand.products.length})` : productFocus}</span>
+              </div>
+            )}
+          </div>
+          <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>Brief completeness</div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {[!!brand, !!campaignType, !!hook.trim(), !!(audienceOverride || brand?.target_audience), !!angle].map((done, i) => (
+                <div key={i} style={{ width: done ? 16 : 8, height: 6, borderRadius: 3, background: done ? '#00ff97' : 'rgba(255,255,255,0.1)', transition: 'all 0.3s ease' }} />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Submit */}
+        <div>
           <button onClick={submit} disabled={saving}
             style={{ width: '100%', padding: '16px', background: saving ? '#e0e0e0' : '#000', color: saving ? '#999' : '#00ff97', fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.02em', borderRadius: 14, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'all 0.15s' }}>
             {saving ? (
