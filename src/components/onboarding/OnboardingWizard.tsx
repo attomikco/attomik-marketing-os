@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Upload, ArrowLeft } from 'lucide-react'
 import AttomikLogo from '@/components/ui/AttomikLogo'
+import MagicModal from '@/components/ui/MagicModal'
 
 const inputCls = "w-full text-sm border border-border rounded-btn px-3 py-2.5 bg-cream focus:outline-none focus:border-accent transition-colors font-sans placeholder:text-[#bbb]"
 
@@ -48,6 +49,7 @@ export default function OnboardingWizard() {
   const [productImageUrl, setProductImageUrl] = useState<string | null>(null)
   const [targetAudience, setTargetAudience] = useState('')
   const [imageFiles, setImageFiles] = useState<File[]>([])
+  const [showModal, setShowModal] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const autoAnalyzed = useRef(false)
@@ -134,7 +136,13 @@ export default function OnboardingWizard() {
 
   async function submit() {
     if (!validate()) return
+
+    // Show animation immediately — no waiting
+    setShowModal(true)
     setSaving(true)
+
+    // Small delay so modal renders before heavy DB work starts
+    await new Promise(r => setTimeout(r, 100))
 
     const slug = brandName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Math.random().toString(36).slice(2, 6)
 
@@ -171,6 +179,7 @@ export default function OnboardingWizard() {
     }).select('id').single()
 
     if (brandErr || !brand) {
+      setShowModal(false)
       setErrors({ submit: brandErr?.message || 'Failed to create brand' })
       setSaving(false)
       return
@@ -181,6 +190,7 @@ export default function OnboardingWizard() {
     }).select('id').single()
 
     if (campErr || !campaign) {
+      setShowModal(false)
       setErrors({ submit: campErr?.message || 'Failed to create campaign' })
       setSaving(false)
       return
@@ -490,6 +500,12 @@ export default function OnboardingWizard() {
 
   return (
     <div ref={scrollRef} className="fixed inset-0 bg-ink z-50 flex flex-col items-center wizard-scroll" style={{ padding: 'clamp(16px, 4vw, 80px) 16px', overflowY: 'auto' }}>
+      <MagicModal
+        isOpen={showModal}
+        mode="scan"
+        isDone={false}
+        brandName={brandName}
+      />
       <style>{`
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .wizard-scroll::-webkit-scrollbar { display: none; }
