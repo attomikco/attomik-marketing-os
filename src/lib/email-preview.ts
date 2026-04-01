@@ -29,20 +29,27 @@ export const DEFAULT_EMAIL_CONFIG: EmailConfig = {
     hero: true,
     products: true,
     cta: true,
-    testimonials: false,
-    promo: false,
-    experience: false,
-    faq: false,
+    testimonials: true,
+    promo: true,
+    experience: true,
+    faq: true,
     blog: false,
-    referral: false,
-    subscribeBar: false,
+    referral: true,
+    subscribeBar: true,
   },
   primaryColor: '#000000',
   accentColor: '#00ff97',
   bgColor: '#f5f5f5',
   headingFont: 'Arial, sans-serif',
-  testimonials: [],
-  faq: [],
+  testimonials: [
+    { quote: 'This completely changed my routine. I can\'t imagine going back to what I was using before.', author: 'Sarah M.' },
+    { quote: 'Finally something that actually delivers on its promise. Worth every penny.', author: 'James R.' },
+  ],
+  faq: [
+    { question: 'How does shipping work?', answer: 'We ship orders within 1-2 business days. Free shipping on orders over $50.' },
+    { question: 'What\'s your return policy?', answer: 'Full refund within 30 days if you\'re not completely satisfied. No questions asked.' },
+    { question: 'How is this different?', answer: 'We use premium ingredients and our proprietary process to deliver results you can actually feel.' },
+  ],
   footerAddress: '',
   unsubscribeText: 'Unsubscribe',
 }
@@ -61,6 +68,15 @@ export function buildPreviewHtml(config: EmailConfig, brand: BrandPreviewData): 
   const blocks: string[] = []
 
   const lifestyleImgs = brand.lifestyleImages || []
+  const products = brand.products.length > 0
+    ? brand.products
+    : [{ name: 'Product One', price: '$29', image: '' }, { name: 'Product Two', price: '$34', image: '' }, { name: 'Product Three', price: '$24', image: '' }]
+
+  // Top banner
+  blocks.push(`
+    <tr><td style="background:${primaryColor};padding:10px 20px;text-align:center;font-size:12px;font-weight:600;color:${textOnPrimary};letter-spacing:0.06em;text-transform:uppercase">
+      Free Shipping On Orders Over $50
+    </td></tr>`)
 
   // Hero
   if (config.blocks.hero) {
@@ -78,8 +94,8 @@ export function buildPreviewHtml(config: EmailConfig, brand: BrandPreviewData): 
   }
 
   // Products
-  if (config.blocks.products && brand.products.length > 0) {
-    const productCells = brand.products.slice(0, 3).map(p => `
+  if (config.blocks.products) {
+    const productCells = products.slice(0, 3).map(p => `
       <td style="width:33%;padding:8px;text-align:center;vertical-align:top">
         ${p.image ? `<img src="${p.image}" alt="${p.name}" style="width:100%;border-radius:8px;margin-bottom:8px" />` : `<div style="width:100%;height:120px;background:#e0e0e0;border-radius:8px;margin-bottom:8px"></div>`}
         <div style="font-family:${headingFont};font-size:13px;font-weight:700;color:#000;margin-bottom:2px">${p.name}</div>
@@ -95,12 +111,12 @@ export function buildPreviewHtml(config: EmailConfig, brand: BrandPreviewData): 
   // CTA Banner
   if (config.blocks.cta) {
     blocks.push(`
-      <tr><td style="padding:0 32px">
-        <div style="background:${primaryColor};border-radius:12px;padding:32px;text-align:center">
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${textOnPrimary};opacity:0.5;margin-bottom:8px">Limited Time</div>
-          <div style="font-family:${headingFont};font-size:22px;font-weight:900;color:${textOnPrimary};margin-bottom:8px">Your CTA headline goes here</div>
-          <div style="font-size:14px;color:${textOnPrimary};opacity:0.7;margin-bottom:20px">Supporting copy for your call to action.</div>
-          <a href="${brand.website}" style="display:inline-block;background:${accentColor};color:${isLight(accentColor) ? '#000' : '#fff'};font-weight:800;font-size:13px;padding:12px 28px;border-radius:999px;text-decoration:none">Get Started</a>
+      <tr><td style="padding:16px 32px 32px">
+        <div style="background:${primaryColor};border-radius:12px;padding:36px;text-align:center">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${textOnPrimary};opacity:0.5;margin-bottom:10px">Limited Time</div>
+          <div style="font-family:${headingFont};font-size:24px;font-weight:900;color:${textOnPrimary};margin-bottom:10px">Free Shipping On All Orders</div>
+          <div style="font-size:14px;color:${textOnPrimary};opacity:0.7;margin-bottom:24px;max-width:380px;margin-left:auto;margin-right:auto;line-height:1.5">Elevate your routine with ${brand.name}. Order today and enjoy free shipping — no minimum.</div>
+          <a href="${brand.website}" style="display:inline-block;background:${accentColor};color:${isLight(accentColor) ? '#000' : '#fff'};font-weight:800;font-size:14px;padding:14px 32px;border-radius:999px;text-decoration:none">Order Now</a>
         </div>
       </td></tr>`)
   }
@@ -129,10 +145,12 @@ export function buildPreviewHtml(config: EmailConfig, brand: BrandPreviewData): 
   if (config.blocks.promo) {
     blocks.push(`
       <tr><td style="padding:0 32px 32px">
-        <div style="border:2px dashed ${accentColor};border-radius:12px;padding:24px;text-align:center">
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#999;margin-bottom:8px">Your Exclusive Code</div>
-          <div style="font-family:monospace;font-size:28px;font-weight:900;color:${primaryColor};letter-spacing:0.08em;margin-bottom:8px">SAVE20</div>
-          <div style="font-size:13px;color:#888">Use at checkout for 20% off your order</div>
+        <div style="border:2px dashed ${accentColor};border-radius:12px;padding:32px;text-align:center;background:${bgColor}">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#999;margin-bottom:12px">Your Exclusive Code</div>
+          <div style="font-family:${headingFont};font-size:48px;font-weight:900;color:${primaryColor};line-height:1;margin-bottom:4px">20%</div>
+          <div style="font-family:${headingFont};font-size:16px;font-weight:700;color:${primaryColor};margin-bottom:16px">Off Your First Order</div>
+          <div style="font-family:monospace;font-size:22px;font-weight:900;color:${primaryColor};letter-spacing:0.1em;background:#fff;display:inline-block;padding:10px 28px;border-radius:8px;border:1px solid #eee;margin-bottom:12px">WELCOME20</div>
+          <div style="font-size:13px;color:#888">Apply at checkout · Expires in 7 days</div>
         </div>
       </td></tr>`)
   }
@@ -141,10 +159,12 @@ export function buildPreviewHtml(config: EmailConfig, brand: BrandPreviewData): 
   if (config.blocks.experience) {
     const expImg = lifestyleImgs[1] || lifestyleImgs[0]
     blocks.push(`
-      <tr><td style="padding:32px;text-align:center">
-        ${expImg ? `<img src="${expImg}" alt="Lifestyle" style="width:100%;border-radius:12px;margin-bottom:20px;display:block" />` : ''}
-        <div style="font-family:${headingFont};font-size:22px;font-weight:900;color:${primaryColor};margin-bottom:12px">How It Makes You Feel</div>
-        <div style="font-size:14px;color:#666;line-height:1.7;max-width:440px;margin:0 auto">This section describes the product experience. It will be customized for each campaign you generate.</div>
+      <tr><td style="padding:32px">
+        ${expImg ? `<img src="${expImg}" alt="Lifestyle" style="width:100%;border-radius:12px;margin-bottom:24px;display:block" />` : `<div style="width:100%;height:240px;background:linear-gradient(135deg,${primaryColor}15,${accentColor}15);border-radius:12px;margin-bottom:24px"></div>`}
+        <div style="text-align:center">
+          <div style="font-family:${headingFont};font-size:24px;font-weight:900;color:${primaryColor};margin-bottom:14px">The ${brand.name} Experience</div>
+          <div style="font-size:15px;color:#666;line-height:1.7;max-width:460px;margin:0 auto">${brand.name} helps you feel your best. Every product is crafted with intention — designed to fit seamlessly into your daily routine and elevate the moments that matter.</div>
+        </div>
       </td></tr>`)
   }
 
@@ -169,10 +189,13 @@ export function buildPreviewHtml(config: EmailConfig, brand: BrandPreviewData): 
   if (config.blocks.subscribeBar) {
     blocks.push(`
       <tr><td style="padding:0 32px 32px">
-        <div style="background:#f9f9f9;border-radius:12px;padding:24px;text-align:center">
-          <div style="font-family:${headingFont};font-size:16px;font-weight:800;color:#000;margin-bottom:8px">Stay in the loop</div>
-          <div style="font-size:13px;color:#888;margin-bottom:14px">Get early access to drops and exclusive offers.</div>
-          <div style="display:inline-block;background:#eee;border-radius:8px;padding:10px 20px;font-size:13px;color:#999">your@email.com &nbsp;&nbsp; Subscribe →</div>
+        <div style="background:${bgColor};border-radius:14px;padding:28px;text-align:center;border:1px solid #eee">
+          <div style="font-family:${headingFont};font-size:18px;font-weight:900;color:#000;margin-bottom:8px">Stay in the loop</div>
+          <div style="font-size:14px;color:#888;margin-bottom:16px;line-height:1.5">Get early access to drops, exclusive offers, and ${brand.name} news.</div>
+          <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto"><tr>
+            <td style="background:#fff;border:1.5px solid #ddd;border-radius:8px 0 0 8px;padding:12px 16px;font-size:13px;color:#bbb;min-width:180px;text-align:left">your@email.com</td>
+            <td style="background:${primaryColor};border-radius:0 8px 8px 0;padding:12px 20px;font-size:13px;font-weight:700;color:${textOnPrimary};white-space:nowrap">Subscribe →</td>
+          </tr></table>
         </div>
       </td></tr>`)
   }
@@ -181,10 +204,10 @@ export function buildPreviewHtml(config: EmailConfig, brand: BrandPreviewData): 
   if (config.blocks.referral) {
     blocks.push(`
       <tr><td style="padding:0 32px 32px">
-        <div style="background:${primaryColor};border-radius:12px;padding:24px;text-align:center">
-          <div style="font-family:${headingFont};font-size:16px;font-weight:800;color:${textOnPrimary};margin-bottom:8px">Share the love</div>
-          <div style="font-size:13px;color:${textOnPrimary};opacity:0.7;margin-bottom:14px">Give $10, get $10 when you refer a friend.</div>
-          <a href="${brand.website}" style="display:inline-block;background:${accentColor};color:${isLight(accentColor) ? '#000' : '#fff'};font-weight:700;font-size:13px;padding:10px 24px;border-radius:999px;text-decoration:none">Share Your Link</a>
+        <div style="background:${primaryColor};border-radius:14px;padding:32px;text-align:center">
+          <div style="font-family:${headingFont};font-size:20px;font-weight:900;color:${textOnPrimary};margin-bottom:10px">Give $10, Get $10</div>
+          <div style="font-size:14px;color:${textOnPrimary};opacity:0.7;margin-bottom:20px;max-width:360px;margin-left:auto;margin-right:auto;line-height:1.5">Share ${brand.name} with a friend. They get $10 off their first order, and you get $10 credit.</div>
+          <a href="${brand.website}" style="display:inline-block;background:${accentColor};color:${isLight(accentColor) ? '#000' : '#fff'};font-weight:800;font-size:14px;padding:14px 28px;border-radius:999px;text-decoration:none">Share Your Link</a>
         </div>
       </td></tr>`)
   }
@@ -202,9 +225,15 @@ export function buildPreviewHtml(config: EmailConfig, brand: BrandPreviewData): 
 
   // Footer
   const footer = `
-    <tr><td style="padding:32px;text-align:center;border-top:1px solid #eee">
-      <div style="font-size:11px;color:#bbb;margin-bottom:8px">${brand.name} · ${config.footerAddress || brand.website}</div>
-      <a href="#" style="font-size:11px;color:#bbb;text-decoration:underline">${config.unsubscribeText || 'Unsubscribe'}</a>
+    <tr><td style="padding:36px 32px;text-align:center;background:${primaryColor}">
+      ${brand.logoUrl ? `<img src="${brand.logoUrl}" alt="${brand.name}" style="height:24px;margin-bottom:16px;display:inline-block;opacity:0.6" />` : `<div style="font-family:${headingFont};font-size:16px;font-weight:800;color:${textOnPrimary};opacity:0.6;margin-bottom:16px">${brand.name}</div>`}
+      <div style="margin-bottom:16px">
+        <a href="${brand.website}" style="font-size:12px;color:${textOnPrimary};opacity:0.4;text-decoration:none;margin:0 8px">Shop</a>
+        <a href="${brand.website}" style="font-size:12px;color:${textOnPrimary};opacity:0.4;text-decoration:none;margin:0 8px">About</a>
+        <a href="${brand.website}" style="font-size:12px;color:${textOnPrimary};opacity:0.4;text-decoration:none;margin:0 8px">Contact</a>
+      </div>
+      <div style="font-size:11px;color:${textOnPrimary};opacity:0.25;margin-bottom:8px">${config.footerAddress || brand.website}</div>
+      <a href="#" style="font-size:11px;color:${textOnPrimary};opacity:0.3;text-decoration:underline">${config.unsubscribeText || 'Unsubscribe'}</a>
     </td></tr>`
 
   // Build Google Fonts link if not a system font
