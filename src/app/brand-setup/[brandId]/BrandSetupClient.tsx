@@ -114,9 +114,9 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
   })
   const headingFamily = brand.font_heading?.family || brand.font_primary?.split('|')[0] || ''
   const bodyFamily = brand.font_body?.family || brand.font_secondary?.split('|')[0] || headingFamily
-  const [fonts, setFonts] = useState<Array<{ label: string; family: string; weight: string }>>([
-    { label: 'Heading', family: headingFamily, weight: brand.font_heading?.weight || '700' },
-    { label: 'Body', family: bodyFamily, weight: brand.font_body?.weight || '400' },
+  const [fonts, setFonts] = useState<Array<{ label: string; family: string; weight: string; transform: 'none' | 'uppercase' | 'lowercase' | 'capitalize' }>>([
+    { label: 'Heading', family: headingFamily, weight: brand.font_heading?.weight || '700', transform: brand.font_heading?.transform || 'none' },
+    { label: 'Body', family: bodyFamily, weight: brand.font_body?.weight || '400', transform: brand.font_body?.transform || 'none' },
   ])
   const [logoDark, setLogoDark] = useState(brand.logo_url || '')
   const [logoLight, setLogoLight] = useState(tryParse(brand.notes)?.logo_url_light || '')
@@ -185,7 +185,7 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
       }
     }
   }
-  function addFont() { setFonts(prev => [...prev, { label: `Font ${prev.length + 1}`, family: '', weight: '400' }]) }
+  function addFont() { setFonts(prev => [...prev, { label: `Font ${prev.length + 1}`, family: '', weight: '400', transform: 'none' }]) }
   function removeFont(index: number) { if (fonts.length <= 1) return; setFonts(prev => prev.filter((_, i) => i !== index)) }
 
   function updateProduct(index: number, field: string, value: string) {
@@ -259,8 +259,8 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
       primary_color: colors[0]?.value || null, secondary_color: colors[1]?.value || null, accent_color: colors[2]?.value || null,
       font_primary: fonts[0]?.family ? `${fonts[0].family}|${fonts[0].weight}|none` : null,
       font_secondary: fonts[1]?.family ? `${fonts[1].family}|${fonts[1].weight || '400'}|none` : null,
-      font_heading: fonts[0]?.family ? { family: fonts[0].family, weight: fonts[0].weight || '700', transform: 'none', letterSpacing: 'normal' } : null,
-      font_body: fonts[1]?.family ? { family: fonts[1].family, weight: fonts[1].weight || '400', transform: 'none', letterSpacing: 'normal' } : null,
+      font_heading: fonts[0]?.family ? { family: fonts[0].family, weight: fonts[0].weight || '700', transform: fonts[0].transform || 'none', letterSpacing: 'normal' } : null,
+      font_body: fonts[1]?.family ? { family: fonts[1].family, weight: fonts[1].weight || '400', transform: fonts[1].transform || 'none', letterSpacing: 'normal' } : null,
       logo_url: logoDark || null,
       notes: JSON.stringify({
         ...tryParse(brand.notes),
@@ -393,52 +393,44 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
         )
       })()}
 
-      {/* ── BRAND KNOWLEDGE REVEAL ── */}
+      {/* ── BRAND KNOWLEDGE SUMMARY ── */}
       {(brand.mission || brand.brand_voice || brand.target_audience) && (
-        <div style={{ background: '#000', borderRadius: 20, padding: '40px 44px', marginBottom: 32, position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: -60, right: -60, width: 240, height: 240, borderRadius: '50%', background: 'rgba(0,255,151,0.06)', pointerEvents: 'none' }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#00ff97', boxShadow: '0 0 8px rgba(0,255,151,0.6)' }} />
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>
-              What Attomik learned from {brand.website?.replace(/https?:\/\//, '') || 'your website'}
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#00ff97' }} />
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)' }}>What Attomik knows about {brand.name}</span>
             </div>
+            {aiPrefilled && <span style={{ fontSize: 11, color: '#00a86b', fontWeight: 600 }}>✦ AI-generated from your website</span>}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 32 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
             {brand.mission && (
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 10 }}>What you do</div>
-                <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 700, fontSize: 20, color: '#fff', lineHeight: 1.4 }}>{brand.mission}</div>
+              <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 6 }}>What you do</div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)', lineHeight: 1.5 }}>{brand.mission}</div>
               </div>
             )}
             {brand.target_audience && (
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 10 }}>Who buys from you</div>
-                <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 700, fontSize: 20, color: '#fff', lineHeight: 1.4 }}>{brand.target_audience}</div>
+              <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 6 }}>Who buys from you</div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)', lineHeight: 1.5 }}>{brand.target_audience}</div>
               </div>
             )}
             {brand.brand_voice && (
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 10 }}>How you sound</div>
-                <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 700, fontSize: 20, color: '#fff', lineHeight: 1.4 }}>{brand.brand_voice}</div>
+              <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 6 }}>How you sound</div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)', lineHeight: 1.5 }}>{brand.brand_voice}</div>
               </div>
             )}
-          </div>
-          {brand.tone_keywords && brand.tone_keywords.length > 0 && (
-            <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.08em', textTransform: 'uppercase', marginRight: 4 }}>Tone</span>
-              {brand.tone_keywords.map((kw: string, i: number) => (
-                <span key={i} style={{ fontSize: 13, fontWeight: 700, color: '#00ff97', background: 'rgba(0,255,151,0.08)', border: '1px solid rgba(0,255,151,0.2)', padding: '4px 12px', borderRadius: 999 }}>{kw}</span>
-              ))}
-            </div>
-          )}
-          <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', lineHeight: 1.5 }}>
-              {aiPrefilled ? '✦ AI-generated from your website — review and improve below for better results.' : 'Review and improve below to get better creatives.'}
-            </div>
-            {brand.website && (
-              <a href={brand.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.2)', textDecoration: 'none', flexShrink: 0 }}>
-                {brand.website.replace(/https?:\/\//, '')} ↗
-              </a>
+            {brand.tone_keywords && brand.tone_keywords.length > 0 && (
+              <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 8 }}>Tone</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                  {brand.tone_keywords.map((kw: string, i: number) => (
+                    <span key={i} style={{ fontSize: 12, fontWeight: 600, color: '#00a86b', background: 'rgba(0,255,151,0.08)', border: '1px solid rgba(0,255,151,0.2)', padding: '3px 10px', borderRadius: 999 }}>{kw}</span>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -447,7 +439,10 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
       {/* Page header */}
       <div style={{ marginBottom: 32 }}>
         <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, textTransform: 'uppercase', letterSpacing: '-0.01em' }}>Brand Hub</div>
-        <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 3 }}>The more you fill in, the better your creatives get.</div>
+        <div style={{ background: 'rgba(0,255,151,0.08)', border: '1px solid rgba(0,255,151,0.2)', borderRadius: 10, padding: '10px 16px', display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+          <span style={{ color: '#00ff97', fontSize: 14 }}>✦</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.4 }}>The more you fill in, the better your creatives get.</span>
+        </div>
       </div>
 
       {/* ── SECTION 1: IDENTITY ── */}
@@ -612,8 +607,16 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
                   <button onClick={() => removeFont(index)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--muted)', lineHeight: 1, padding: '0 4px', flexShrink: 0 }}>×</button>
                 )}
               </div>
+              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                {(['none', 'uppercase', 'capitalize'] as const).map(t => (
+                  <button key={t} onClick={() => { setFonts(prev => prev.map((f, i) => i === index ? { ...f, transform: t } : f)); setIsDirty(true) }}
+                    style={{ padding: '4px 10px', borderRadius: 6, border: font.transform === t ? '2px solid #000' : '1.5px solid #e0e0e0', background: font.transform === t ? '#000' : '#fff', color: font.transform === t ? '#fff' : '#666', fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}>
+                    {t === 'none' ? 'Aa' : t === 'uppercase' ? 'AA' : 'Aa'}
+                  </button>
+                ))}
+              </div>
               {font.family && (
-                <div style={{ fontSize: 15, fontFamily: `${font.family}, sans-serif`, fontWeight: parseInt(font.weight) || 700, color: 'var(--muted)', paddingTop: 6 }}>
+                <div style={{ fontSize: 15, fontFamily: `${font.family}, sans-serif`, fontWeight: parseInt(font.weight) || 700, textTransform: font.transform || 'none', color: 'var(--muted)', paddingTop: 6, lineHeight: 1.4 }}>
                   The quick brown fox jumps over the lazy dog
                 </div>
               )}
@@ -697,12 +700,12 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
       {products.map((product, index) => (
         <div key={index} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 14, padding: 16, marginBottom: 12, display: 'flex', gap: 16, alignItems: 'stretch', position: 'relative' }}>
           {/* LEFT: Product image */}
-          <div style={{ flexShrink: 0 }}>
+          <div style={{ flexShrink: 0, display: 'flex', alignSelf: 'stretch' }}>
             {(() => {
               const productImgs = images.filter(img => img.tag === 'product')
               const currentImg = product.image || (productImgs[index] ? getImageUrl(productImgs[index]) : null)
               return (
-                <label style={{ width: 120, flexShrink: 0, borderRadius: 10, border: currentImg ? '1px solid var(--border)' : '2px dashed var(--border)', cursor: 'pointer', overflow: 'hidden', background: currentImg ? '#000' : '#fafafa', position: 'relative', alignSelf: 'stretch', minHeight: 120, display: 'block' }}>
+                <label style={{ width: 120, flex: 1, borderRadius: 10, border: currentImg ? '1px solid var(--border)' : '2px dashed var(--border)', cursor: 'pointer', overflow: 'hidden', background: currentImg ? '#000' : '#fafafa', position: 'relative', display: 'block', minHeight: 120 }}>
                   {currentImg ? (
                     <>
                       <img src={currentImg} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
