@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { CheckCircle } from 'lucide-react'
 import AttomikLogo from '@/components/ui/AttomikLogo'
+import { colors, font, fontWeight, fontSize, radius, zIndex, transition } from '@/lib/design-tokens'
 
 interface MagicModalProps {
   isOpen: boolean
@@ -148,7 +149,7 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
   if (!isOpen) return null
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#000', opacity: visible ? 1 : 0, transition: 'opacity 0.4s ease' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: zIndex.modal, background: colors.ink, opacity: visible ? 1 : 0, transition: `opacity ${transition.overlay}` }}>
       <style>{`
         @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
@@ -159,53 +160,53 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
 
       {/* ZONE 1: Logo */}
       <div style={{ position: 'absolute', top: 40, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
-        <AttomikLogo height={36} color="#ffffff" />
+        <AttomikLogo height={36} color={colors.paper} />
       </div>
 
       {/* ZONE 2: Animation */}
       <div style={{ position: 'absolute', top: 100, bottom: 120, left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
         {mode === 'scan' && !isDone && (
           <div style={{ position: 'relative', width: 220, height: 220 }}>
-            <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)' }} />
-            <div style={{ position: 'absolute', inset: 28, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.06)' }} />
-            <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'conic-gradient(from 0deg, transparent 0deg, rgba(0,255,151,0.08) 20deg, rgba(0,255,151,0.35) 40deg, transparent 60deg)', animation: 'spin 3s linear infinite' }} />
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 10, height: 10, borderRadius: '50%', background: '#00ff97', animation: 'pulse 1.5s ease infinite' }} />
+            <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `1px solid ${colors.whiteAlpha10}` }} />
+            <div style={{ position: 'absolute', inset: 28, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.06)' /* TODO: tokenize */ }} />
+            <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: `conic-gradient(from 0deg, transparent 0deg, ${colors.accentAlpha8} 20deg, rgba(0,255,151,0.35) 40deg, transparent 60deg)` /* TODO: tokenize rgba(0,255,151,0.35) */, animation: 'spin 3s linear infinite' }} />
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 10, height: 10, borderRadius: '50%', background: colors.accent, animation: 'pulse 1.5s ease infinite' }} />
             {[{top:'15%',left:'50%'},{top:'50%',left:'85%'},{top:'80%',left:'65%'},{top:'75%',left:'25%'},{top:'40%',left:'10%'}].map((pos,i) => (
-              <div key={i} style={{ position: 'absolute', ...pos, width: 6, height: 6, borderRadius: '50%', background: '#00ff97', opacity: 0.6, animation: 'scanDot 1.4s ease-in-out infinite', animationDelay: `${i*0.25}s` }} />
+              <div key={i} style={{ position: 'absolute', ...pos, width: 6, height: 6, borderRadius: '50%', background: colors.accent, opacity: 0.6, animation: 'scanDot 1.4s ease-in-out infinite', animationDelay: `${i*0.25}s` }} />
             ))}
-            <div style={{ position: 'absolute', bottom: -36, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', fontFamily: 'monospace', fontSize: 11, color: '#00ff97', opacity: 0.8 }}>
+            <div style={{ position: 'absolute', bottom: -36, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', fontFamily: font.mono, fontSize: fontSize.sm, color: colors.accent, opacity: 0.8 }}>
               {scanText}<span style={{ animation: 'pulse 1s ease infinite' }}>_</span>
             </div>
           </div>
         )}
         {mode === 'scan' && isDone && (
-          <div style={{ width: 88, height: 88, borderRadius: '50%', background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards' }}>
-            <CheckCircle size={36} color="#00ff97" />
+          <div style={{ width: 88, height: 88, borderRadius: '50%', background: 'rgba(0,255,151,0.1)' /* TODO: tokenize */, border: `1px solid ${colors.accentAlpha30}`, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards' }}>
+            <CheckCircle size={36} color={colors.accent} />
           </div>
         )}
 
         {mode === 'adcopy' && !isDone && (
           <div style={{ position: 'relative', width: '100%', maxWidth: 400, height: 200, margin: '0 auto' }}>
             {[{scale:0.92,y:16,opacity:0.25},{scale:0.96,y:8,opacity:0.45}].map((card,i) => (
-              <div key={i} style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.02)', borderRadius: 20, transform: `translateY(${card.y}px) scale(${card.scale})`, opacity: card.opacity, transformOrigin: 'bottom center' }} />
+              <div key={i} style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.02)' /* TODO: tokenize */, borderRadius: radius['4xl'], transform: `translateY(${card.y}px) scale(${card.scale})`, opacity: card.opacity, transformOrigin: 'bottom center' }} />
             ))}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03))', borderRadius: 20, boxShadow: '0 24px 48px rgba(0,0,0,0.5)', padding: '20px 24px', textAlign: 'center' }}>
-              <div style={{ width: 32, height: 3, background: '#00ff97', borderRadius: 2, margin: '0 auto 10px' }} />
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', color: '#00ff97', marginBottom: 14, borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: 12 }}>VARIATION 1</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: 'Barlow,sans-serif', minHeight: 28, marginBottom: 10, lineHeight: 1.2 }}>
-                {typedText}<span style={{ display: 'inline-block', width: 2, height: 20, background: '#00ff97', marginLeft: 2, verticalAlign: 'middle', animation: 'pulse 0.8s ease infinite' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03))' /* TODO: tokenize */, borderRadius: radius['4xl'], boxShadow: `0 24px 48px ${colors.blackAlpha50}`, padding: '20px 24px', textAlign: 'center' }}>
+              <div style={{ width: 32, height: 3, background: colors.accent, borderRadius: 2 /* TODO: tokenize */, margin: '0 auto 10px' }} />
+              <div style={{ fontSize: fontSize.xs, fontWeight: fontWeight.bold, letterSpacing: '0.12em', color: colors.accent, marginBottom: 14, borderBottom: `1px solid ${colors.whiteAlpha8}`, paddingBottom: 12 }}>VARIATION 1</div>
+              <div style={{ fontSize: fontSize['3xl'], fontWeight: fontWeight.extrabold, color: colors.paper, fontFamily: font.heading, minHeight: 28, marginBottom: 10, lineHeight: 1.2 }}>
+                {typedText}<span style={{ display: 'inline-block', width: 2 /* TODO: tokenize */, height: 20, background: colors.accent, marginLeft: 2 /* TODO: tokenize */, verticalAlign: 'middle', animation: 'pulse 0.8s ease infinite' }} />
               </div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', lineHeight: 1.5, marginBottom: 12, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const }}>
+              <div style={{ fontSize: fontSize.caption, color: colors.whiteAlpha40, lineHeight: 1.5, marginBottom: 12, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const }}>
                 {bodyText ? bodyText.slice(0,80)+(bodyText.length>80?'...':'') : 'Crafting your message...'}
               </div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#00ff97' }}>Shop Now →</div>
+              <div style={{ fontSize: fontSize.caption, fontWeight: fontWeight.bold, color: colors.accent }}>Shop Now →</div>
             </div>
           </div>
         )}
         {mode === 'adcopy' && isDone && (
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 96, fontWeight: 900, color: '#00ff97', lineHeight: 1, animation: 'popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards' }}>12</div>
-            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, marginTop: 8 }}>creatives ready</div>
+            <div style={{ fontSize: fontSize.display, fontWeight: fontWeight.heading, color: colors.accent, lineHeight: 1, animation: 'popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards' }}>12</div>
+            <div style={{ color: colors.whiteAlpha40, fontSize: fontSize.body, marginTop: 8 }}>creatives ready</div>
           </div>
         )}
 
@@ -215,8 +216,8 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
               const isActive = currentBlock === i
               const isVis = visibleBlocks > i
               return (
-                <div key={i} style={{ height: b.h, background: isActive ? 'rgba(0,255,151,0.12)' : isVis ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)', border: `1px solid ${isActive ? 'rgba(0,255,151,0.3)' : isVis ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 8, marginBottom: 5, display: 'flex', alignItems: 'center', paddingLeft: 12, opacity: isVis ? 1 : 0.15, transform: isVis ? 'translateY(0)' : 'translateY(8px)', transition: 'all 0.4s ease' }}>
-                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: isActive ? '#00ff97' : isVis ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.2)' }}>{b.label}</span>
+                <div key={i} style={{ height: b.h, background: isActive ? colors.accentAlpha12 : isVis ? 'rgba(255,255,255,0.06)' /* TODO: tokenize */ : 'rgba(255,255,255,0.02)' /* TODO: tokenize */, border: `1px solid ${isActive ? colors.accentAlpha30 : isVis ? 'rgba(255,255,255,0.06)' /* TODO: tokenize */ : colors.whiteAlpha8}`, borderRadius: radius.md, marginBottom: 5, display: 'flex', alignItems: 'center', paddingLeft: 12, opacity: isVis ? 1 : 0.15, transform: isVis ? 'translateY(0)' : 'translateY(8px)', transition: `all ${transition.overlay}` }}>
+                  <span style={{ fontSize: fontSize['2xs'], fontWeight: fontWeight.bold, letterSpacing: '0.1em', color: isActive ? colors.accent : isVis ? colors.whiteAlpha60 : colors.whiteAlpha20 }}>{b.label}</span>
                 </div>
               )
             })}
@@ -227,9 +228,9 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
             {[{label:'HERO',h:56},{label:'PROBLEM',h:36},{label:'SOLUTION',h:36},{label:'BENEFITS',h:44},{label:'SOCIAL PROOF',h:48},{label:'CTA',h:44}].map((b,i) => (
               <div key={i} style={{
                 height: b.h,
-                background: 'rgba(0,255,151,0.1)',
-                border: '1px solid rgba(0,255,151,0.25)',
-                borderRadius: 8,
+                background: 'rgba(0,255,151,0.1)' /* TODO: tokenize */,
+                border: `1px solid ${colors.accentAlpha25}`,
+                borderRadius: radius.md,
                 marginBottom: 5,
                 display: 'flex',
                 alignItems: 'center',
@@ -238,10 +239,10 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
                 animation: `fadeIn 0.3s ease ${i * 0.06}s both`,
               }}>
                 <span style={{
-                  fontSize: 9,
-                  fontWeight: 700,
+                  fontSize: fontSize['2xs'],
+                  fontWeight: fontWeight.bold,
                   letterSpacing: '0.1em',
-                  color: '#00ff97',
+                  color: colors.accent,
                 }}>
                   {b.label}
                 </span>
@@ -253,10 +254,10 @@ export default function MagicModal({ isOpen, mode, isDone, brandName = 'your bra
 
       {/* ZONE 3: Phrases */}
       <div style={{ position: 'absolute', bottom: 40, left: 0, right: 0, height: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 32px', pointerEvents: 'none' }}>
-        <div style={{ fontFamily: 'Barlow,sans-serif', fontWeight: 800, fontSize: 26, color: '#fff', marginBottom: 8, lineHeight: 1.2 }}>
+        <div style={{ fontFamily: font.heading, fontWeight: fontWeight.extrabold, fontSize: fontSize['6xl'], color: colors.paper, marginBottom: 8, lineHeight: 1.2 }}>
           {isDone ? copy.donePhrase : copy.phrases[phraseIndex]}
         </div>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>
+        <div style={{ fontSize: fontSize.body, color: colors.whiteAlpha30 }}>
           {isDone ? copy.doneSub : copy.sub(brandName)}
         </div>
       </div>
