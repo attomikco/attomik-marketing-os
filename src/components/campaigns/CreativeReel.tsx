@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { Brand } from '@/types'
+import { colors, font, fontWeight, fontSize, radius, zIndex } from '@/lib/design-tokens'
 import AttomikLogo from '@/components/ui/AttomikLogo'
 import OverlayTemplate from '@/components/creatives/templates/OverlayTemplate'
 import SplitTemplate from '@/components/creatives/templates/SplitTemplate'
@@ -45,11 +46,11 @@ export default function CreativeReel({ brand, adVariation, imageUrl, allImageUrl
   const getVariation = (i: number): AdVariation => adVariations?.[i % (adVariations?.length || 1)] || adVariation
 
   const bgColors = [
-    brand.primary_color || '#000000',
-    brand.secondary_color || brand.primary_color || '#000000',
-    brand.primary_color || '#000000',
-    brand.accent_color || brand.secondary_color || '#000000',
-    brand.primary_color || '#000000',
+    brand.primary_color || colors.ink,
+    brand.secondary_color || brand.primary_color || colors.ink,
+    brand.primary_color || colors.ink,
+    brand.accent_color || brand.secondary_color || colors.ink,
+    brand.primary_color || colors.ink,
   ]
 
   const makeBase = (i: number) => {
@@ -60,27 +61,27 @@ export default function CreativeReel({ brand, adVariation, imageUrl, allImageUrl
       headline: v.headline,
       bodyText: v.primary_text.slice(0, 100),
       ctaText: 'Shop Now',
-      brandColor: brand.primary_color || '#000000',
+      brandColor: brand.primary_color || colors.ink,
       brandName: brand.name,
       headlineFont: fontFamily,
       headlineWeight: brand.font_heading?.weight || '800',
       headlineTransform: brand.font_heading?.transform || 'none',
-      headlineColor: '#ffffff',
+      headlineColor: colors.paper,
       bodyFont: fontFamily,
       bodyWeight: '400',
       bodyTransform: 'none',
-      bodyColor: 'rgba(255,255,255,0.85)',
+      bodyColor: colors.whiteAlpha85,
       bgColor: bgColors[i],
       headlineSizeMul: 1,
       bodySizeMul: 1,
       showOverlay: true,
-      overlayOpacity: 0.35,
+      overlayOpacity: 0.35, // TODO: tokenize
       textBanner: 'none' as const,
-      textBannerColor: '#000',
+      textBannerColor: colors.ink,
       textPosition: 'bottom-left' as const,
       showCta: true,
-      ctaColor: brand.accent_color || brand.secondary_color || '#00ff97',
-      ctaFontColor: '#000000',
+      ctaColor: brand.accent_color || brand.secondary_color || colors.accent,
+      ctaFontColor: colors.ink,
       imagePosition: 'center',
     }
   }
@@ -129,15 +130,15 @@ export default function CreativeReel({ brand, adVariation, imageUrl, allImageUrl
 
   return (
     <div style={{
-      position: 'fixed', inset: 0, zIndex: 200, background: '#000',
+      position: 'fixed', inset: 0, zIndex: zIndex.modal, background: colors.ink,
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       minHeight: '100vh', padding: '40px 24px',
       opacity: isExiting ? 0 : 1, transition: 'opacity 500ms ease',
       ...externalStyle,
     }}>
       {/* Zone 1 — LOGO */}
-      <div style={{ position: 'absolute', top: 40, left: 0, right: 0, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
-        <AttomikLogo height={36} color="#ffffff" />
+      <div style={{ position: 'absolute', top: 40, left: 0, right: 0, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: zIndex.reel }}>
+        <AttomikLogo height={36} color={colors.paper} />
       </div>
 
       {/* Zone 2 — CENTER CONTENT */}
@@ -146,8 +147,8 @@ export default function CreativeReel({ brand, adVariation, imageUrl, allImageUrl
         <div style={{ display: 'flex', gap: 4, marginBottom: 32 }}>
           {Array.from({ length: TOTAL }).map((_, i) => (
             <div key={i} style={{
-              width: 32, height: 4, borderRadius: 2,
-              background: i < currentIndex ? '#00ff97' : i === currentIndex ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)',
+              width: 32, height: 4, borderRadius: 2, // TODO: tokenize
+              background: i < currentIndex ? colors.accent : i === currentIndex ? colors.whiteAlpha40 : colors.whiteAlpha10,
               transition: 'background 300ms',
             }} />
           ))}
@@ -159,7 +160,7 @@ export default function CreativeReel({ brand, adVariation, imageUrl, allImageUrl
           transform: isVisible ? 'scale(1)' : 'scale(0.95)',
           transition: 'opacity 250ms ease, transform 250ms ease',
         }}>
-          <div style={{ width: 300, height: 300, borderRadius: 12, overflow: 'hidden', boxShadow: '0 25px 80px rgba(0,0,0,0.5)', background: '#fff' }}>
+          <div style={{ width: 300, height: 300, borderRadius: radius.xl, overflow: 'hidden', boxShadow: '0 25px 80px rgba(0,0,0,0.5)' /* TODO: tokenize */, background: colors.paper }}>
             <div style={{ width: 1080, height: 1080, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
               <Comp {...current.props} />
             </div>
@@ -167,17 +168,17 @@ export default function CreativeReel({ brand, adVariation, imageUrl, allImageUrl
         </div>
 
         {/* Template label */}
-        <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', transition: 'opacity 250ms', opacity: isVisible ? 1 : 0, marginTop: 16 }}>
+        <div style={{ color: colors.whiteAlpha30, fontSize: fontSize.xs, fontWeight: fontWeight.semibold, letterSpacing: '0.15em', textTransform: 'uppercase', transition: 'opacity 250ms', opacity: isVisible ? 1 : 0, marginTop: 16 }}>
           {current.label}
         </div>
       </div>
 
       {/* Zone 3 — PHRASES */}
       <div style={{ position: 'absolute', bottom: 40, left: 0, right: 0, height: 80, textAlign: 'center', padding: '0 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-        <div style={{ color: '#fff', fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 20, transition: 'opacity 300ms', opacity: isVisible ? 1 : 0, marginBottom: 4 }}>
+        <div style={{ color: colors.paper, fontFamily: font.heading, fontWeight: fontWeight.extrabold, fontSize: fontSize['3xl'], transition: 'opacity 300ms', opacity: isVisible ? 1 : 0, marginBottom: 4 }}>
           {phrases[currentIndex]}
         </div>
-        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>
+        <div style={{ color: colors.whiteAlpha40, fontSize: 11 /* TODO: tokenize */ }}>
           Attomik — AI-powered funnel builder
         </div>
       </div>
