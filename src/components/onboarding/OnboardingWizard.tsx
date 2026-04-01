@@ -5,8 +5,18 @@ import { createClient } from '@/lib/supabase/client'
 import { Loader2, Upload, ArrowLeft } from 'lucide-react'
 import AttomikLogo from '@/components/ui/AttomikLogo'
 import MagicModal from '@/components/ui/MagicModal'
+import { colors, font, fontWeight, fontSize, radius, transition, letterSpacing } from '@/lib/design-tokens'
 
-const inputCls = "w-full text-sm border border-border rounded-btn px-3 py-2.5 bg-cream focus:outline-none focus:border-accent transition-colors font-sans placeholder:text-[#bbb]"
+const inputCls = `w-full text-sm border border-border rounded-btn px-3 py-2.5 bg-cream focus:outline-none focus:border-accent transition-colors font-sans placeholder:text-[${colors.gray500}]`
+
+function isLight(hex: string) {
+  const c = (hex || '').replace('#', '')
+  if (c.length < 6) return true
+  const r = parseInt(c.slice(0,2),16)
+  const g = parseInt(c.slice(2,4),16)
+  const b = parseInt(c.slice(4,6),16)
+  return (r*299+g*587+b*114)/1000 > 128
+}
 
 export default function OnboardingWizard() {
   const supabase = createClient()
@@ -222,20 +232,41 @@ export default function OnboardingWizard() {
     // STATE B: Brand reveal
     <div key="review" style={{ animation: 'fadeInUp 0.2s ease-out' }}>
       {/* Tiny back link */}
-      <button onClick={() => { setDetected(false); setDetectedName(null) }} style={{
-        display: 'flex', alignItems: 'center', gap: 6,
-        fontSize: 14, fontWeight: 700, color: '#00ff97', background: 'none',
-        border: 'none', cursor: 'pointer', marginBottom: 16,
-        padding: 0,
+      <button onClick={() => router.push('/')} style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.accent, background: colors.accentAlpha8,
+        border: `1px solid ${colors.accentAlpha20}`, borderRadius: radius.pill,
+        cursor: 'pointer', marginBottom: 16,
+        padding: '8px 16px',
+        transition: `background ${transition.normal}`,
       }}>
         <ArrowLeft size={14} /> Back to website detection
       </button>
 
       {/* Brand identity card */}
-      <div className="wiz-brand-row" style={{ borderRadius: 14, overflow: 'hidden', marginBottom: 16, display: 'flex', background: '#2a2a2a' }}>
+      <div className="wiz-brand-row" style={{ borderRadius: radius['2xl'], overflow: 'hidden', marginBottom: 16, display: 'flex', background: colors.darkCardAlt }}>
         {/* Left: brand info */}
         <div className="wiz-brand-info" style={{ flex: '0 0 50%', padding: '18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 12 }}>
-          <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 24, color: '#fff', lineHeight: 1.1 }}>
+          {detectedLogo && (
+            <div style={{ marginBottom: 16 }}>
+              <img
+                src={detectedLogo}
+                alt={brandName}
+                style={{
+                  height: 48,
+                  maxWidth: 160,
+                  objectFit: 'contain',
+                  objectPosition: 'left center',
+                  display: 'block',
+                  filter: !isLight(primaryColor || colors.ink) ? 'brightness(0) invert(1)' : 'none',
+                }}
+                onError={e => {
+                  e.currentTarget.style.display = 'none'
+                }}
+              />
+            </div>
+          )}
+          <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['5xl'], color: colors.paper, lineHeight: 1.1 }}>
             {brandName || 'Your Brand'}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -245,30 +276,42 @@ export default function OnboardingWizard() {
               { label: 'Accent', value: accentColor },
             ].filter(c => c.value).map(({ label, value }) => (
               <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: value!, border: '2px solid rgba(255,255,255,0.15)' }} />
-                <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>{label}</span>
+                <div style={{ width: 28, height: 28, borderRadius: radius.md, background: value!, border: `2px solid ${colors.whiteAlpha15}` }} />
+                <span style={{ fontSize: fontSize['2xs'], fontWeight: fontWeight.bold, color: colors.whiteAlpha40, letterSpacing: letterSpacing.wide, textTransform: 'uppercase' as const }}>{label}</span>
               </div>
             ))}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            {brandFont && (
-              <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>{brandFont}</div>
-            )}
-            <div style={{ display: 'flex', gap: 6, marginLeft: 'auto', alignItems: 'center' }}>
-              {businessType !== 'brand' && (
-                <div style={{
-                  background: 'rgba(0,255,151,0.12)',
-                  border: '1px solid rgba(0,255,151,0.3)',
-                  borderRadius: 20, padding: '3px 10px',
-                  fontSize: 10, color: '#00ff97', fontWeight: 700,
-                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                }}>
-                  {{ shopify: '⬡ Shopify', ecommerce: '◻ Ecommerce', saas: '◈ SaaS', restaurant: '✦ Restaurant', service: '◆ Service', brand: '' }[businessType]}
-                </div>
-              )}
-              <div style={{ background: 'rgba(0,255,151,0.12)', border: '1px solid rgba(0,255,151,0.3)', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: '#00ff97', fontWeight: 700 }}>
-                {detectedName ? '✦ Detected' : '✦ Manual'}
+          {brandFont && (
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ background: colors.whiteAlpha8, borderRadius: radius['4xl'], padding: '4px 12px', fontSize: fontSize.caption, fontWeight: fontWeight.semibold, color: colors.whiteAlpha70 }}>{brandFont}</div>
+            </div>
+          )}
+          {/* Bottom pills row */}
+          <div style={{
+            display: 'flex', gap: 6,
+            flexWrap: 'wrap',
+            marginTop: 12,
+          }}>
+            {businessType !== 'brand' && (
+              <div style={{
+                background: colors.accentAlpha12,
+                border: `1px solid ${colors.accentAlpha30}`,
+                borderRadius: radius['4xl'], padding: '4px 10px',
+                fontSize: fontSize.xs, color: colors.accent, fontWeight: fontWeight.bold,
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                whiteSpace: 'nowrap',
+              }}>
+                {{ shopify: '⬡ Shopify', ecommerce: '◻ Ecommerce', saas: '◈ SaaS', restaurant: '✦ Restaurant', service: '◆ Service', brand: '' }[businessType]}
               </div>
+            )}
+            <div style={{
+              background: colors.accentAlpha12,
+              border: `1px solid ${colors.accentAlpha30}`,
+              borderRadius: radius['4xl'], padding: '4px 10px',
+              fontSize: fontSize.xs, color: colors.accent, fontWeight: fontWeight.bold,
+              whiteSpace: 'nowrap',
+            }}>
+              {detectedName ? '✦ Detected' : '✦ Manual'}
             </div>
           </div>
         </div>
@@ -281,49 +324,91 @@ export default function OnboardingWizard() {
         )}
       </div>
 
-      {/* Detected images strip */}
-      {detectedImages.length > 0 && (
+      {/* Logo strip */}
+      {detectedLogo && (
         <div style={{ marginBottom: 16 }}>
           <div style={{
-            fontSize: 11, fontWeight: 700, color: '#999',
-            letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8,
+            fontSize: fontSize.sm, fontWeight: fontWeight.bold, color: colors.gray700,
+            letterSpacing: letterSpacing.wider, textTransform: 'uppercase',
+            marginBottom: 8,
           }}>
-            Detected images ({Math.min(detectedImages.length, 8)})
+            Logo
+          </div>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center',
+            justifyContent: 'center',
+            background: primaryColor || colors.gray200,
+            border: '1px solid var(--border)',
+            borderRadius: radius.lg, padding: 12,
+            width: 80, height: 80,
+          }}>
+            <img
+              src={detectedLogo}
+              alt="Logo"
+              style={{
+                maxWidth: 56, maxHeight: 56,
+                objectFit: 'contain', display: 'block',
+                filter: primaryColor && !isLight(primaryColor)
+                  ? 'brightness(0) invert(1)'
+                  : 'none',
+              }}
+              onError={e => {
+                (e.currentTarget.parentElement as HTMLElement)
+                  .style.display = 'none'
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Detected images strip */}
+      {(() => {
+        const displayImages = detectedImages.filter(
+          img => img.tag !== 'logo' && img.url !== detectedLogo
+        )
+        return displayImages.length > 0 ? (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{
+            fontSize: fontSize.sm, fontWeight: fontWeight.bold, color: colors.gray700,
+            letterSpacing: letterSpacing.wider, textTransform: 'uppercase', marginBottom: 8,
+          }}>
+            Detected images ({Math.min(displayImages.length, 8)})
           </div>
           <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, minHeight: 80 }}>
-            {detectedImages.slice(0, 8).map((img, i) => (
+            {displayImages.slice(0, 8).map((img, i) => (
               <img key={i} src={img.url} alt="" style={{
-                width: 80, height: 80, objectFit: 'cover', borderRadius: 8,
+                width: 80, height: 80, objectFit: 'cover', borderRadius: radius.md,
                 border: '1px solid var(--border)', flexShrink: 0,
               }} onError={e => { e.currentTarget.style.display = 'none' }} />
             ))}
           </div>
         </div>
-      )}
+      ) : null
+      })()}
 
       {/* Editable fields — compact 2-col grid */}
       <div className="wiz-field-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
         <div style={{ gridColumn: '1 / -1' }}>
-          <label style={{ display: 'block', marginBottom: 6, fontSize: 12, fontWeight: 600, color: '#666', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Brand name *</label>
+          <label style={{ display: 'block', marginBottom: 6, fontSize: fontSize.caption, fontWeight: fontWeight.semibold, color: colors.gray800, letterSpacing: letterSpacing.label, textTransform: 'uppercase' }}>Brand name *</label>
           <input className={inputCls} value={brandName} onChange={e => setBrandName(e.target.value)} placeholder="e.g. Afterdream" />
           {errors.brandName && <p className="text-danger text-xs mt-1">{errors.brandName}</p>}
         </div>
         <div style={{ gridColumn: '1 / -1' }}>
-          <label style={{ display: 'block', marginBottom: 6, fontSize: 12, fontWeight: 600, color: '#666', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Website</label>
+          <label style={{ display: 'block', marginBottom: 6, fontSize: fontSize.caption, fontWeight: fontWeight.semibold, color: colors.gray800, letterSpacing: letterSpacing.label, textTransform: 'uppercase' }}>Website</label>
           <input className={inputCls} value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://yourbrand.com" />
         </div>
         <div style={{ gridColumn: '1 / -1' }}>
-          <label style={{ display: 'block', marginBottom: 6, fontSize: 12, fontWeight: 600, color: '#666', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Brand font</label>
+          <label style={{ display: 'block', marginBottom: 6, fontSize: fontSize.caption, fontWeight: fontWeight.semibold, color: colors.gray800, letterSpacing: letterSpacing.label, textTransform: 'uppercase' }}>Brand font</label>
           <input className={inputCls} value={brandFont} onChange={e => setBrandFont(e.target.value)} placeholder="Fraunces, Barlow..." />
         </div>
       </div>
 
       {/* Color inputs label */}
       <div style={{ marginBottom: 10, marginTop: 4 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>
+        <div style={{ fontSize: fontSize.md, fontWeight: fontWeight.bold, color: 'var(--ink)', marginBottom: 2 }}>
           Pick your brand colors
         </div>
-        <div style={{ fontSize: 13, color: 'var(--muted)' }}>
+        <div style={{ fontSize: fontSize.body, color: 'var(--muted)' }}>
           For a better preview — edit anything we detected.
         </div>
       </div>
@@ -336,16 +421,16 @@ export default function OnboardingWizard() {
           { label: 'Accent', value: accentColor, set: setAccentColor, id: 'color-accent' },
         ].map(({ label, value, set, id }) => (
           <div key={id}>
-            <label style={{ display: 'block', marginBottom: 6, fontSize: 12, fontWeight: 600, color: '#666', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{label}</label>
+            <label style={{ display: 'block', marginBottom: 6, fontSize: fontSize.caption, fontWeight: fontWeight.semibold, color: colors.gray800, letterSpacing: letterSpacing.label, textTransform: 'uppercase' }}>{label}</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{
-                width: 28, height: 28, borderRadius: 6,
-                background: value || '#000', border: '1px solid var(--border)',
+                width: 28, height: 28, borderRadius: radius.sm,
+                background: value || colors.ink, border: '1px solid var(--border)',
                 flexShrink: 0, cursor: 'pointer',
               }} onClick={() => (document.getElementById(id) as HTMLInputElement)?.click()} />
               <input id={id} type="color" value={value || '#000000'} onChange={e => set(e.target.value)}
                 style={{ width: 0, height: 0, opacity: 0, position: 'absolute' }} />
-              <input className={inputCls + ' font-mono'} style={{ fontSize: 12, padding: '6px 8px' }}
+              <input className={inputCls + ' font-mono'} style={{ fontSize: fontSize.caption, padding: '6px 8px' }}
                 value={value} placeholder="#000000" onChange={e => set(e.target.value)} />
             </div>
           </div>
@@ -355,8 +440,8 @@ export default function OnboardingWizard() {
   )
 
   const step2Config = {
-    shopify:    { title: 'YOUR PRODUCTS',  subtitle: 'All saved to your brand.', emptyLabel: 'Add your hero product', itemLabel: 'product', icon: '◻' },
-    ecommerce:  { title: 'YOUR PRODUCTS',  subtitle: 'Found on your website.', emptyLabel: 'Add your main product', itemLabel: 'product', icon: '◻' },
+    shopify:    { title: 'YOUR PRODUCTS',  subtitle: 'All saved to your brand.', emptyLabel: 'Add your hero product', itemLabel: 'product', icon: '🛍' },
+    ecommerce:  { title: 'YOUR PRODUCTS',  subtitle: 'Found on your website.', emptyLabel: 'Add your main product', itemLabel: 'product', icon: '🛍' },
     saas:       { title: 'YOUR PLANS',     subtitle: 'We found your pricing tiers.', emptyLabel: 'Add your main plan', itemLabel: 'plan', icon: '◈' },
     restaurant: { title: 'YOUR MENU',      subtitle: 'We found some menu items.', emptyLabel: 'Add a signature dish', itemLabel: 'dish', icon: '✦' },
     service:    { title: 'YOUR SERVICES',  subtitle: 'What you offer your clients.', emptyLabel: 'Add your main service', itemLabel: 'service', icon: '◆' },
@@ -379,30 +464,30 @@ export default function OnboardingWizard() {
           {(detectedProducts.length > 0 || offerings.length > 0) ? (
             <>
               <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 24 }}>{step2Config.icon}</div>
-                <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, textTransform: 'uppercase', marginBottom: 8 }}>
+                <div style={{ width: 56, height: 56, borderRadius: '50%', background: colors.accentAlpha12, border: `1px solid ${colors.accentAlpha20}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: fontSize['5xl'] }}>{step2Config.icon}</div>
+                <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['4xl'], textTransform: 'uppercase', marginBottom: 8 }}>
                   We found {detectedProducts.length || offerings.length} {(detectedProducts.length || offerings.length) === 1 ? step2Config.itemLabel : step2Config.itemLabel + 's'}.
                 </div>
-                <div style={{ fontSize: 14, color: '#666', lineHeight: 1.6 }}>
+                <div style={{ fontSize: fontSize.md, color: colors.gray800, lineHeight: 1.6 }}>
                   All saved to your brand. You can edit them in Brand Hub after your funnel is ready.
                 </div>
               </div>
               {detectedProducts.length > 0 ? (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, maxHeight: 360, overflowY: 'auto' }}>
                   {detectedProducts.slice(0, 8).map((p, i) => (
-                    <div key={i} style={{ background: '#f8f8f8', borderRadius: 14, overflow: 'hidden', border: '1px solid #eee', display: 'flex', flexDirection: 'column' }}>
+                    <div key={i} style={{ background: '#f8f8f8' /* TODO: tokenize */, borderRadius: radius['2xl'], overflow: 'hidden', border: `1px solid ${colors.gray300}`, display: 'flex', flexDirection: 'column' }}>
                       {p.image ? (
                         <div style={{ width: '100%', aspectRatio: '1/1', overflow: 'hidden', flexShrink: 0 }}>
                           <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => { e.currentTarget.parentElement!.style.display = 'none' }} />
                         </div>
                       ) : (
-                        <div style={{ width: '100%', aspectRatio: '1/1', background: 'linear-gradient(135deg, #f0f0f0, #e0e0e0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, color: '#ccc' }}>◻</div>
+                        <div style={{ width: '100%', aspectRatio: '1/1', background: `linear-gradient(135deg, ${colors.gray250}, #e0e0e0)` /* TODO: tokenize #e0e0e0 */, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, color: colors.gray450 }}>◻</div>
                       )}
                       <div style={{ padding: '10px 12px' }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#000', marginBottom: 2, lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                        <div style={{ fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.ink, marginBottom: 2, lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          {p.price && <span style={{ fontSize: 12, color: '#666', fontWeight: 500 }}>${p.price}</span>}
-                          <span style={{ fontSize: 9, fontWeight: 800, color: '#00a86b', background: 'rgba(0,255,151,0.12)', padding: '2px 7px', borderRadius: 4, border: '1px solid rgba(0,255,151,0.2)', letterSpacing: '0.04em', textTransform: 'uppercase', marginLeft: 'auto' }}>✓ Saved</span>
+                          {p.price && <span style={{ fontSize: fontSize.caption, color: colors.gray800, fontWeight: fontWeight.medium }}>${p.price}</span>}
+                          <span style={{ fontSize: fontSize['2xs'], fontWeight: fontWeight.extrabold, color: colors.brandGreen, background: colors.accentAlpha12, padding: '2px 7px', borderRadius: radius.xs, border: `1px solid ${colors.accentAlpha20}`, letterSpacing: letterSpacing.label, textTransform: 'uppercase', marginLeft: 'auto' }}>✓ Saved</span>
                         </div>
                       </div>
                     </div>
@@ -411,24 +496,24 @@ export default function OnboardingWizard() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {offerings.slice(0, 6).map((o, i) => (
-                    <div key={i} style={{ background: '#f8f8f8', borderRadius: 12, padding: '12px 16px', border: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left' }}>
-                      <span style={{ fontSize: 18, color: '#999' }}>{step2Config.icon}</span>
+                    <div key={i} style={{ background: '#f8f8f8' /* TODO: tokenize */, borderRadius: radius.xl, padding: '12px 16px', border: `1px solid ${colors.gray300}`, display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left' }}>
+                      <span style={{ fontSize: fontSize['2xl'], color: colors.gray700 }}>{step2Config.icon}</span>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#000', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{o.name}</div>
-                        {o.price && <span style={{ fontSize: 12, color: '#666' }}>{o.price}</span>}
+                        <div style={{ fontSize: fontSize.md, fontWeight: fontWeight.bold, color: colors.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{o.name}</div>
+                        {o.price && <span style={{ fontSize: fontSize.caption, color: colors.gray800 }}>{o.price}</span>}
                       </div>
-                      <span style={{ fontSize: 9, fontWeight: 800, color: '#00a86b', background: 'rgba(0,255,151,0.12)', padding: '2px 7px', borderRadius: 4, border: '1px solid rgba(0,255,151,0.2)', letterSpacing: '0.04em', textTransform: 'uppercase', flexShrink: 0 }}>✓ Saved</span>
+                      <span style={{ fontSize: fontSize['2xs'], fontWeight: fontWeight.extrabold, color: colors.brandGreen, background: colors.accentAlpha12, padding: '2px 7px', borderRadius: radius.xs, border: `1px solid ${colors.accentAlpha20}`, letterSpacing: letterSpacing.label, textTransform: 'uppercase', flexShrink: 0 }}>✓ Saved</span>
                     </div>
                   ))}
                 </div>
               )}
               {detectedProducts.length > 8 && (
-                <div style={{ fontSize: 12, color: '#999', textAlign: 'center', padding: '8px 0 0', fontWeight: 600 }}>+{detectedProducts.length - 8} more saved to Brand Hub</div>
+                <div style={{ fontSize: fontSize.caption, color: colors.gray700, textAlign: 'center', padding: '8px 0 0', fontWeight: fontWeight.semibold }}>+{detectedProducts.length - 8} more saved to Brand Hub</div>
               )}
             </>
           ) : (
             <>
-              <div style={{ background: '#fff8ed', border: '1px solid #fde8bb', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#92660a', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left' }}>
+              <div style={{ background: '#fff8ed' /* TODO: tokenize */, border: '1px solid #fde8bb' /* TODO: tokenize */, borderRadius: radius.lg, padding: '10px 14px', fontSize: fontSize.body, color: '#92660a' /* TODO: tokenize */, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left' }}>
                 <span>💡</span>
                 <span>Tip: if you&apos;re on Shopify, make sure your store is public and not password protected.</span>
               </div>
@@ -446,7 +531,7 @@ export default function OnboardingWizard() {
                 <input className={inputCls} value={productDesc} onChange={e => setProductDesc(e.target.value)} placeholder="Organic single-origin pour-over coffee" />
               </div>
               {(businessType === 'service' || businessType === 'brand') && (
-                <button onClick={() => { setStep(2); if (!campaignName) setCampaignName(`${brandName.trim()} — Launch Campaign`) }} style={{ background: 'none', border: 'none', fontSize: 13, color: '#999', cursor: 'pointer', padding: 0, marginTop: 4 }}>
+                <button onClick={() => { setStep(2); if (!campaignName) setCampaignName(`${brandName.trim()} — Launch Campaign`) }} style={{ background: 'none', border: 'none', fontSize: fontSize.body, color: colors.gray700, cursor: 'pointer', padding: 0, marginTop: 4 }}>
                   Skip for now →
                 </button>
               )}
@@ -456,11 +541,11 @@ export default function OnboardingWizard() {
           {/* Image uploads */}
           <div>
             <div style={{ marginBottom: 8 }}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)', marginBottom: 4 }}>
+              <div style={{ fontSize: fontSize.xl, fontWeight: fontWeight.extrabold, color: 'var(--ink)', marginBottom: 4 }}>
                 Product images
-                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted)', marginLeft: 8 }}>optional</span>
+                <span style={{ fontSize: fontSize.body, fontWeight: fontWeight.medium, color: 'var(--muted)', marginLeft: 8 }}>optional</span>
               </div>
-              <div style={{ fontSize: 14, color: 'var(--muted)' }}>
+              <div style={{ fontSize: fontSize.md, color: 'var(--muted)' }}>
                 Add images for a better preview — you can always do this later too.
               </div>
             </div>
@@ -530,8 +615,8 @@ export default function OnboardingWizard() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: 20, minHeight: '60vh' }}>
           <AttomikLogo height={32} color="#ffffff" />
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 18, height: 18, border: '2.5px solid rgba(0,255,151,0.3)', borderTopColor: '#00ff97', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
-            <span style={{ fontSize: 16, fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>Analyzing {website}...</span>
+            <span style={{ width: 18, height: 18, border: `2.5px solid ${colors.accentAlpha30}`, borderTopColor: colors.accent, borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
+            <span style={{ fontSize: fontSize.lg, fontWeight: fontWeight.semibold, color: 'rgba(255,255,255,0.6)' /* TODO: tokenize */ }}>Analyzing {website}...</span>
           </div>
         </div>
       )}
@@ -546,18 +631,18 @@ export default function OnboardingWizard() {
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', maxWidth: '100%', margin: '0 auto', padding: '0 16px', paddingTop: 120, textAlign: 'center' }}>
             {/* Badge */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.25)', borderRadius: 999, padding: '5px 16px', fontSize: 11, fontWeight: 700, color: '#00ff97', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 24 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accentAlpha12, border: `1px solid ${colors.accentAlpha25}`, borderRadius: radius.pill, padding: '5px 16px', fontSize: fontSize.sm, fontWeight: fontWeight.bold, color: colors.accent, letterSpacing: letterSpacing.caps, textTransform: 'uppercase', marginBottom: 24 }}>
               ✦ AI-Powered Funnel Builder
             </div>
 
             {/* Big headline */}
-            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 'clamp(32px, 8vw, 52px)', lineHeight: 1.05, letterSpacing: '-0.03em', color: '#fff', marginBottom: 20, textTransform: 'uppercase' as const }}>
+            <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: 'clamp(32px, 8vw, 52px)', lineHeight: 1.05, letterSpacing: '-0.03em', color: colors.paper, marginBottom: 20, textTransform: 'uppercase' as const }}>
               How much revenue are{' '}
-              <span style={{ color: '#00ff97' }}>you leaving on the table?</span>
+              <span style={{ color: colors.accent }}>you leaving on the table?</span>
             </div>
 
             {/* Subtext */}
-            <div style={{ fontSize: 17, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6, marginBottom: 36, maxWidth: 420 }}>
+            <div style={{ fontSize: fontSize.xl, color: 'rgba(255,255,255,0.45)' /* TODO: tokenize */, lineHeight: 1.6, marginBottom: 36, maxWidth: 420 }}>
               Enter your website. We&apos;ll build a complete ad funnel in 30 seconds — creatives, copy, and landing page.
             </div>
 
@@ -569,27 +654,27 @@ export default function OnboardingWizard() {
                 onKeyDown={e => e.key === 'Enter' && analyzeWebsite()}
                 placeholder="https://yourbrand.com"
                 autoFocus
-                style={{ width: '100%', padding: '16px 20px', fontSize: 16, fontWeight: 500, background: 'rgba(255,255,255,0.08)', border: '1.5px solid rgba(255,255,255,0.15)', borderRadius: 14, color: '#fff', outline: 'none', textAlign: 'center' }}
-                onFocus={e => { e.target.style.borderColor = '#00ff97'; e.target.style.background = 'rgba(255,255,255,0.1)' }}
-                onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.15)'; e.target.style.background = 'rgba(255,255,255,0.08)' }}
+                style={{ width: '100%', padding: '16px 20px', fontSize: fontSize.lg, fontWeight: fontWeight.medium, background: colors.whiteAlpha8, border: `1.5px solid ${colors.whiteAlpha15}`, borderRadius: radius['2xl'], color: colors.paper, outline: 'none', textAlign: 'center' }}
+                onFocus={e => { e.target.style.borderColor = colors.accent; e.target.style.background = 'rgba(255,255,255,0.1)' /* TODO: tokenize */ }}
+                onBlur={e => { e.target.style.borderColor = colors.whiteAlpha15; e.target.style.background = colors.whiteAlpha8 }}
               />
-              {errors.website && <p style={{ color: '#ff4444', fontSize: 13, margin: 0 }}>{errors.website}</p>}
+              {errors.website && <p style={{ color: '#ff4444' /* TODO: tokenize */, fontSize: fontSize.body, margin: 0 }}>{errors.website}</p>}
               <button
                 onClick={analyzeWebsite}
                 disabled={detecting || !website.trim()}
                 style={{
                   width: '100%', padding: 17,
-                  background: detecting || !website.trim() ? 'rgba(0,255,151,0.3)' : '#00ff97',
-                  color: '#000', fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 17,
-                  border: 'none', borderRadius: 14,
+                  background: detecting || !website.trim() ? colors.accentAlpha30 : colors.accent,
+                  color: colors.ink, fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize.xl,
+                  border: 'none', borderRadius: radius['2xl'],
                   cursor: detecting || !website.trim() ? 'not-allowed' : 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  letterSpacing: '-0.01em', transition: 'background 0.2s ease',
+                  letterSpacing: '-0.01em', transition: `background ${transition.normal}`,
                 }}
               >
                 {detecting ? (
                   <>
-                    <span style={{ width: 16, height: 16, border: '2px solid rgba(0,0,0,0.3)', borderTopColor: '#000', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
+                    <span style={{ width: 16, height: 16, border: '2px solid rgba(0,0,0,0.3)' /* TODO: tokenize */, borderTopColor: colors.ink, borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
                     Analyzing your site...
                   </>
                 ) : 'Build my funnel →'}
@@ -597,7 +682,7 @@ export default function OnboardingWizard() {
             </div>
 
             {/* Skip */}
-            <button onClick={skipToManual} style={{ background: 'none', border: 'none', fontSize: 13, color: 'rgba(255,255,255,0.55)', cursor: 'pointer', marginTop: 16, padding: 0 }}>
+            <button onClick={skipToManual} style={{ background: 'none', border: 'none', fontSize: fontSize.body, color: 'rgba(255,255,255,0.55)' /* TODO: tokenize */, cursor: 'pointer', marginTop: 16, padding: 0 }}>
               or set up manually →
             </button>
           </div>
@@ -613,8 +698,8 @@ export default function OnboardingWizard() {
           </div>
 
           <div className="mx-4 wiz-card" style={{
-            maxWidth: '100%', width: 'min(540px, calc(100vw - 32px))', background: '#fff',
-            borderRadius: 16, padding: '32px',
+            maxWidth: '100%', width: 'min(540px, calc(100vw - 32px))', background: colors.paper,
+            borderRadius: 16 /* TODO: tokenize */, padding: '32px',
             border: '1px solid var(--border)',
             boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
             marginBottom: 40, flexShrink: 0,
@@ -624,14 +709,14 @@ export default function OnboardingWizard() {
           {steps.map((_, i) => (
             <div key={i} style={{
               width: 10, height: 10, borderRadius: '50%',
-              background: i === step ? '#00ff97' : 'transparent',
-              border: i === step ? '2px solid #00ff97' : '2px solid #ddd',
-              transition: 'all 0.2s',
+              background: i === step ? colors.accent : 'transparent',
+              border: i === step ? `2px solid ${colors.accent}` : '2px solid #ddd' /* TODO: tokenize #ddd */,
+              transition: `all ${transition.normal}`,
             }} />
           ))}
         </div>
 
-        <h2 className="text-center uppercase tracking-tight" style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 24, marginBottom: 4 }}>{current.title}</h2>
+        <h2 className="text-center uppercase tracking-tight" style={{ fontFamily: font.heading, fontWeight: fontWeight.extrabold, fontSize: fontSize['5xl'], marginBottom: 4 }}>{current.title}</h2>
         <p className="text-muted text-sm mb-6 text-center">{current.subtitle}</p>
 
         {current.content}
@@ -646,13 +731,13 @@ export default function OnboardingWizard() {
             {step < 2 ? (
               <button onClick={next}
                 className="text-sm font-bold px-6 py-2.5 rounded-btn transition-opacity hover:opacity-90"
-                style={{ background: '#00ff97', color: '#000' }}>
+                style={{ background: colors.accent, color: colors.ink }}>
                 Next
               </button>
             ) : (
               <button onClick={submit} disabled={saving}
                 className="flex items-center gap-2 text-sm font-bold px-6 py-2.5 rounded-btn transition-opacity hover:opacity-90 disabled:opacity-50"
-                style={{ background: '#00ff97', color: '#000', position: 'relative', overflow: 'hidden' }}>
+                style={{ background: colors.accent, color: colors.ink, position: 'relative', overflow: 'hidden' }}>
                 {saving && <Loader2 size={14} className="animate-spin" />}
                 {saving ? 'Building your funnel...' : 'Build my funnel →'}
               </button>
