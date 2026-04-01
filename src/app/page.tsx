@@ -8,14 +8,13 @@ export default function HomePage() {
   const router = useRouter()
   const [website, setWebsite] = useState('')
   const [website2, setWebsite2] = useState('')
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Redirect returning users to dashboard
   useEffect(() => {
     const supabase = createClient()
-    supabase.from('brands').select('id').eq('status', 'active').limit(1)
-      .then(({ data }) => { if (data?.length) router.replace('/dashboard') })
-  }, [router])
+    supabase.auth.getUser().then(({ data: { user } }) => { if (user) setIsLoggedIn(true) })
+  }, [])
 
   function go(url: string) {
     const v = url.trim()
@@ -131,6 +130,9 @@ export default function HomePage() {
         <div className="fu fu4" style={{ width: '100%', maxWidth: 500, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <input id="hero-input" className="inp" style={inputStyle} value={website} onChange={e => setWebsite(e.target.value)} onKeyDown={e => e.key === 'Enter' && go(website)} placeholder="https://yourbrand.com" autoFocus />
           <button className="cta-btn" onClick={() => go(website)} disabled={!website.trim()} style={btnStyle(!!website.trim())}>Build my funnel →</button>
+          {isLoggedIn && (
+            <a href="/dashboard" style={{ background: '#000', color: '#00ff97', fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 14, padding: '12px 28px', borderRadius: 999, textDecoration: 'none', display: 'inline-block', textAlign: 'center' }}>Go to dashboard →</a>
+          )}
         </div>
         <div className="fu fu5 hp-stats" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 40, marginTop: 40 }}>
           {[{ num: '300+', label: 'CPG brands' }, { num: '30s', label: 'To full funnel' }, { num: '9', label: 'Ad creatives' }, { num: '100%', label: 'Brand-matched' }].map(({ num, label }) => (

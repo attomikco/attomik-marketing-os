@@ -151,11 +151,17 @@ export default function TopNav() {
         })}
       </div>
 
-      <Link href="/onboarding" style={{
-        background: '#000', color: '#00ff97', fontFamily: 'Barlow, sans-serif',
-        fontWeight: 800, fontSize: 13, padding: '9px 20px', borderRadius: 999,
-        textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0,
-      }}>+ New funnel</Link>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <button onClick={async () => { const s = createClient(); await s.auth.signOut(); window.location.href = '/' }}
+          style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', background: 'none', border: '1px solid var(--border)', borderRadius: 999, padding: '6px 14px', cursor: 'pointer' }}>
+          Log out
+        </button>
+        <Link href="/onboarding" style={{
+          background: '#000', color: '#00ff97', fontFamily: 'Barlow, sans-serif',
+          fontWeight: 800, fontSize: 13, padding: '9px 20px', borderRadius: 999,
+          textDecoration: 'none', whiteSpace: 'nowrap',
+        }}>+ New funnel</Link>
+      </div>
     </nav>
   )
 }

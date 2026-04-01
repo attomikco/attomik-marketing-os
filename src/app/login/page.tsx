@@ -37,17 +37,17 @@ export default function LoginPage() {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        window.location.href = '/'
+        window.location.href = new URLSearchParams(window.location.search).get('next') || '/dashboard'
       }
       if (event === 'TOKEN_REFRESHED' && session) {
-        window.location.href = '/'
+        window.location.href = new URLSearchParams(window.location.search).get('next') || '/dashboard'
       }
     })
 
     // Also check current session (might already be set by detectSessionInUrl)
     supabase.auth.getSession().then(({ data: { session }, error: sessionError }) => {
       if (session) {
-        window.location.href = '/'
+        window.location.href = new URLSearchParams(window.location.search).get('next') || '/dashboard'
       } else if (search.includes('code=') && sessionError) {
         setAuthenticating(false)
         setError(sessionError.message)
