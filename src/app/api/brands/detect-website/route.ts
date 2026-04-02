@@ -64,171 +64,69 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Colors ──────────────────────────────────────────────────────
-    const colorCounts = new Map<string, number>()
 
-    // Extract all style content
-    const styleBlocks = html.match(/<style[^>]*>([\s\S]*?)<\/style>/gi) || []
-    const inlineStyles = html.match(/style=["']([^"']+)["']/gi) || []
-
-    // Find external CSS links
+    // Fetch external CSS
     const cssLinks = Array.from(html.matchAll(
       /<link[^>]+rel=["\']stylesheet["\'][^>]+href=["\']([^"']+)["\'][^>]*>/gi
     )).map(m => m[1])
-    .filter(href =>
-      !href.includes('fonts.googleapis') &&
-      !href.includes('font-awesome') &&
-      !href.includes('bootstrap')
-    )
+    .filter(href => !href.includes('fonts.googleapis') && !href.includes('font-awesome') && !href.includes('bootstrap'))
     .slice(0, 2)
 
     const externalCSS: string[] = []
     for (const href of cssLinks) {
       try {
-        const cssUrl = href.startsWith('http')
-          ? href
-          : href.startsWith('//')
-          ? 'https:' + href
-          : new URL(href, url).toString()
-
-        const cssRes = await fetch(cssUrl, {
-          signal: AbortSignal.timeout(3000),
-          headers: { 'User-Agent': 'Mozilla/5.0' }
-        })
-        if (cssRes.ok) {
-          const text = await cssRes.text()
-          externalCSS.push(text.slice(0, 50000))
-        }
+        const cssUrl = href.startsWith('http') ? href : href.startsWith('//') ? 'https:' + href : new URL(href, url).toString()
+        const cssRes = await fetch(cssUrl, { signal: AbortSignal.timeout(3000), headers: { 'User-Agent': 'Mozilla/5.0' } })
+        if (cssRes.ok) externalCSS.push((await cssRes.text()).slice(0, 50000))
       } catch {}
     }
 
-    const allCSS = [
-      ...styleBlocks,
-      ...inlineStyles,
-      ...externalCSS,
-    ].join(' ')
+    // Combine all CSS sources + inline styles into one string
+    const styleBlocks = html.match(/<style[^>]*>([\s\S]*?)<\/style>/gi) || []
+    const inlineStyles = (html.match(/style=["'][^"']+["']/gi) || []).join(' ')
+    const allCSS = [...styleBlocks, ...externalCSS].join(' ')
+    const styleText = allCSS + ' ' + inlineStyles
 
-    // Find hex colors
-    const hexMatches = allCSS.match(/#[0-9a-fA-F]{3,8}/g) || []
+    // Extract hex colors
+    const WHITES = new Set(['#ffffff', '#fefefe', '#f9f9f9', '#f8f8f8', '#fcfcfc'])
+    const BLACKS = new Set(['#000000', '#111111', '#222222'])
+    const colorCounts = new Map<string, number>()
+
+    const hexMatches = styleText.match(/#[0-9a-fA-F]{6}\b/g) || []
     for (const raw of hexMatches) {
-      let hex = raw.toLowerCase()
-      // Expand 3-char to 6-char
-      if (hex.length === 4) hex = '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3]
-      if (hex.length !== 7) continue
-
+      const hex = raw.toLowerCase()
+      if (WHITES.has(hex) || BLACKS.has(hex)) continue
       const r = parseInt(hex.slice(1, 3), 16)
       const g = parseInt(hex.slice(3, 5), 16)
       const b = parseInt(hex.slice(5, 7), 16)
-
-      // Skip whites
-      if (r > 240 && g > 240 && b > 240) continue
-      // Skip pure black #000000
-      if (r === 0 && g === 0 && b === 0) continue
-      // Skip grays (all channels within 15 of each other AND not a dark brand color)
-      const isGray =
-        Math.abs(r - g) < 15 &&
-        Math.abs(g - b) < 15 &&
-        Math.abs(r - b) < 15
-      const isDarkBrand = r < 80 && g < 80 && b < 80
-      if (isGray && !isDarkBrand) continue
-
+      // Skip near-grays (R, G, B all within 20 of each other)
+      if (Math.abs(r - g) < 20 && Math.abs(g - b) < 20 && Math.abs(r - b) < 20) continue
+      // Skip very light colors (all channels > 220)
+      if (r > 220 && g > 220 && b > 220) continue
       colorCounts.set(hex, (colorCounts.get(hex) || 0) + 1)
     }
 
-    // Check CSS custom properties — primary/brand vars get highest boost
-    const cssVarBoosts: [string, number][] = [
-      ['--primary', 200], ['--color-primary', 200], ['--brand-color', 200], ['--brand', 200],
-      ['--secondary', 80], ['--color-secondary', 80],
-      ['--accent', 60], ['--color-accent', 60],
-    ]
-    for (const [varName, boost] of cssVarBoosts) {
-      const match = allCSS.match(new RegExp(`${varName.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*:\\s*(#[0-9a-fA-F]{3,8})`, 'i'))
-      if (match) {
-        let hex = match[1].toLowerCase()
-        if (hex.length === 4) hex = '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3]
-        if (hex.length === 7) colorCounts.set(hex, (colorCounts.get(hex) || 0) + boost)
-      }
+    // Also extract rgb() values
+    const rgbMatches = styleText.match(/rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/g) || []
+    for (const m of rgbMatches) {
+      const parts = m.match(/(\d{1,3})/g)
+      if (!parts || parts.length < 3) continue
+      const r = parseInt(parts[0]), g = parseInt(parts[1]), b = parseInt(parts[2])
+      if (r > 255 || g > 255 || b > 255) continue
+      // Skip if opacity 0
+      if (/rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*0\s*\)/.test(m)) continue
+      const hex = '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('')
+      if (WHITES.has(hex) || BLACKS.has(hex)) continue
+      if (Math.abs(r - g) < 20 && Math.abs(g - b) < 20 && Math.abs(r - b) < 20) continue
+      if (r > 220 && g > 220 && b > 220) continue
+      colorCounts.set(hex, (colorCounts.get(hex) || 0) + 1)
     }
 
-    // Shopify theme color variables
-    const shopifyVarBoosts: [string, number][] = [
-      ['--color-base-accent-1', 150], ['--color-base-accent-2', 100],
-      ['--color-button', 120], ['--color-button-text', 40],
-    ]
-    for (const [varName, boost] of shopifyVarBoosts) {
-      const match = allCSS.match(new RegExp(`${varName.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*:\\s*(#[0-9a-fA-F]{3,8})`, 'i'))
-      if (match) {
-        let hex = match[1].toLowerCase()
-        if (hex.length === 4) hex = '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3]
-        if (hex.length === 7) colorCounts.set(hex, (colorCounts.get(hex) || 0) + boost)
-      }
-    }
-
-    // Also check for rgb() values in CSS variables (Shopify stores colors as R G B)
-    const rgbVarPatterns = ['--color-base-accent-1', '--color-base-accent-2', '--color-button']
-    for (const varName of rgbVarPatterns) {
-      const match = allCSS.match(new RegExp(`${varName.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*:\\s*(\\d{1,3})\\s*,?\\s*(\\d{1,3})\\s*,?\\s*(\\d{1,3})`, 'i'))
-      if (match) {
-        const r = parseInt(match[1]), g = parseInt(match[2]), b = parseInt(match[3])
-        if (r <= 255 && g <= 255 && b <= 255) {
-          const hex = '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('')
-          colorCounts.set(hex, (colorCounts.get(hex) || 0) + 150)
-        }
-      }
-    }
-
-    // Boost colors in header/nav (likely brand identity colors)
-    const headerSection = html.match(/<(?:header|nav)[^>]*>[\s\S]{0,5000}?<\/(?:header|nav)>/gi) || []
-    const headerCSS = headerSection.join(' ')
-    const headerColors = headerCSS.match(/#[0-9a-fA-F]{3,8}/g) || []
-    for (const raw of headerColors) {
-      let hex = raw.toLowerCase()
-      if (hex.length === 4) hex = '#' + hex[1]+hex[1]+hex[2]+hex[2]+hex[3]+hex[3]
-      if (hex.length === 7) {
-        const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16)
-        if (r < 240 || g < 240 || b < 240) { // skip whites
-          colorCounts.set(hex, (colorCounts.get(hex) || 0) + 30)
-        }
-      }
-    }
-
-    // Boost colors in background-color of header/nav elements
-    const headerBgMatch = headerCSS.match(/background(?:-color)?:\s*(#[0-9a-fA-F]{3,8})/gi) || []
-    for (const m of headerBgMatch) {
-      const hexMatch = m.match(/#[0-9a-fA-F]{3,8}/)
-      if (hexMatch) {
-        let hex = hexMatch[0].toLowerCase()
-        if (hex.length === 4) hex = '#' + hex[1]+hex[1]+hex[2]+hex[2]+hex[3]+hex[3]
-        if (hex.length === 7) colorCounts.set(hex, (colorCounts.get(hex) || 0) + 80)
-      }
-    }
-
-    // Boost colors used in button/CTA contexts (moderate boost — these are often accent, not primary)
-    const btnPatterns = [
-      /background(?:-color)?:\s*(#[0-9a-fA-F]{3,8})[^;]*(?:;[^}]*)?(?:\.btn|button|\.cta|\.primary)/gi,
-      /(?:\.btn|button|\.cta|\.primary)[^{]*\{[^}]*background(?:-color)?:\s*(#[0-9a-fA-F]{3,8})/gi,
-    ]
-    for (const pattern of btnPatterns) {
-      const matches = Array.from(allCSS.matchAll(pattern))
-      for (const match of matches) {
-        let hex = match[1].toLowerCase()
-        if (hex.length === 4) hex = '#' + hex[1]+hex[1]+hex[2]+hex[2]+hex[3]+hex[3]
-        if (hex.length === 7) {
-          colorCounts.set(hex, (colorCounts.get(hex) || 0) + 30)
-        }
-      }
-    }
-
-    // Pick top 3 visually distinct colors
-    const colorDistance = (hex1: string, hex2: string): number => {
-      const r1 = parseInt(hex1.slice(1,3),16)
-      const g1 = parseInt(hex1.slice(3,5),16)
-      const b1 = parseInt(hex1.slice(5,7),16)
-      const r2 = parseInt(hex2.slice(1,3),16)
-      const g2 = parseInt(hex2.slice(3,5),16)
-      const b2 = parseInt(hex2.slice(5,7),16)
-      return Math.sqrt(
-        Math.pow(r1-r2,2) + Math.pow(g1-g2,2) + Math.pow(b1-b2,2)
-      )
+    // Sort by frequency, pick top 3 distinct colors
+    const colorDistance = (a: string, b2: string): number => {
+      const r1 = parseInt(a.slice(1, 3), 16), g1 = parseInt(a.slice(3, 5), 16), b1 = parseInt(a.slice(5, 7), 16)
+      const r2 = parseInt(b2.slice(1, 3), 16), g2 = parseInt(b2.slice(3, 5), 16), bv = parseInt(b2.slice(5, 7), 16)
+      return Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - bv) ** 2)
     }
 
     const sorted = Array.from(colorCounts.entries())
@@ -238,15 +136,8 @@ export async function POST(req: NextRequest) {
     const colors: string[] = []
     for (const hex of sorted) {
       if (colors.length >= 3) break
-      const tooSimilar = colors.some(
-        existing => colorDistance(hex, existing) < 60
-      )
-      if (!tooSimilar) colors.push(hex)
-    }
-
-    // Fallback if not enough distinct colors
-    if (colors.length === 0 && sorted.length > 0) {
-      colors.push(...sorted.slice(0, 3))
+      if (colors.some(existing => colorDistance(hex, existing) < 40)) continue
+      colors.push(hex)
     }
 
     // ── Font ────────────────────────────────────────────────────────
