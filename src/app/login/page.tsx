@@ -34,20 +34,30 @@ export default function LoginPage() {
       }
     }
 
+    function getPostAuthRedirect() {
+      const demoCampaignId = sessionStorage.getItem('attomik_demo_campaign_id')
+      if (demoCampaignId) {
+        sessionStorage.removeItem('attomik_demo_campaign_id')
+        sessionStorage.removeItem('attomik_demo_brand_id')
+        return `/preview/${demoCampaignId}`
+      }
+      return new URLSearchParams(window.location.search).get('next') || '/dashboard'
+    }
+
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        window.location.href = new URLSearchParams(window.location.search).get('next') || '/dashboard'
+        window.location.href = getPostAuthRedirect()
       }
       if (event === 'TOKEN_REFRESHED' && session) {
-        window.location.href = new URLSearchParams(window.location.search).get('next') || '/dashboard'
+        window.location.href = getPostAuthRedirect()
       }
     })
 
     // Also check current session (might already be set by detectSessionInUrl)
     supabase.auth.getSession().then(({ data: { session }, error: sessionError }) => {
       if (session) {
-        window.location.href = new URLSearchParams(window.location.search).get('next') || '/dashboard'
+        window.location.href = getPostAuthRedirect()
       } else if (search.includes('code=') && sessionError) {
         setAuthenticating(false)
         setError(sessionError.message)

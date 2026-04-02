@@ -8,6 +8,7 @@ interface BrandControlBarProps {
   accentColor: string
   fontFamily: string
   allImageUrls: string[]
+  shopifyImageUrls?: string[]
   productImageUrls?: string[]
   lifestyleImageUrls?: string[]
   logoUrl?: string | null
@@ -26,7 +27,7 @@ interface BrandControlBarProps {
 
 export default function BrandControlBar({
   primaryColor, secondaryColor, accentColor,
-  fontFamily, allImageUrls, productImageUrls = [], lifestyleImageUrls = [], logoUrl, logoImageUrls = [], activeImageIndex,
+  fontFamily, allImageUrls, shopifyImageUrls = [], productImageUrls = [], lifestyleImageUrls = [], logoUrl, logoImageUrls = [], activeImageIndex,
   onPrimaryChange, onSecondaryChange, onAccentChange,
   onFontChange, onImageIndexChange,
   onAddImages, onRemoveImage,
@@ -81,8 +82,17 @@ export default function BrandControlBar({
     return false
   }
 
-  const filteredProductUrls = productImageUrls.filter(u => !isLogoUrl(u))
-  const filteredLifestyleUrls = lifestyleImageUrls.filter(u => !isLogoUrl(u))
+  const dedupe = (urls: string[]) => Array.from(new Set(urls))
+  const filteredShopifyUrls = dedupe(shopifyImageUrls.filter(u => !isLogoUrl(u)))
+  const filteredProductUrls = dedupe(productImageUrls
+    .filter(u => !isLogoUrl(u)))
+    .sort((a, b) => {
+      const aScore = (/cdn\.shopify\.com|myshopify/i.test(a) ? 2 : 0)
+      const bScore = (/cdn\.shopify\.com|myshopify/i.test(b) ? 2 : 0)
+      return bScore - aScore
+    })
+  const filteredLifestyleUrls = dedupe(lifestyleImageUrls.filter(u => !isLogoUrl(u)))
+  const filteredCombinedUrls = dedupe([...filteredProductUrls, ...filteredLifestyleUrls])
 
   const imageThumb = (url: string, i: number, keyPrefix: string) => {
     const idx = allImageUrls.indexOf(url)
@@ -100,7 +110,7 @@ export default function BrandControlBar({
   }
 
   const addImageBtn = (
-    <label style={{ width: 88, height: 88, borderRadius: radius.xl, border: `2px dashed ${colors.gray400}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: colors.gray600, fontSize: fontSize.xs, fontWeight: fontWeight.semibold, gap: 3, flexShrink: 0, transition: `border-color ${transition.normal}` }}>
+    <label style={{ width: 88, height: 88, borderRadius: radius.xl, border: `2px dashed ${colors.gray400}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: colors.gray600, fontSize: fontSize.body, fontWeight: fontWeight.semibold, gap: 3, flexShrink: 0, transition: `border-color ${transition.normal}` }}>
       <span style={{ fontSize: fontSize['4xl'] }}>+</span>
       Add
       <input type="file" accept="image/*" multiple style={{ display: 'none' }}
@@ -109,22 +119,22 @@ export default function BrandControlBar({
   )
 
   return (
-    <div style={{ marginBottom: 32, borderRadius: 24, overflow: 'hidden', boxShadow: shadow.xl }}>
-      {/* Dark header */}
-      <div style={{ background: colors.darkBg, padding: '48px 40px 40px', textAlign: 'center' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accentAlpha12, border: `1.5px solid ${colors.accentAlpha40}`, borderRadius: radius.pill, padding: '5px 16px', fontSize: fontSize.sm, fontWeight: fontWeight.bold, color: colors.accent, letterSpacing: letterSpacing.caps, textTransform: 'uppercase', marginBottom: 20 }}>
+    <div style={{ marginBottom: 32 }}>
+      {/* Header — outside the card */}
+      <div style={{ padding: '48px 0 32px', textAlign: 'center' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.ink, borderRadius: radius.pill, padding: '6px 16px', fontFamily: font.mono, fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.accent, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', marginBottom: 14 }}>
           ✦ Auto-detected from your website
         </div>
-        <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: 'clamp(28px, 4vw, 42px)', color: colors.paper, letterSpacing: '-0.02em', textTransform: 'uppercase', lineHeight: 1.05, marginBottom: 12 }}>
-          Your brand <span style={{ color: colors.accent }}>toolkit</span>
+        <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: 36, textTransform: 'uppercase', color: colors.ink, lineHeight: 1.1, marginBottom: 12 }}>
+          Your Brand Toolkit
         </div>
-        <div style={{ fontSize: fontSize.lg, color: colors.whiteAlpha45, maxWidth: 480, margin: '0 auto', lineHeight: 1.6 }}>
-          Update colors, font and images to make the creatives look dramatically better.
+        <div style={{ fontSize: fontSize.md, color: colors.muted, lineHeight: 1.6, maxWidth: 480, margin: '0 auto' }}>
+          Here's what we pulled from your site. Update anything before generating — oh, and your SEO could use some work. 👀
         </div>
       </div>
 
-      {/* Content area — light card */}
-      <div style={{ background: colors.paper }}>
+      {/* White card */}
+      <div style={{ borderRadius: 24, overflow: 'hidden', boxShadow: shadow.xl, background: colors.paper }}>
         {/* Colors + Font row */}
         <div className="pv-bcb-row" style={{
           display: 'flex', gap: 40, alignItems: 'flex-start',
@@ -133,7 +143,7 @@ export default function BrandControlBar({
         }}>
           {/* Colors */}
           <div>
-            <div style={{ fontSize: fontSize.sm, fontWeight: fontWeight.extrabold, letterSpacing: letterSpacing.widest, textTransform: 'uppercase', color: colors.brandGreen, marginBottom: 16 }}>Colors</div>
+            <div style={{ fontSize: fontSize.body, fontWeight: fontWeight.extrabold, letterSpacing: letterSpacing.widest, textTransform: 'uppercase', color: colors.brandGreen, marginBottom: 16 }}>Colors</div>
             <div style={{ display: 'flex', gap: 20 }}>
               {[
                 { label: 'Primary', value: primaryColor, key: 'primary' as const, onChange: onPrimaryChange },
@@ -155,7 +165,7 @@ export default function BrandControlBar({
                       boxShadow: activeColorField === key ? `0 0 0 2px ${colors.blackAlpha10}` : shadow.sm,
                     }}
                   />
-                  <span style={{ fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: colors.gray700, fontFamily: font.mono, letterSpacing: '0.02em' }}>{/* TODO: tokenize */}
+                  <span style={{ fontSize: fontSize.body, fontWeight: fontWeight.semibold, color: colors.gray700, fontFamily: font.mono, letterSpacing: '0.02em' }}>{/* TODO: tokenize */}
                     {value.toUpperCase()}
                   </span>
                   <span style={{ fontSize: fontSize['2xs'], fontWeight: fontWeight.bold, color: colors.gray500, letterSpacing: letterSpacing.wider, textTransform: 'uppercase' }}>
@@ -170,7 +180,7 @@ export default function BrandControlBar({
                       borderRadius: 16, padding: 16, zIndex: zIndex.dropdown,
                       boxShadow: shadow.picker, width: 220,
                     }}>
-                      <div style={{ fontSize: fontSize.xs, fontWeight: fontWeight.bold, color: colors.gray600, letterSpacing: letterSpacing.wider, textTransform: 'uppercase', marginBottom: 10 }}>
+                      <div style={{ fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.gray600, letterSpacing: letterSpacing.wider, textTransform: 'uppercase', marginBottom: 10 }}>
                         Detected colors
                       </div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
@@ -195,7 +205,7 @@ export default function BrandControlBar({
                         })}
                       </div>
                       <div style={{ borderTop: `1px solid ${colors.gray250}`, marginBottom: 12 }} />
-                      <div style={{ fontSize: fontSize.xs, fontWeight: fontWeight.bold, color: colors.gray600, letterSpacing: letterSpacing.wider, textTransform: 'uppercase', marginBottom: 8 }}>
+                      <div style={{ fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.gray600, letterSpacing: letterSpacing.wider, textTransform: 'uppercase', marginBottom: 8 }}>
                         Custom
                       </div>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -237,7 +247,7 @@ export default function BrandControlBar({
 
           {/* Font */}
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: fontSize.sm, fontWeight: fontWeight.extrabold, letterSpacing: letterSpacing.widest, textTransform: 'uppercase', color: colors.brandGreen, marginBottom: 16 }}>Font</div>
+            <div style={{ fontSize: fontSize.body, fontWeight: fontWeight.extrabold, letterSpacing: letterSpacing.widest, textTransform: 'uppercase', color: colors.brandGreen, marginBottom: 16 }}>Font</div>
             <input
               value={fontFamily}
               onChange={e => onFontChange(e.target.value)}
@@ -275,65 +285,59 @@ export default function BrandControlBar({
         </div>
 
         {/* Logo + Images section */}
-        {(logoUrl || allImageUrls.length > 0) && (
+        {(logoUrl || filteredShopifyUrls.length > 0 || filteredCombinedUrls.length > 0) && (
           <div style={{ padding: '28px 40px 32px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-            {/* Logo row */}
+            {/* LOGO — single thumbnail, not removable */}
             {logoUrl && (
               <div>
-                <div style={{ fontSize: fontSize.sm, fontWeight: fontWeight.extrabold, letterSpacing: letterSpacing.widest, textTransform: 'uppercase', color: colors.brandGreen, marginBottom: 12 }}>
+                <div style={{ fontSize: fontSize.body, fontWeight: fontWeight.extrabold, letterSpacing: letterSpacing.widest, textTransform: 'uppercase', color: colors.brandGreen, marginBottom: 12 }}>
                   Logo
                 </div>
                 <div style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   background: primaryColor || colors.darkCard, border: `2px solid ${colors.gray300}`,
-                  borderRadius: radius['2xl'], padding: 16, width: 96, height: 96,
+                  borderRadius: radius['2xl'], padding: 16, width: 88, height: 88,
                 }}>
                   <img src={logoUrl} alt="Logo" style={{
-                    maxWidth: 64, maxHeight: 64, objectFit: 'contain', display: 'block',
+                    maxWidth: 56, maxHeight: 56, objectFit: 'contain', display: 'block',
                   }} onError={e => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none' }} />
                 </div>
               </div>
             )}
 
-            {/* Product images row */}
-            {filteredProductUrls.length > 0 && (
+            {/* PRODUCTS — Shopify product images */}
+            {filteredShopifyUrls.length > 0 && (
               <div>
-                <div style={{ fontSize: fontSize.sm, fontWeight: fontWeight.extrabold, letterSpacing: letterSpacing.widest, textTransform: 'uppercase', color: colors.brandGreen, marginBottom: 12 }}>
-                  Product ({filteredProductUrls.length})
+                <div style={{ fontSize: fontSize.body, fontWeight: fontWeight.extrabold, letterSpacing: letterSpacing.widest, textTransform: 'uppercase', color: colors.brandGreen, marginBottom: 12 }}>
+                  Products ({filteredShopifyUrls.length})
                 </div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  {filteredProductUrls.slice(0, 6).map((url, i) => imageThumb(url, i, 'p'))}
+                  {filteredShopifyUrls.slice(0, 8).map((url, i) => imageThumb(url, i, 's'))}
                   {addImageBtn}
+                  {filteredShopifyUrls.length > 8 && (
+                    <span style={{ fontSize: fontSize.md, color: colors.gray700, fontWeight: fontWeight.medium, marginLeft: 4, alignSelf: 'center' }}>
+                      and {filteredShopifyUrls.length - 8} more
+                    </span>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* Lifestyle images row */}
-            {filteredLifestyleUrls.length > 0 && (
+            {/* IMAGES — product + lifestyle combined */}
+            {filteredCombinedUrls.length > 0 && (
               <div>
-                <div style={{ fontSize: fontSize.sm, fontWeight: fontWeight.extrabold, letterSpacing: letterSpacing.widest, textTransform: 'uppercase', color: colors.brandGreen, marginBottom: 12 }}>
-                  Lifestyle ({filteredLifestyleUrls.length})
+                <div style={{ fontSize: fontSize.body, fontWeight: fontWeight.extrabold, letterSpacing: letterSpacing.widest, textTransform: 'uppercase', color: colors.brandGreen, marginBottom: 12 }}>
+                  Images ({filteredCombinedUrls.length})
                 </div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  {filteredLifestyleUrls.slice(0, 6).map((url, i) => imageThumb(url, i, 'l'))}
+                  {filteredCombinedUrls.slice(0, 8).map((url, i) => imageThumb(url, i, 'i'))}
                   {addImageBtn}
-                </div>
-              </div>
-            )}
-
-            {/* Fallback — no tagged images, show all */}
-            {filteredProductUrls.length === 0 && filteredLifestyleUrls.length === 0 && (
-              <div>
-                <div style={{ fontSize: fontSize.sm, fontWeight: fontWeight.extrabold, letterSpacing: letterSpacing.widest, textTransform: 'uppercase', color: colors.brandGreen, marginBottom: 12 }}>
-                  Images ({allImageUrls.filter(url => !isLogoUrl(url)).length})
-                </div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  {allImageUrls
-                    .filter(url => !isLogoUrl(url))
-                    .slice(0, 10)
-                    .map((url, i) => imageThumb(url, i, 'a'))}
-                  {addImageBtn}
+                  {filteredCombinedUrls.length > 8 && (
+                    <span style={{ fontSize: fontSize.md, color: colors.gray700, fontWeight: fontWeight.medium, marginLeft: 4, alignSelf: 'center' }}>
+                      and {filteredCombinedUrls.length - 8} more
+                    </span>
+                  )}
                 </div>
               </div>
             )}

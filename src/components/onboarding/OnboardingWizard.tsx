@@ -50,7 +50,7 @@ export default function OnboardingWizard() {
 
   // Step 2
   type DetectedProduct = { name: string; description: string | null; price: string | null; image: string | null }
-  type ScrapedImage = { url: string; tag: 'product' | 'lifestyle' | 'background' | 'logo' | 'other'; score: number; alt?: string | null }
+  type ScrapedImage = { url: string; tag: 'product' | 'lifestyle' | 'background' | 'logo' | 'press' | 'shopify' | 'other'; score: number; alt?: string | null }
   const [detectedImages, setDetectedImages] = useState<ScrapedImage[]>([])
   const [detectedProducts, setDetectedProducts] = useState<DetectedProduct[]>([])
   const [productName, setProductName] = useState('')
@@ -205,6 +205,10 @@ export default function OnboardingWizard() {
       setSaving(false)
       return
     }
+
+    // Store demo IDs for post-auth redirect
+    sessionStorage.setItem('attomik_demo_brand_id', brand.id)
+    sessionStorage.setItem('attomik_demo_campaign_id', campaign.id)
 
     // Redirect immediately — uploads continue in background
     router.push(`/preview/${campaign.id}`)

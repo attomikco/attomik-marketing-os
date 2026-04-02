@@ -59,8 +59,8 @@ export default function OverlayTemplate({
   return (
     <div style={{ position: 'relative', overflow: 'hidden', width, height, fontFamily: ff(bodyFont), background: bgColor, WebkitFontSmoothing: 'antialiased' as any }}>
       {imageUrl ? (
-        <img crossOrigin="anonymous" src={imageUrl} alt="" onError={(e) => console.error('[Template] Image failed:', e.currentTarget.src)} style={{
-          position: 'absolute', inset: 0, width: '100%', height: '100%',
+        <img crossOrigin="anonymous" src={imageUrl} alt="" width={width} height={height} onError={(e) => console.error('[Template] Image failed:', e.currentTarget.src)} style={{
+          position: 'absolute', inset: 0, width, height,
           objectFit: 'cover', objectPosition: `center ${imagePosition || 'center'}`,
         }} />
       ) : (
@@ -123,20 +123,24 @@ export default function OverlayTemplate({
 
           {showCta && (
             <div style={{
-              display: 'inline-block',
+              display: 'flex',
+              justifyContent: pos.alignItems === 'center' ? 'center' : pos.alignItems === 'flex-end' ? 'flex-end' : 'flex-start',
               marginTop: px(GAP_BODY_CTA, width),
-              background: ctaColor || brandColor,
-              color: ctaFontColor || '#000',
-              fontSize: px(CTA_SIZE, width) * bodySizeMul,
-              fontWeight: 700,
-              padding: `${px(CTA_PAD_V, width)}px ${px(CTA_PAD_H, width)}px`,
-              borderRadius: CTA_RADIUS,
-              whiteSpace: 'nowrap' as const,
-              fontFamily: ff(headlineFont),
-              lineHeight: 1,
-              textAlign: 'center' as const,
             }}>
-              {ctaText || 'Shop Now'}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                minWidth: px(160, width), height: px(52, width),
+                background: ctaColor || brandColor,
+                color: ctaFontColor || '#000',
+                fontSize: px(CTA_SIZE, width) * bodySizeMul,
+                fontWeight: 700,
+                padding: `0 ${px(CTA_PAD_H, width)}px`,
+                borderRadius: CTA_RADIUS,
+                whiteSpace: 'nowrap' as const,
+                fontFamily: ff(headlineFont),
+              }}>
+                {ctaText || 'Shop Now'}
+              </div>
             </div>
           )}
         </div>

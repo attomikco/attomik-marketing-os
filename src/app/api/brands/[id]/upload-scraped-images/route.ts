@@ -72,16 +72,18 @@ export async function POST(
     })())
   }
 
-  // Product images — always tagged 'product'
+  // Product images from detected products (typically Shopify product API)
   ;(productImageUrls || []).forEach((url: string, idx: number) => {
     tasks.push((async () => {
       const ext = url.split('.').pop()?.split('?')[0]?.slice(0, 4) || 'jpg'
-      const path = `${brandId}/product_${idx}_${Date.now()}.${ext}`
+      const isShopify = /cdn\.shopify\.com|myshopify/i.test(url)
+      const prefix = isShopify ? 'shopify' : 'product'
+      const path = `${brandId}/${prefix}_${idx}_${Date.now()}.${ext}`
       const result = await proxyAndUpload(url, path)
       if (result) {
         imageRows.push({
           brand_id: brandId,
-          file_name: `product_${idx}.${ext}`,
+          file_name: `${prefix}_${idx}.${ext}`,
           storage_path: path,
           tag: 'product',
           mime_type: result.contentType,
@@ -95,12 +97,13 @@ export async function POST(
     (img: { url: string; tag: string; alt?: string | null }, idx: number) => {
       tasks.push((async () => {
         const ext = img.url.split('.').pop()?.split('?')[0]?.slice(0, 4) || 'jpg'
-        const prefix = img.tag === 'logo' ? 'logo' : img.tag === 'product' ? 'product' : 'scraped'
+        const prefix = img.tag === 'logo' ? 'logo' : img.tag === 'shopify' ? 'shopify' : img.tag === 'product' ? 'product' : img.tag === 'lifestyle' ? 'lifestyle' : 'scraped'
         const path = `${brandId}/${prefix}_${idx}_${Date.now()}.${ext}`
-        const bucket = img.tag === 'logo' ? 'brand-assets' : 'brand-images'
+        const isLogo = img.tag === 'logo'
+        const bucket = isLogo ? 'brand-assets' : 'brand-images'
         const result = await proxyAndUpload(img.url, path, bucket)
-        if (result) {
-          // Logo images go to brand_images too so they're queryable
+        if (result && !isLogo) {
+          // Non-logo images go to brand_images (logos are handled via brands.logo_url)
           imageRows.push({
             brand_id: brandId,
             file_name: `${prefix}_${idx}.${ext}`,
@@ -120,9 +123,25 @@ export async function POST(
     await Promise.allSettled(tasks.slice(i, i + BATCH_SIZE))
   }
 
+  // Map tags to DB-allowed values (check constraint: product, lifestyle, background, ugc, seasonal, other)
+  const ALLOWED_TAGS = new Set(['product', 'lifestyle', 'background', 'ugc', 'seasonal', 'other'])
+  const TAG_MAP: Record<string, string> = { shopify: 'product', press: 'other', logo: 'other' }
+  for (const row of imageRows) {
+    if (!ALLOWED_TAGS.has(row.tag)) {
+      row.tag = TAG_MAP[row.tag] || 'other'
+    }
+  }
+
   // Batch insert
   if (imageRows.length > 0) {
-    await supabase.from('brand_images').insert(imageRows)
+    const { error: insertErr } = await supabase.from('brand_images').insert(imageRows)
+    if (insertErr) {
+      console.error('[upload-scraped-images] batch insert failed:', insertErr.message)
+      // Fallback: insert one by one to salvage what we can
+      for (const row of imageRows) {
+        await supabase.from('brand_images').insert(row)
+      }
+    }
   }
 
   return NextResponse.json({ success: true, uploaded: imageRows.length })

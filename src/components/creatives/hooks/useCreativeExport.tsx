@@ -48,7 +48,7 @@ export function useCreativeExport(opts: UseCreativeExportOptions) {
     // Render at 2x native size for crisp text
     const s = 2
     const rw = w * s, rh = h * s
-    container.style.cssText = `position:fixed;top:0;left:0;width:${rw}px;height:${rh}px;z-index:9999;overflow:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;`
+    container.style.cssText = `position:fixed;left:-9999px;top:-9999px;width:${rw}px;height:${rh}px;overflow:hidden;pointer-events:none;z-index:-1;visibility:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;`
     container.innerHTML = ''
     const { createRoot } = await import('react-dom/client')
     const wrapper = document.createElement('div'); wrapper.style.cssText = `width:${rw}px;height:${rh}px;overflow:hidden;`
@@ -56,10 +56,31 @@ export function useCreativeExport(opts: UseCreativeExportOptions) {
     const root = createRoot(wrapper)
     // Pass 2x dimensions so template renders text/layout at 2x
     root.render(<Component {...props} width={rw} height={rh} />)
-    await new Promise(r => setTimeout(r, 600))
-    const imgs = container.querySelectorAll('img')
-    await Promise.all(Array.from(imgs).map(img => img.complete && img.naturalWidth > 0 ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r })))
-    await new Promise(r => setTimeout(r, 300))
+    // Wait for React render + all images to load (8s safety timeout)
+    await new Promise<void>(resolve => {
+      const timeout = setTimeout(resolve, 8000)
+      const check = () => {
+        const imgs = container.querySelectorAll('img')
+        const allLoaded = Array.from(imgs).every(img => img.complete)
+        if (imgs.length === 0 || allLoaded) {
+          clearTimeout(timeout)
+          resolve()
+        }
+      }
+      // Initial check after React render
+      setTimeout(() => {
+        const imgs = container.querySelectorAll('img')
+        Promise.all(
+          Array.from(imgs).map(img =>
+            img.complete ? Promise.resolve() :
+            new Promise(r => { img.onload = r; img.onerror = r })
+          )
+        ).then(() => { clearTimeout(timeout); resolve() })
+        // Also check immediately in case all already loaded
+        check()
+      }, 200)
+    })
+    await new Promise(r => setTimeout(r, 100))
     // Capture at 1:1 (already 2x size)
     const canvas = await html2canvas(container, { width: rw, height: rh, scale: 1, useCORS: true, allowTaint: true, logging: false })
     // Downscale to target size
@@ -72,7 +93,7 @@ export function useCreativeExport(opts: UseCreativeExportOptions) {
     const dataUrl = out.toDataURL('image/png')
     root.unmount()
     container.innerHTML = ''
-    container.style.cssText = 'position:absolute;top:-9999px;left:-9999px;pointer-events:none;'
+    container.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:0;height:0;overflow:hidden;pointer-events:none;visibility:hidden;'
     return dataUrl
   }, [])
 

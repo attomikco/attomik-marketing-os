@@ -32,8 +32,8 @@ export default function GridTemplate({
   const imgCell = (url: string | null | undefined) => (
     <div style={{ width: cellW, height: cellH, position: 'relative', overflow: 'hidden' }}>
       {url ? (
-        <img crossOrigin="anonymous" src={url} alt="" style={{
-          position: 'absolute', inset: 0, width: '100%', height: '100%',
+        <img crossOrigin="anonymous" src={url} alt="" width={Math.round(cellW)} height={Math.round(cellH)} style={{
+          position: 'absolute', inset: 0, width: Math.round(cellW), height: Math.round(cellH),
           objectFit: 'cover', objectPosition: `center ${imagePosition || 'center'}`,
         }} />
       ) : (
@@ -82,14 +82,17 @@ export default function GridTemplate({
             </div>
           )}
           {showCta && (
-            <div style={{
-              marginTop: px(16, width), display: 'inline-block', alignSelf: 'flex-start',
-              background: ctaColor || brandColor, color: ctaFontColor || '#000',
-              fontSize: px(CTA_SIZE, width), fontWeight: 700,
-              padding: `${px(CTA_PAD_V, width)}px ${px(CTA_PAD_H, width)}px`,
-              borderRadius: 6, fontFamily: ff(headlineFont), lineHeight: 1,
-            }}>
-              {ctaText || 'Shop Now'}
+            <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: px(16, width) }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                minWidth: px(160, width), height: px(52, width),
+                background: ctaColor || brandColor, color: ctaFontColor || '#000',
+                fontSize: px(CTA_SIZE, width), fontWeight: 700,
+                padding: `0 ${px(CTA_PAD_H, width)}px`,
+                borderRadius: 6, fontFamily: ff(headlineFont), whiteSpace: 'nowrap' as const,
+              }}>
+                {ctaText || 'Shop Now'}
+              </div>
             </div>
           )}
         </>,

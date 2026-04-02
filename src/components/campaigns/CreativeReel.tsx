@@ -41,8 +41,9 @@ export default function CreativeReel({ brand, adVariation, imageUrl, allImageUrl
   ]
 
   const fontFamily = brand.font_heading?.family || brand.font_primary?.split('|')[0] || ''
-  const imgs = allImageUrls && allImageUrls.length > 0 ? allImageUrls : [imageUrl, imageUrl, imageUrl, imageUrl, imageUrl]
-  const getImg = (i: number) => imgs[i % imgs.length] || imageUrl
+  const reelImages = (allImageUrls && allImageUrls.length > 0 ? allImageUrls : []).slice(0, 6)
+  const getImg = (i: number): string | null =>
+    reelImages.length > 0 ? reelImages[i % reelImages.length] : null
   const getVariation = (i: number): AdVariation => adVariations?.[i % (adVariations?.length || 1)] || adVariation
 
   const bgColors = [
@@ -57,7 +58,7 @@ export default function CreativeReel({ brand, adVariation, imageUrl, allImageUrl
     const v = getVariation(i)
     return {
       width: 1080, height: 1080,
-      imageUrl: getImg(i),
+      imageUrl: getImg(i) || '',
       headline: v.headline,
       bodyText: v.primary_text.slice(0, 100),
       ctaText: 'Shop Now',
@@ -75,7 +76,7 @@ export default function CreativeReel({ brand, adVariation, imageUrl, allImageUrl
       headlineSizeMul: 1,
       bodySizeMul: 1,
       showOverlay: true,
-      overlayOpacity: 0.35, // TODO: tokenize
+      overlayOpacity: 0.35,
       textBanner: 'none' as const,
       textBannerColor: colors.ink,
       textPosition: 'bottom-left' as const,

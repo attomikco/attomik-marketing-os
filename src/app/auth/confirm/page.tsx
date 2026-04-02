@@ -24,16 +24,26 @@ export default function AuthConfirmPage() {
 
     // With implicit flow, Supabase client auto-detects tokens in the URL hash
     // and sets the session. We just listen for it.
+    function getPostAuthRedirect() {
+      const demoCampaignId = sessionStorage.getItem('attomik_demo_campaign_id')
+      if (demoCampaignId) {
+        sessionStorage.removeItem('attomik_demo_campaign_id')
+        sessionStorage.removeItem('attomik_demo_brand_id')
+        return `/preview/${demoCampaignId}`
+      }
+      return '/'
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        router.push('/')
+        router.push(getPostAuthRedirect())
       }
     })
 
     // Also check if session is already set
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        router.push('/')
+        router.push(getPostAuthRedirect())
       }
     })
 

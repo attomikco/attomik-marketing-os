@@ -1,7 +1,6 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
 import { Brand, Campaign, GeneratedContent, BrandImage } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import OverlayTemplate from '@/components/creatives/templates/OverlayTemplate'
@@ -15,6 +14,8 @@ import CreativeReel from './CreativeReel'
 import FunnelReadyModal from '@/components/ui/FunnelReadyModal'
 import AttomikLogo from '@/components/ui/AttomikLogo'
 import BrandControlBar from './BrandControlBar'
+import AccountModal from '@/components/ui/AccountModal'
+import { colors, font, fontWeight, fontSize, radius, zIndex, shadow, transition, letterSpacing } from '@/lib/design-tokens'
 
 interface AdVariation {
   primary_text: string
@@ -31,7 +32,7 @@ interface LandingBrief {
   final_cta: { headline: string; body: string; cta_text: string }
 }
 
-const APP_ACCENT = '#00ff97'
+const APP_ACCENT = colors.accent
 
 function ScaledCreative({
   Comp, props, srcW, srcH, aspectRatio, borderRadius = 14
@@ -70,7 +71,7 @@ function ScaledCreative({
         overflow: 'hidden',
         borderRadius,
         border: '1px solid var(--border)',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+        boxShadow: shadow.cardHover,
       }}
     >
       {scale > 0 && (
@@ -108,6 +109,13 @@ export default function PreviewClient({
   const supabase = createClient()
   const [activating, setActivating] = useState(false)
   const [removedImageUrls, setRemovedImageUrls] = useState<Set<string>>(new Set())
+  const [showAccountModal, setShowAccountModal] = useState(false)
+
+  async function requireAuth(onAuthed: () => void) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) { onAuthed(); return }
+    setShowAccountModal(true)
+  }
 
   async function syncBrandChanges() {
     if (removedImageUrls.size > 0) {
@@ -198,8 +206,10 @@ export default function PreviewClient({
   const [productImageUrl, setProductImageUrl] = useState<string | null>(null)
   const [lifestyleImageUrl, setLifestyleImageUrl] = useState<string | null>(null)
   const [allImageUrls, setAllImageUrls] = useState<string[]>([])
+  const [shopifyImageUrls, setShopifyImageUrls] = useState<string[]>([])
   const [productImageUrls, setProductImageUrls] = useState<string[]>([])
   const [lifestyleImageUrls, setLifestyleImageUrls] = useState<string[]>([])
+  const [logoImageUrls, setLogoImageUrls] = useState<string[]>([])
   const [imagesLoaded, setImagesLoaded] = useState(brandImages.length > 0)
   const brandImageUrl = productImageUrl
 
@@ -216,16 +226,22 @@ export default function PreviewClient({
   }
 
   // Brand colors (editable state)
-  const [brandPrimary, setBrandPrimary] = useState(brand.primary_color || '#000000')
-  const [brandSecondary, setBrandSecondary] = useState(brand.secondary_color || brand.primary_color || '#000000')
-  const [brandAccent, setBrandAccent] = useState(brand.accent_color || brand.secondary_color || brand.primary_color || '#000000')
+  // Brand knowledge (local state — updated by generate-voice)
+  const [brandMission, setBrandMission] = useState(brand.mission || '')
+  const [brandAudience, setBrandAudience] = useState(brand.target_audience || '')
+  const [brandVoice, setBrandVoice] = useState(brand.brand_voice || '')
+  const [brandTone, setBrandTone] = useState<string[]>(brand.tone_keywords || [])
+
+  const [brandPrimary, setBrandPrimary] = useState(brand.primary_color || colors.ink)
+  const [brandSecondary, setBrandSecondary] = useState(brand.secondary_color || brand.primary_color || colors.ink)
+  const [brandAccent, setBrandAccent] = useState(brand.accent_color || brand.secondary_color || brand.primary_color || colors.ink)
   function isLightColor(hex: string): boolean {
     const c = (hex || '').replace('#', ''); if (c.length < 6) return false
     const r = parseInt(c.slice(0,2),16); const g = parseInt(c.slice(2,4),16); const b = parseInt(c.slice(4,6),16)
     return (r*299+g*587+b*114)/1000 > 128
   }
-  const textOnPrimary = isLightColor(brandPrimary) ? '#000000' : '#ffffff'
-  const textOnAccent = isLightColor(brandAccent) ? '#000000' : '#ffffff'
+  const textOnPrimary = isLightColor(brandPrimary) ? colors.ink : colors.paper
+  const textOnAccent = isLightColor(brandAccent) ? colors.ink : colors.paper
 
   // Brand font (editable state)
   const fh = brand.font_heading
@@ -248,13 +264,20 @@ export default function PreviewClient({
     setSavingBrand(false)
   }
 
-  // Fetch existing email on mount
+  // Fetch existing email on mount — auto-generate if none exists
   useEffect(() => {
     fetch(`/api/campaigns/${campaign.id}/email`)
       .then(r => r.json())
-      .then(data => { if (data.html) { setEmailHtml(data.html); setEmailSubject(data.subject || ''); setEmailGenerated(true) } })
-      .catch(() => {})
-  }, [campaign.id])
+      .then(data => {
+        if (data.html) {
+          setEmailHtml(data.html); setEmailSubject(data.subject || ''); setEmailGenerated(true)
+        } else {
+          // Auto-generate email
+          generateEmail()
+        }
+      })
+      .catch(() => { generateEmail() })
+  }, [campaign.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function generateEmail() {
     setGeneratingEmail(true)
@@ -285,18 +308,50 @@ export default function PreviewClient({
       return data.publicUrl
     }
     function loadImages(images: BrandImage[]) {
-      console.log('[Preview] brand images:', images.map(i => ({ id: i.id, tag: i.tag, storage_path: i.storage_path })))
-      // Filter out logos from content pools — they shouldn't appear in ad templates
-      const contentImages = images.filter(i => i.tag !== 'logo')
-      const products = contentImages.filter(i => i.tag === 'product')
+      console.log('[Preview] brand images:', images.map(i => ({ id: i.id, tag: i.tag, storage_path: i.storage_path, file_name: i.file_name })))
+
+      // Build set of known logo URLs to exclude
+      const logoUrls = new Set<string>()
+      if (brand.logo_url) logoUrls.add(brand.logo_url)
+      for (const img of images) {
+        if (img.tag === 'logo' || /logo/i.test(img.storage_path) || /logo/i.test(img.file_name || '')) {
+          logoUrls.add(buildImageUrl(img.storage_path))
+        }
+      }
+
+      setLogoImageUrls(Array.from(logoUrls))
+
+      // Filter out logos and press from content pools — they shouldn't appear in ad templates
+      const contentImages = images.filter(i => {
+        if (i.tag === 'logo') return false
+        if (/logo/i.test(i.storage_path)) return false
+        if (/logo/i.test(i.file_name || '')) return false
+        if (/\.svg$/i.test(i.storage_path) || /\.svg$/i.test(i.file_name || '')) return false
+        // Check if this image's URL matches the brand logo
+        const url = buildImageUrl(i.storage_path)
+        if (logoUrls.has(url)) return false
+        if (brand.logo_url) {
+          try {
+            // Compare by original source URL embedded in alt_text or file path
+            const logoHost = new URL(brand.logo_url).pathname.split('/').pop()
+            if (logoHost && i.file_name && i.file_name.includes(logoHost)) return false
+          } catch {}
+        }
+        return true
+      })
+      // Shopify images are stored as tag='product' but with file_name prefix 'shopify_'
+      const shopify = contentImages.filter(i => /^shopify_/i.test(i.file_name || ''))
+      const products = contentImages.filter(i => i.tag === 'product' && !/^shopify_/i.test(i.file_name || ''))
       const lifestyle = contentImages.filter(i => i.tag === 'lifestyle' || i.tag === 'background')
-      if (products.length > 0) setProductImageUrl(buildImageUrl(products[0].storage_path))
-      else if (contentImages.length > 0) setProductImageUrl(buildImageUrl(contentImages[0].storage_path))
-      if (lifestyle.length > 0) setLifestyleImageUrl(buildImageUrl(lifestyle[0].storage_path))
-      else if (products.length > 0) setLifestyleImageUrl(buildImageUrl(products[0].storage_path))
-      else if (contentImages.length > 0) setLifestyleImageUrl(buildImageUrl(contentImages[0].storage_path))
+      // Priority: shopify > products > lifestyle > any content
+      const bestProduct = shopify[0] || products[0] || contentImages[0]
+      if (bestProduct) setProductImageUrl(buildImageUrl(bestProduct.storage_path))
+      const bestLifestyle = lifestyle[0] || shopify[0] || products[0] || contentImages[0]
+      if (bestLifestyle) setLifestyleImageUrl(buildImageUrl(bestLifestyle.storage_path))
+      const shopifyUrls = shopify.map(img => buildImageUrl(img.storage_path))
       const productUrls = products.map(img => buildImageUrl(img.storage_path))
       const lifestyleUrls = lifestyle.map(img => buildImageUrl(img.storage_path))
+      setShopifyImageUrls(shopifyUrls)
       setProductImageUrls(productUrls)
       setLifestyleImageUrls(lifestyleUrls)
       const allUrls = contentImages.map(img => buildImageUrl(img.storage_path))
@@ -304,6 +359,11 @@ export default function PreviewClient({
       filterGoodImages(allUrls).then(goodUrls => {
         if (goodUrls.length >= Math.ceil(allUrls.length * 0.3) || goodUrls.length >= 3) {
           setAllImageUrls(goodUrls)
+        }
+      })
+      filterGoodImages(shopifyUrls).then(good => {
+        if (good.length >= Math.ceil(shopifyUrls.length * 0.3) || good.length >= 2) {
+          setShopifyImageUrls(good)
         }
       })
       filterGoodImages(productUrls).then(good => {
@@ -395,12 +455,25 @@ export default function PreviewClient({
     if (hasContent) return
 
     async function generate() {
-      // Fire voice generation silently in background
+      // Generate brand voice — update local state when done
       const needsVoice = !brand.mission && !brand.target_audience && !brand.brand_voice
       if (needsVoice) {
+        // Show fallbacks immediately while AI generates
+        if (!brandMission) setBrandMission(`${brand.name} delivers quality products to customers who care about what they buy.`)
+        if (!brandAudience) setBrandAudience(`Customers interested in ${brand.name} products`)
+        if (!brandVoice) setBrandVoice('Professional and approachable')
+        if (brandTone.length === 0) setBrandTone(['trustworthy', 'approachable'])
+
         fetch(`/api/brands/${brand.id}/generate-voice`, { method: 'POST' })
           .then(res => res.json())
-          .then(data => console.log('[Voice] Generated:', data.voice?.mission?.slice(0, 50)))
+          .then(data => {
+            if (data.voice) {
+              if (data.voice.mission) setBrandMission(data.voice.mission)
+              if (data.voice.target_audience) setBrandAudience(data.voice.target_audience)
+              if (data.voice.brand_voice) setBrandVoice(data.voice.brand_voice)
+              if (data.voice.tone_keywords?.length) setBrandTone(data.voice.tone_keywords)
+            }
+          })
           .catch(() => {})
       }
 
@@ -437,24 +510,26 @@ export default function PreviewClient({
   const headingStyle: React.CSSProperties = {
     fontFamily: fontFamily ? `${fontFamily}, sans-serif` : undefined,
     textTransform: (fh?.transform || 'none') as React.CSSProperties['textTransform'],
-    letterSpacing: fh?.letterSpacing === 'wide' ? '0.12em' : fh?.letterSpacing === 'tight' ? '-0.02em' : 'normal',
+    letterSpacing: fh?.letterSpacing === 'wide' ? letterSpacing.widest : fh?.letterSpacing === 'tight' ? letterSpacing.snug : 'normal',
   }
 
-  // Smart image pickers — prefer tagged pools, fall back to all
+  // Image pickers — priority: shopify > product > lifestyle, no mixed pool fallback
+  const bestProductPool = shopifyImageUrls.length > 0 ? shopifyImageUrls : productImageUrls.length > 0 ? productImageUrls : null
   function getProductImg(offset: number): string | null {
-    const pool = productImageUrls.length > 0 ? productImageUrls : allImageUrls
-    if (pool.length === 0) return null
+    const pool = bestProductPool
+    if (!pool || pool.length === 0) return null
     return pool[(activeImageIndex + offset) % pool.length]
   }
   function getLifestyleImg(offset: number): string | null {
-    const pool = lifestyleImageUrls.length > 0 ? lifestyleImageUrls : allImageUrls
-    if (pool.length === 0) return null
-    return pool[(activeImageIndex + offset) % pool.length]
+    if (lifestyleImageUrls.length === 0) return null
+    return lifestyleImageUrls[(activeImageIndex + offset) % lifestyleImageUrls.length]
   }
   const getImg = (offset: number) =>
-    allImageUrls.length > 0
-      ? allImageUrls[(activeImageIndex + offset) % allImageUrls.length]
-      : productImageUrl || null
+    bestProductPool && bestProductPool.length > 0
+      ? bestProductPool[(activeImageIndex + offset) % bestProductPool.length]
+      : lifestyleImageUrls.length > 0
+        ? lifestyleImageUrls[(activeImageIndex + offset) % lifestyleImageUrls.length]
+        : null
   const img0 = getProductImg(0)
   const img1 = getProductImg(1)
   const img2 = getLifestyleImg(0)
@@ -476,32 +551,32 @@ export default function PreviewClient({
     headlineFont: fontFamily,
     headlineWeight: brand.font_heading?.weight || '800',
     headlineTransform: brand.font_heading?.transform || 'none',
-    headlineColor: '#ffffff',
+    headlineColor: colors.paper,
     bodyFont: fontFamily,
     bodyWeight: '400',
     bodyTransform: 'none',
-    bodyColor: 'rgba(255,255,255,0.85)',
+    bodyColor: colors.whiteAlpha85,
     bgColor: brandPrimary,
     headlineSizeMul: 1,
     bodySizeMul: 1,
     showOverlay: !!brandImageUrl,
     overlayOpacity: brandImageUrl ? 0.3 : 0,
     textBanner: 'none' as const,
-    textBannerColor: '#000',
+    textBannerColor: colors.ink,
     textPosition: 'center' as const,
     showCta: true,
     ctaColor: brandAccent,
-    ctaFontColor: '#ffffff',
+    ctaFontColor: colors.paper,
     imagePosition: 'center',
   } : null
 
   const skeleton = 'animate-pulse bg-cream rounded'
 
   return (
-    <div className="min-h-screen" style={{ background: '#000' }}>
+    <div className="min-h-screen" style={{ background: colors.ink }}>
       {/* Persistent black screen gate */}
       {!previewReady && (
-        <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 150, pointerEvents: 'none' }} />
+        <div style={{ position: 'fixed', inset: 0, background: colors.ink, zIndex: zIndex.reelOverlay, pointerEvents: 'none' }} />
       )}
 
       {/* MagicModal */}
@@ -519,7 +594,7 @@ export default function PreviewClient({
         brand={brand}
         adVariation={adVariations[0] || adVariation || { headline: brand.name, primary_text: '', description: '' }}
         imageUrl={img0}
-        allImageUrls={allImageUrls}
+        allImageUrls={shopifyImageUrls.length > 0 ? shopifyImageUrls : productImageUrls.length > 0 ? productImageUrls : lifestyleImageUrls}
         adVariations={adVariations}
         isActive={showReel}
         onComplete={() => { setShowReel(false); setShowReadyModal(true) }}
@@ -539,25 +614,25 @@ export default function PreviewClient({
       {showWelcomeBack && (
         <div style={{
           position: 'fixed', inset: 0,
-          zIndex: 200, background: '#000',
+          zIndex: 200, background: colors.ink,
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
           gap: 16,
           opacity: showWelcomeBack ? 1 : 0,
           transition: 'opacity 0.5s ease',
         }}>
-          <AttomikLogo height={36} color="#ffffff" />
+          <AttomikLogo height={36} color={colors.paper} />
           <div style={{
-            fontFamily: 'Barlow, sans-serif',
-            fontWeight: 900, fontSize: 24,
-            color: '#fff', textTransform: 'uppercase',
+            fontFamily: font.heading,
+            fontWeight: fontWeight.heading, fontSize: fontSize['5xl'],
+            color: colors.paper, textTransform: 'uppercase',
             marginTop: 8,
           }}>
             Your funnel is ready.
           </div>
           <div style={{
-            fontSize: 13,
-            color: 'rgba(255,255,255,0.4)',
+            fontSize: fontSize.body,
+            color: colors.whiteAlpha40,
           }}>
             Loading {brand.name}...
           </div>
@@ -592,97 +667,29 @@ export default function PreviewClient({
         }
       `}</style>
 
-      {/* Hero */}
-      {brand.status === 'active' && (
-        <div style={{ background: '#000', padding: '28px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, borderBottom: '1px solid rgba(255,255,255,0.08)', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: brand.primary_color || '#00ff97', flexShrink: 0 }} />
-            <div>
-              <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em' }}>{brand.name}</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{campaign.name} · Last updated {new Date(campaign.updated_at || campaign.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <a href={`/creatives?brand=${brand.id}&campaign=${campaign.id}`} style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', padding: '8px 16px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.05)', whiteSpace: 'nowrap' }}>Edit creatives →</a>
-            <a href={`/copy?campaign=${campaign.id}`} style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', padding: '8px 16px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.05)', whiteSpace: 'nowrap' }}>Edit copy →</a>
-            <a href="/dashboard" style={{ fontSize: 12, fontWeight: 700, color: '#000', textDecoration: 'none', padding: '8px 16px', borderRadius: 999, background: '#00ff97', whiteSpace: 'nowrap' }}>← Dashboard</a>
+      {/* Preview nav */}
+      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 56, background: colors.ink, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', zIndex: zIndex.topbar, borderBottom: `1px solid ${colors.whiteAlpha8}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <a href="/dashboard" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}><AttomikLogo height={24} color={colors.paper} /></a>
+          <div style={{ width: 1, height: 24, background: colors.whiteAlpha15, flexShrink: 0 }} />
+          <div>
+            <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize.md, color: colors.paper, textTransform: 'uppercase', letterSpacing: letterSpacing.slight, lineHeight: 1.2 }}>{brand.name}</div>
+            <div style={{ fontSize: fontSize.body, color: colors.whiteAlpha40, lineHeight: 1.2 }}>{campaign.name}</div>
           </div>
         </div>
-      )}
-      {brand.status === 'draft' && <div className="pv-hero" style={{ background: '#000', padding: '64px 32px 56px', textAlign: 'center', marginBottom: 0 }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(0,255,151,0.1)', border: '1px solid rgba(0,255,151,0.25)', borderRadius: 999, padding: '5px 16px', fontSize: 11, fontWeight: 700, color: '#00ff97', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 24 }}>
-          ✦ Built in 30 seconds
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <button onClick={() => requireAuth(() => router.push(`/creatives?brand=${brand.id}&campaign=${campaign.id}`))} style={{ fontSize: fontSize.base, fontWeight: fontWeight.bold, color: colors.whiteAlpha60, padding: '8px 16px', borderRadius: radius.pill, border: `1px solid ${colors.whiteAlpha12}`, background: colors.whiteAlpha5, whiteSpace: 'nowrap', cursor: 'pointer', transition: `color ${transition.base}` }}>Edit creatives →</button>
+          <button onClick={() => requireAuth(() => router.push(`/copy?campaign=${campaign.id}`))} style={{ fontSize: fontSize.base, fontWeight: fontWeight.bold, color: colors.whiteAlpha60, padding: '8px 16px', borderRadius: radius.pill, border: `1px solid ${colors.whiteAlpha12}`, background: colors.whiteAlpha5, whiteSpace: 'nowrap', cursor: 'pointer', transition: `color ${transition.base}` }}>Edit copy →</button>
+          <button onClick={() => requireAuth(() => router.push('/dashboard'))} style={{ fontSize: fontSize.base, fontWeight: fontWeight.bold, color: colors.ink, padding: '8px 16px', borderRadius: radius.pill, background: colors.accent, border: 'none', whiteSpace: 'nowrap', cursor: 'pointer' }}>← Dashboard</button>
         </div>
-        <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 56, lineHeight: 1.05, letterSpacing: '-0.03em', color: '#fff', marginBottom: 16, textTransform: 'uppercase' }}>
-          Your funnel is<br/><span style={{ color: '#00ff97' }}>ready to launch.</span>
-        </div>
-        <div style={{ fontSize: 17, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6, maxWidth: 480, margin: '0 auto 32px' }}>
-          Ad creatives, copy, and landing page — generated from your brand. Refine below to make it perfect.
-        </div>
-        {/* Funnel explainer */}
-        <div style={{ maxWidth: 960, margin: '0 auto', padding: '80px 48px 80px' }}>
-          <div className="pv-funnel-flow" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 0, marginBottom: 40 }}>
-            {([
-              { num: '9', label: 'AD CREATIVES', desc: 'Multi-format visuals built from your brand colors, font and images. Ready to upload directly to Meta.', color: '#a78bfa' },
-              null,
-              { num: '3', label: 'COPY VARIATIONS', desc: 'Three distinct angles — different hooks, different audiences. Find the message that resonates.', color: '#34d399' },
-              null,
-              { num: '1', label: 'LANDING PAGE', desc: 'A full conversion page matched to your ad message. Same brand. Same promise. No bounce.', color: '#fbbf24' },
-              null,
-              { num: '1', label: 'EMAIL', desc: 'Campaign email ready for Klaviyo. Brand-matched, fully rendered.', color: '#60a5fa' },
-            ] as (null | { num: string; label: string; desc: string; color: string })[]).map((item, i) =>
-              item === null ? (
-                <div key={i} className="pv-arrow" style={{ alignSelf: 'flex-start', marginTop: 40, padding: '0 8px', color: 'rgba(255,255,255,0.3)', fontSize: 28, flexShrink: 0 }}>→</div>
-              ) : (
-                <div key={i} style={{ textAlign: 'center', padding: '0 20px', flex: 1 }}>
-                  <div style={{ width: 80, height: 80, borderRadius: '50%', background: `${item.color}18`, border: `1.5px solid ${item.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 32, color: item.color }}>{item.num}</div>
-                  <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.9)', marginBottom: 14, textTransform: 'uppercase' }}>{item.label}</div>
-                  <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>{item.desc}</div>
-                </div>
-              )
-            )}
-          </div>
-
-          {/* Without vs With */}
-          <div className="pv-compare" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 0, alignItems: 'stretch', marginBottom: 40 }}>
-            <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '32px 36px' }}>
-              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: 20 }}>Without this</div>
-              {['Random creative with no system', 'Copy that doesn\'t match the ad', 'Generic page that loses the sale', 'Months wasted finding what works'].map((t, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 14, fontSize: 16, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
-                  <span style={{ color: 'rgba(255,100,100,0.9)', fontSize: 18, lineHeight: 1, flexShrink: 0, marginTop: 1 }}>✕</span>{t}
-                </div>
-              ))}
-            </div>
-            <div className="pv-compare-vs" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px', fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 18, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em' }}>VS</div>
-            <div style={{ border: '1px solid rgba(0,255,151,0.2)', borderRadius: 14, padding: '32px 36px', background: 'rgba(0,255,151,0.03)' }}>
-              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#00ff97', marginBottom: 20 }}>With this</div>
-              {['A complete funnel built in 30 seconds', 'Consistent message from ad to page', 'Landing page that closes the sale', 'Start testing today, find winners fast'].map((t, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 14, fontSize: 16, color: 'rgba(255,255,255,0.9)', lineHeight: 1.5 }}>
-                  <span style={{ color: '#00ff97', fontSize: 18, lineHeight: 1, flexShrink: 0, marginTop: 1 }}>✓</span>{t}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="pv-point" style={{ textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 48 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(0,255,151,0.06)', border: '1px solid rgba(0,255,151,0.15)', borderRadius: 999, padding: '8px 22px', marginBottom: 14 }}>
-              <span style={{ color: '#00ff97', fontSize: 13, fontWeight: 700 }}>THE POINT</span>
-            </div>
-            <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 28, color: '#fff', marginBottom: 12 }}>
-              Same message, start to finish.
-            </div>
-            <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.55)', maxWidth: 560, margin: '0 auto', lineHeight: 1.7 }}>
-              Most brands lose because their ad and landing page say different things. This funnel is consistent end-to-end — so you can test faster, learn faster, and find what actually converts.
-            </div>
-          </div>
-        </div>
-      </div>}
+      </nav>
+      <div style={{ height: 56 }} /> {/* Spacer for fixed nav */}
 
       {brand.status === 'draft' && (
         <div className="max-w-5xl mx-auto px-4 md:px-10 mt-8">
           <div className="pv-draft-bar" style={{
-            background: '#000',
-            borderRadius: 16,
+            background: colors.ink,
+            borderRadius: radius['3xl'],
             padding: '20px 24px',
             margin: '0 0 24px',
             display: 'flex',
@@ -693,28 +700,28 @@ export default function PreviewClient({
           }}>
             <div>
               <div style={{
-                fontFamily: 'Barlow, sans-serif',
-                fontWeight: 900, fontSize: 17,
-                color: '#fff', marginBottom: 4,
+                fontFamily: font.heading,
+                fontWeight: fontWeight.heading, fontSize: fontSize.xl,
+                color: colors.paper, marginBottom: 4,
                 textTransform: 'uppercase',
               }}>
                 Your funnel is ready — save it to your account.
               </div>
               <div style={{
-                fontSize: 14,
-                color: 'rgba(255,255,255,0.45)',
+                fontSize: fontSize.md,
+                color: colors.whiteAlpha45,
               }}>
                 Activate to unlock editing, custom images, and export.
               </div>
             </div>
             <button
-              onClick={activateBrand}
+              onClick={() => requireAuth(activateBrand)}
               disabled={activating}
               style={{
-                background: '#00ff97', color: '#000',
-                fontFamily: 'Barlow, sans-serif',
-                fontWeight: 800, fontSize: 15,
-                padding: '12px 28px', borderRadius: 999,
+                background: colors.accent, color: colors.ink,
+                fontFamily: font.heading,
+                fontWeight: fontWeight.extrabold, fontSize: fontSize.base,
+                padding: '12px 28px', borderRadius: radius.pill,
                 border: 'none', cursor: 'pointer',
                 flexShrink: 0, whiteSpace: 'nowrap',
               }}
@@ -726,6 +733,15 @@ export default function PreviewClient({
       )}
 
       <div className="max-w-5xl mx-auto px-4 md:px-10 py-8 space-y-8">
+        {/* Make your creatives better banner */}
+        <div style={{ background: colors.darkBg, borderRadius: radius['4xl'], padding: '36px 36px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, boxShadow: shadow.xl }}>
+          <div>
+            <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['3xl'], color: colors.paper, marginBottom: 6, textTransform: 'uppercase' }}><span style={{ color: colors.accent }}>✦</span> Make your creatives better</div>
+            <div style={{ fontSize: fontSize.base, color: colors.whiteAlpha50, lineHeight: 1.6 }}>Add your brand voice, target audience and products to get more accurate copy and creatives.</div>
+          </div>
+          <a href={`/brand-setup/${brand.id}`} style={{ background: colors.accent, color: colors.ink, fontFamily: font.heading, fontWeight: fontWeight.extrabold, fontSize: fontSize.md, padding: '14px 28px', borderRadius: radius.pill, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>Complete Brand Hub →</a>
+        </div>
+
         {/* Brand control bar */}
         <BrandControlBar
           primaryColor={brandPrimary}
@@ -733,8 +749,11 @@ export default function PreviewClient({
           accentColor={brandAccent}
           fontFamily={fontFamily}
           allImageUrls={allImageUrls}
+          shopifyImageUrls={shopifyImageUrls}
           productImageUrls={productImageUrls}
           lifestyleImageUrls={lifestyleImageUrls}
+          logoUrl={brand.logo_url}
+          logoImageUrls={logoImageUrls}
           activeImageIndex={activeImageIndex}
           onPrimaryChange={setBrandPrimary}
           onSecondaryChange={setBrandSecondary}
@@ -754,6 +773,7 @@ export default function PreviewClient({
               }
             }
             setAllImageUrls(prev => [...prev, ...newUrls])
+            setProductImageUrls(prev => [...prev, ...newUrls])
           }}
           onRemoveImage={(url: string) => {
             setRemovedImageUrls(prev => {
@@ -762,60 +782,64 @@ export default function PreviewClient({
               return next
             })
             setAllImageUrls(prev => prev.filter(u => u !== url))
+            setShopifyImageUrls(prev => prev.filter(u => u !== url))
             setProductImageUrls(prev => prev.filter(u => u !== url))
             setLifestyleImageUrls(prev => prev.filter(u => u !== url))
             setActiveImageIndex(0)
           }}
-          onSave={saveBrandColors}
+          onSave={() => requireAuth(saveBrandColors)}
           saving={savingBrand}
         />
 
         {/* ═══ BRAND KNOWLEDGE ═══ */}
-        {(brand.mission || brand.brand_voice || brand.target_audience || (brand.tone_keywords && brand.tone_keywords.length > 0)) && (
-          <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 16, padding: '28px 28px 20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)' }}>What we know about your brand</div>
-              <a href={`/brand-setup/${brand.id}`} style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textDecoration: 'none' }}>Edit in Brand Hub →</a>
+        {(brandMission || brandVoice || brandAudience || brandTone.length > 0) && (
+          <div>
+            {/* Section header */}
+            <div style={{ padding: '48px 0 32px', textAlign: 'center' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.ink, borderRadius: radius.pill, padding: '6px 16px', fontFamily: font.mono, fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.accent, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', marginBottom: 14 }}>
+                ✦ AI-generated from your website
+              </div>
+              <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: 36, textTransform: 'uppercase', color: colors.ink, lineHeight: 1.1, marginBottom: 12 }}>
+                What We Know About {brand.name}
+              </div>
+              <div style={{ fontSize: fontSize.md, color: colors.muted, lineHeight: 1.6, maxWidth: 480, margin: '0 auto', marginBottom: 14 }}>
+                Our AI scraped your site and built a brand profile. The more you fill in, the better your funnel gets.
+              </div>
+              <a href={`/brand-setup/${brand.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.ink, borderRadius: radius.pill, padding: '6px 16px', fontFamily: font.mono, fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.accent, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', textDecoration: 'none' }}>Edit in Brand Hub →</a>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
-              {brand.mission && (
-                <div style={{ background: '#fafafa', borderRadius: 12, padding: '16px 18px' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#999', marginBottom: 8 }}>What you do</div>
-                  <div style={{ fontSize: 15, fontWeight: 500, color: '#000', lineHeight: 1.6 }}>{brand.mission}</div>
+
+            {/* Brand fields — clean column layout */}
+            <div style={{ padding: '0 0 48px', textAlign: 'center' }}>
+              {[
+                brandMission && { label: 'What you do', text: brandMission },
+                brandAudience && { label: 'Who buys from you', text: brandAudience },
+                brandVoice && { label: 'How you sound', text: brandVoice },
+              ].filter(Boolean).map((field, i, arr) => (
+                <div key={i}>
+                  <div style={{ fontFamily: font.mono, fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.ink, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', marginBottom: 8 }}>
+                    {(field as { label: string; text: string }).label}
+                  </div>
+                  <div style={{ fontSize: 18, color: '#333', lineHeight: 1.75 }}>
+                    {(field as { label: string; text: string }).text}
+                  </div>
+                  {i < arr.length - 1 && (
+                    <div style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', margin: '24px 0' }} />
+                  )}
                 </div>
-              )}
-              {brand.target_audience && (
-                <div style={{ background: '#fafafa', borderRadius: 12, padding: '16px 18px' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#999', marginBottom: 8 }}>Who you talk to</div>
-                  <div style={{ fontSize: 15, fontWeight: 500, color: '#000', lineHeight: 1.6 }}>{brand.target_audience}</div>
-                </div>
-              )}
-              {brand.brand_voice && (
-                <div style={{ background: '#fafafa', borderRadius: 12, padding: '16px 18px' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#999', marginBottom: 8 }}>Your brand voice</div>
-                  <div style={{ fontSize: 15, fontWeight: 500, color: '#000', lineHeight: 1.6 }}>{brand.brand_voice}</div>
-                </div>
-              )}
-              {brand.tone_keywords && brand.tone_keywords.length > 0 && (
-                <div style={{ background: '#fafafa', borderRadius: 12, padding: '16px 18px' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#999', marginBottom: 10 }}>Tone</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {brand.tone_keywords.map((kw: string, i: number) => (
-                      <span key={i} style={{ fontSize: 12, fontWeight: 700, color: '#00a86b', background: 'rgba(0,255,151,0.08)', border: '1px solid rgba(0,255,151,0.2)', padding: '4px 12px', borderRadius: 999 }}>{kw}</span>
+              ))}
+              {brandTone.length > 0 && (
+                <div style={{ marginTop: 24 }}>
+                  <div style={{ fontFamily: font.mono, fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.ink, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', marginBottom: 10 }}>
+                    Tone
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
+                    {brandTone.map((kw: string, i: number) => (
+                      <span key={i} style={{ fontSize: fontSize.body, fontWeight: fontWeight.medium, color: colors.ink, border: `1.5px solid ${colors.ink}`, padding: '6px 16px', borderRadius: radius.pill }}>{kw}</span>
                     ))}
                   </div>
                 </div>
               )}
             </div>
-          </div>
-        )}
-        {!brand.mission && !brand.brand_voice && (
-          <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#000', marginBottom: 4 }}>✦ Make your creatives better</div>
-              <div style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.5 }}>Add your brand voice, target audience and products to get more accurate copy and creatives.</div>
-            </div>
-            <a href={`/brand-setup/${brand.id}`} style={{ background: '#000', color: '#00ff97', fontFamily: 'Barlow, sans-serif', fontWeight: 800, fontSize: 12, padding: '9px 20px', borderRadius: 999, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>Complete Brand Hub →</a>
           </div>
         )}
         {/* ═══ SECTION 1: Ad Creatives ═══ */}
@@ -825,12 +849,15 @@ export default function PreviewClient({
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#a78bfa', flexShrink: 0 }} />
-              <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#000', color: '#a78bfa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>1</span>
-              <span style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 26, textTransform: 'uppercase', letterSpacing: '-0.01em', color: '#000' }}>Ad Creatives</span>
+              <span style={{ width: 28, height: 28, borderRadius: '50%', background: colors.ink, color: '#a78bfa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: fontSize.caption, fontWeight: fontWeight.extrabold, flexShrink: 0 }}>1</span>
+              <span style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['6xl'], textTransform: 'uppercase', letterSpacing: letterSpacing.slight, color: colors.ink }}>Ad Creatives</span>
             </div>
             {brand.status === 'active' && (
               <a href={`/creatives?brand=${brand.id}&campaign=${campaign.id}`} style={{
-                fontSize: 13, fontWeight: 700, color: '#00cc7a',
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: colors.ink, borderRadius: radius.pill, padding: '6px 16px',
+                fontFamily: font.mono, fontSize: fontSize.body, fontWeight: fontWeight.bold,
+                color: colors.accent, letterSpacing: letterSpacing.wide, textTransform: 'uppercase',
                 textDecoration: 'none',
               }}>
                 Customize in builder →
@@ -866,11 +893,11 @@ export default function PreviewClient({
               { label: 'Story — Statement', Comp: StatTemplate, img: img2, variation: v2, tp: 'center' as const, bgColor: brandAccent },
               { label: 'Story — Overlay Alt', Comp: OverlayTemplate, img: img3, variation: v1, tp: 'center' as const, bgColor: brandSecondary },
               { label: 'Story — Testimonial', Comp: TestimonialTemplate, img: img4, variation: v2, tp: 'center' as const, bgColor: brandPrimary },
-              { label: 'Story — Grid', Comp: GridTemplate, img: img5, variation: v0, tp: 'center' as const, bgColor: brandAccent },
+              { label: 'Story — Grid', Comp: GridTemplate, img: img5, variation: v0, tp: 'center' as const, bgColor: brandSecondary },
             ]
 
             function makeProps(card: { variation: typeof v0, img: string | null, tp: 'center' | 'bottom-left', bgColor: string }) {
-              const hColor = card.img ? '#ffffff' : textOnPrimary
+              const hColor = card.img ? colors.paper : textOnPrimary
               return {
                 headline: card.variation?.headline || adVariation?.headline || '',
                 bodyText: (card.variation?.primary_text || adVariation?.primary_text || '').slice(0, 100),
@@ -907,7 +934,7 @@ export default function PreviewClient({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
                   {gridCards.map((card, i) => (
                     <div key={i} style={{ display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#888', marginBottom: 8 }}>
+                      <div style={{ fontSize: fontSize.body, fontWeight: fontWeight.semibold, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', color: colors.gray750, marginBottom: 8 }}>
                         {card.label}
                       </div>
                       <ScaledCreative
@@ -916,7 +943,7 @@ export default function PreviewClient({
                         srcW={SRC_W}
                         srcH={SRC_H}
                         aspectRatio="4/5"
-                        borderRadius={14}
+                        borderRadius={radius['2xl']}
                       />
                     </div>
                   ))}
@@ -924,13 +951,13 @@ export default function PreviewClient({
 
                 {/* ── 9:16 STORIES — 3 in a row ── */}
                 <div style={{ borderTop: '1px solid var(--border)', paddingTop: 32, marginBottom: 8 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 20, textAlign: 'center' }}>
+                  <div style={{ fontSize: fontSize.body, fontWeight: fontWeight.semibold, letterSpacing: letterSpacing.wider, textTransform: 'uppercase', color: colors.gray750, marginBottom: 20, textAlign: 'center' }}>
                     Instagram & TikTok Stories
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {storyCards.map((card, i) => (
                       <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#888', marginBottom: 8 }}>
+                        <div style={{ fontSize: fontSize.body, fontWeight: fontWeight.semibold, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', color: colors.gray750, marginBottom: 8 }}>
                           {card.label}
                         </div>
                         <ScaledCreative
@@ -939,7 +966,7 @@ export default function PreviewClient({
                           srcW={STORY_SRC_W}
                           srcH={STORY_SRC_H}
                           aspectRatio="9/16"
-                          borderRadius={16}
+                          borderRadius={radius['3xl']}
                         />
                       </div>
                     ))}
@@ -961,35 +988,35 @@ export default function PreviewClient({
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#34d399', flexShrink: 0 }} />
-              <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#000', color: '#34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>2</span>
-              <span style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 26, textTransform: 'uppercase', letterSpacing: '-0.01em', color: '#000' }}>Ad Copy</span>
+              <span style={{ width: 28, height: 28, borderRadius: '50%', background: colors.ink, color: '#34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: fontSize.caption, fontWeight: fontWeight.extrabold, flexShrink: 0 }}>2</span>
+              <span style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['6xl'], textTransform: 'uppercase', letterSpacing: letterSpacing.slight, color: colors.ink }}>Ad Copy</span>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {adVariations.slice(0, 3).map((v, i) => (
               <div key={i} style={{
-                background: i === 0 ? '#000' : '#fff',
+                background: i === 0 ? colors.ink : colors.paper,
                 border: i === 0 ? 'none' : '1px solid var(--border)',
-                borderRadius: 16, padding: '28px 28px 24px',
+                borderRadius: radius['3xl'], padding: '28px 28px 24px',
                 display: 'flex', flexDirection: 'column', gap: 0,
               }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: i === 0 ? '#00ff97' : '#bbb', marginBottom: 12 }}>
+                <div style={{ fontSize: fontSize.body, fontWeight: fontWeight.bold, letterSpacing: letterSpacing.widest, textTransform: 'uppercase', color: i === 0 ? colors.accent : '#bbb', marginBottom: 12 }}>
                   Variation {i + 1}
                 </div>
-                <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 28, lineHeight: 1.1, letterSpacing: '-0.02em', color: i === 0 ? '#fff' : '#000', marginBottom: 20, textTransform: 'uppercase' }}>
+                <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['7xl'], lineHeight: 1.1, letterSpacing: letterSpacing.snug, color: i === 0 ? colors.paper : colors.ink, marginBottom: 20, textTransform: 'uppercase' }}>
                   {v.headline}
                 </div>
-                <div style={{ width: 32, height: 2, background: i === 0 ? '#00ff97' : '#000', borderRadius: 1, marginBottom: 20 }} />
-                <div style={{ fontSize: 14, lineHeight: 1.7, color: i === 0 ? 'rgba(255,255,255,0.65)' : '#444', flex: 1, marginBottom: 20 }}>
+                <div style={{ width: 32, height: 2, background: i === 0 ? colors.accent : colors.ink, borderRadius: 1, marginBottom: 20 }} />
+                <div style={{ fontSize: fontSize.md, lineHeight: 1.7, color: i === 0 ? colors.whiteAlpha65 : colors.grayText, flex: 1, marginBottom: 20 }}>
                   {v.primary_text}
                 </div>
                 {v.description && (
-                  <div style={{ display: 'inline-block', background: i === 0 ? 'rgba(0,255,151,0.12)' : '#f8f8f8', border: i === 0 ? '1px solid rgba(0,255,151,0.25)' : '1px solid #e0e0e0', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: i === 0 ? '#00ff97' : '#555', marginBottom: 16 }}>
+                  <div style={{ display: 'inline-block', background: i === 0 ? colors.accentAlpha12 : '#f8f8f8', border: i === 0 ? `1px solid ${colors.accentAlpha25}` : '1px solid #e0e0e0', borderRadius: radius.md, padding: '8px 14px', fontSize: fontSize.md, fontWeight: fontWeight.bold, letterSpacing: letterSpacing.label, textTransform: 'uppercase', color: i === 0 ? colors.accent : '#555', marginBottom: 16 }}>
                     {v.description}
                   </div>
                 )}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 16, borderTop: `1px solid ${i === 0 ? 'rgba(255,255,255,0.1)' : '#eee'}` }}>
-                  <span style={{ fontFamily: 'monospace', fontSize: 11, color: i === 0 ? 'rgba(255,255,255,0.3)' : '#bbb' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 16, borderTop: `1px solid ${i === 0 ? colors.whiteAlpha10 : colors.gray300}` }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: fontSize.body, color: i === 0 ? colors.whiteAlpha30 : '#bbb' }}>
                     {v.primary_text.length} chars
                   </span>
                   <button id={`copy-btn-${i}`} onClick={() => {
@@ -999,9 +1026,9 @@ export default function PreviewClient({
                         const btn = document.getElementById(`copy-btn-${i}`)
                         if (btn) {
                           btn.textContent = 'Copied ✓'
-                          btn.style.background = '#00ff97'
-                          btn.style.color = '#000'
-                          setTimeout(() => { btn.textContent = 'Copy all'; btn.style.background = i === 0 ? 'rgba(255,255,255,0.1)' : '#f0f0f0'; btn.style.color = i === 0 ? '#fff' : '#000' }, 1500)
+                          btn.style.background = colors.accent
+                          btn.style.color = colors.ink
+                          setTimeout(() => { btn.textContent = 'Copy all'; btn.style.background = i === 0 ? colors.whiteAlpha10 : colors.gray250; btn.style.color = i === 0 ? colors.paper : colors.ink }, 1500)
                         }
                       })
                     } else {
@@ -1009,7 +1036,7 @@ export default function PreviewClient({
                       document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta)
                     }
                   }}
-                    style={{ background: i === 0 ? 'rgba(255,255,255,0.1)' : '#f0f0f0', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 600, color: i === 0 ? '#fff' : '#000', cursor: 'pointer' }}>
+                    style={{ background: i === 0 ? colors.whiteAlpha10 : colors.gray250, border: 'none', borderRadius: radius.md, padding: '6px 14px', fontSize: fontSize.md, fontWeight: fontWeight.semibold, color: i === 0 ? colors.paper : colors.ink, cursor: 'pointer' }}>
                     Copy all
                   </button>
                 </div>
@@ -1032,14 +1059,14 @@ export default function PreviewClient({
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#fbbf24', flexShrink: 0 }} />
-              <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#000', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>3</span>
-              <span style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 26, textTransform: 'uppercase', letterSpacing: '-0.01em', color: '#000' }}>Landing Page</span>
+              <span style={{ width: 28, height: 28, borderRadius: '50%', background: colors.ink, color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: fontSize.caption, fontWeight: fontWeight.extrabold, flexShrink: 0 }}>3</span>
+              <span style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['6xl'], textTransform: 'uppercase', letterSpacing: letterSpacing.slight, color: colors.ink }}>Landing Page</span>
             </div>
             {brand.status === 'active' && (
               <a
                 href={`/api/campaigns/${campaign.id}/landing-html`}
                 download={`${brand.name.toLowerCase().replace(/\s+/g, '-')}-landing-page.html`}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#000', color: '#00ff97', fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 999, textDecoration: 'none', border: 'none' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: colors.ink, color: colors.accent, fontSize: fontSize.base, fontWeight: fontWeight.bold, padding: '8px 16px', borderRadius: radius.pill, textDecoration: 'none', border: 'none' }}
               >
                 ↓ Download HTML
               </a>
@@ -1050,11 +1077,11 @@ export default function PreviewClient({
               width: '100%',
               height: 680,
               position: 'relative',
-              borderRadius: 20,
+              borderRadius: radius['4xl'],
               overflow: 'hidden',
               border: '1px solid var(--border)',
-              boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
-              background: '#fff',
+              boxShadow: shadow.heavy,
+              background: colors.paper,
             }}>
               <iframe
                 src={`/api/campaigns/${campaign.id}/landing-html`}
@@ -1075,7 +1102,7 @@ export default function PreviewClient({
                 position: 'absolute',
                 bottom: 0, left: 0, right: 0,
                 height: 120,
-                background: 'linear-gradient(to bottom, transparent, #fff)',
+                background: `linear-gradient(to bottom, transparent, ${colors.paper})`,
                 pointerEvents: 'none',
               }} />
               <div style={{
@@ -1089,12 +1116,12 @@ export default function PreviewClient({
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
-                    background: '#000', color: '#00ff97',
-                    fontSize: 13, fontWeight: 700,
-                    padding: '10px 20px', borderRadius: 999,
+                    background: colors.ink, color: colors.accent,
+                    fontSize: fontSize.body, fontWeight: fontWeight.bold,
+                    padding: '10px 20px', borderRadius: radius.pill,
                     textDecoration: 'none',
                     display: 'inline-flex', alignItems: 'center', gap: 6,
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+                    boxShadow: shadow.dark,
                   }}
                 >
                   ↗ View full page
@@ -1107,41 +1134,41 @@ export default function PreviewClient({
         </div>
 
         {/* ═══ SECTION 4: EMAIL ═══ */}
-        <div style={{ background: '#000', padding: '64px 32px 48px' }}>
+        <div style={{ background: colors.ink, padding: '64px 32px 48px' }}>
           <div style={{ maxWidth: 960, margin: '0 auto' }}>
             <div className="pv-section-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#60a5fa', flexShrink: 0 }} />
-                <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#fff', color: '#60a5fa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>4</span>
-                <span style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#fff' }}>Email</span>
-                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>Campaign email · Klaviyo ready</span>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: colors.emailBlue, flexShrink: 0 }} />
+                <span style={{ width: 28, height: 28, borderRadius: '50%', background: colors.paper, color: colors.emailBlue, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: fontSize.caption, fontWeight: fontWeight.extrabold, flexShrink: 0 }}>4</span>
+                <span style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['4xl'], textTransform: 'uppercase', letterSpacing: letterSpacing.label, color: colors.paper }}>Email</span>
+                <span style={{ fontSize: fontSize.body, color: colors.whiteAlpha30 }}>Campaign email · Klaviyo ready</span>
               </div>
               {emailGenerated && (
                 <a href={`data:text/html;charset=utf-8,${encodeURIComponent(emailHtml || '')}`} download={`${brand.name.toLowerCase().replace(/\s+/g, '-')}-email.html`}
-                  style={{ fontSize: 12, fontWeight: 700, color: '#000', textDecoration: 'none', padding: '8px 20px', background: '#00ff97', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  style={{ fontSize: fontSize.base, fontWeight: fontWeight.bold, color: colors.ink, textDecoration: 'none', padding: '8px 20px', background: colors.accent, borderRadius: radius.pill, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   ↓ Download HTML
                 </a>
               )}
             </div>
 
             {!emailGenerated ? (
-              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: '48px 40px', textAlign: 'center' }}>
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${colors.whiteAlpha8}`, borderRadius: radius['4xl'], padding: '48px 40px', textAlign: 'center' }}>
                 {generatingEmail ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-                    <div style={{ width: 40, height: 40, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#60a5fa', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                    <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 18, color: '#fff', textTransform: 'uppercase' }}>Writing your email...</div>
-                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Generating campaign email from your brief</div>
+                    <div style={{ width: 40, height: 40, border: `3px solid ${colors.whiteAlpha10}`, borderTopColor: colors.emailBlue, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                    <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['2xl'], color: colors.paper, textTransform: 'uppercase' }}>Writing your email...</div>
+                    <div style={{ fontSize: fontSize.body, color: colors.whiteAlpha40 }}>Generating campaign email from your brief</div>
                     <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
                   </div>
                 ) : (
                   <>
-                    <div style={{ fontSize: 36, marginBottom: 16 }}>✉</div>
-                    <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 22, color: '#fff', textTransform: 'uppercase', marginBottom: 8 }}>Generate campaign email</div>
-                    <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', marginBottom: 28, maxWidth: 400, margin: '0 auto 28px', lineHeight: 1.6 }}>
+                    <div style={{ fontSize: fontSize['9xl'], marginBottom: 16 }}>✉</div>
+                    <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['4xl'], color: colors.paper, textTransform: 'uppercase', marginBottom: 8 }}>Generate campaign email</div>
+                    <div style={{ fontSize: fontSize.md, color: colors.whiteAlpha40, marginBottom: 28, maxWidth: 400, margin: '0 auto 28px', lineHeight: 1.6 }}>
                       AI generates a complete email using your campaign brief and brand template. Export HTML or push directly to Klaviyo.
                     </div>
                     <button onClick={generateEmail}
-                      style={{ background: '#60a5fa', color: '#000', fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: 14, padding: '12px 32px', borderRadius: 999, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      style={{ background: colors.emailBlue, color: colors.ink, fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize.md, padding: '12px 32px', borderRadius: radius.pill, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                       ✉ Generate email →
                     </button>
                   </>
@@ -1150,17 +1177,17 @@ export default function PreviewClient({
             ) : (
               <div>
                 {emailSubject && (
-                  <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>Subject:</span>
-                    <span style={{ fontSize: 14, color: '#fff', fontWeight: 500 }}>{emailSubject}</span>
+                  <div style={{ background: colors.whiteAlpha5, border: `1px solid ${colors.whiteAlpha8}`, borderRadius: radius.lg, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.whiteAlpha30, textTransform: 'uppercase', letterSpacing: letterSpacing.wider, flexShrink: 0 }}>Subject:</span>
+                    <span style={{ fontSize: fontSize.md, color: colors.paper, fontWeight: fontWeight.medium }}>{emailSubject}</span>
                   </div>
                 )}
-                <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, overflow: 'hidden', background: '#fff' }}>
+                <div style={{ border: `1px solid ${colors.whiteAlpha8}`, borderRadius: radius.xl, overflow: 'hidden', background: colors.paper }}>
                   <iframe srcDoc={emailHtml || ''} style={{ width: '100%', height: 900, border: 'none', display: 'block' }} title="Email preview" />
                 </div>
                 <div style={{ textAlign: 'center', marginTop: 16 }}>
                   <button onClick={generateEmail} disabled={generatingEmail}
-                    style={{ background: 'none', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.4)', borderRadius: 999, padding: '7px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                    style={{ background: 'none', border: `1px solid ${colors.whiteAlpha15}`, color: colors.whiteAlpha40, borderRadius: radius.pill, padding: '7px 16px', fontSize: fontSize.md, fontWeight: fontWeight.semibold, cursor: 'pointer' }}>
                     {generatingEmail ? 'Regenerating...' : '↺ Regenerate email'}
                   </button>
                 </div>
@@ -1173,22 +1200,22 @@ export default function PreviewClient({
         {brand.status === 'draft' ? (
           <div style={{
             marginTop: 48,
-            background: '#000',
-            borderRadius: 20,
+            background: colors.ink,
+            borderRadius: radius['4xl'],
             padding: '48px 40px',
             textAlign: 'center',
           }}>
             <div style={{
-              fontFamily: 'Barlow, sans-serif',
-              fontWeight: 900, fontSize: 32,
-              color: '#fff', marginBottom: 12,
+              fontFamily: font.heading,
+              fontWeight: fontWeight.heading, fontSize: fontSize['8xl'],
+              color: colors.paper, marginBottom: 12,
               textTransform: 'uppercase',
               lineHeight: 1.1,
             }}>
               Ready to launch?
             </div>
             <div style={{
-              fontSize: 16, color: 'rgba(255,255,255,0.45)',
+              fontSize: fontSize.lg, color: colors.whiteAlpha45,
               maxWidth: 440, margin: '0 auto 32px',
               lineHeight: 1.7,
             }}>
@@ -1197,12 +1224,12 @@ export default function PreviewClient({
               in 30 seconds — testing it takes even less.
             </div>
             <button
-              onClick={activateBrand}
+              onClick={() => requireAuth(activateBrand)}
               style={{
-                background: '#00ff97', color: '#000',
-                fontFamily: 'Barlow, sans-serif',
-                fontWeight: 900, fontSize: 16,
-                padding: '16px 40px', borderRadius: 999,
+                background: colors.accent, color: colors.ink,
+                fontFamily: font.heading,
+                fontWeight: fontWeight.heading, fontSize: fontSize.lg,
+                padding: '16px 40px', borderRadius: radius.pill,
                 border: 'none', cursor: 'pointer',
               }}
             >
@@ -1212,22 +1239,22 @@ export default function PreviewClient({
         ) : (
           <div style={{
             marginTop: 48,
-            background: '#000',
-            borderRadius: 20,
+            background: colors.ink,
+            borderRadius: radius['4xl'],
             padding: '48px 40px',
             textAlign: 'center',
           }}>
             <div style={{
-              fontFamily: 'Barlow, sans-serif',
-              fontWeight: 900, fontSize: 32,
-              color: '#fff', marginBottom: 12,
+              fontFamily: font.heading,
+              fontWeight: fontWeight.heading, fontSize: fontSize['8xl'],
+              color: colors.paper, marginBottom: 12,
               textTransform: 'uppercase',
               lineHeight: 1.1,
             }}>
               Make it yours.
             </div>
             <div style={{
-              fontSize: 16, color: 'rgba(255,255,255,0.45)',
+              fontSize: fontSize.lg, color: colors.whiteAlpha45,
               maxWidth: 440, margin: '0 auto 32px',
               lineHeight: 1.7,
             }}>
@@ -1237,10 +1264,10 @@ export default function PreviewClient({
             <a
               href={`/creatives?brand=${brand.id}&campaign=${campaign.id}`}
               style={{
-                background: '#00ff97', color: '#000',
-                fontFamily: 'Barlow, sans-serif',
-                fontWeight: 900, fontSize: 16,
-                padding: '16px 40px', borderRadius: 999,
+                background: colors.accent, color: colors.ink,
+                fontFamily: font.heading,
+                fontWeight: fontWeight.heading, fontSize: fontSize.lg,
+                padding: '16px 40px', borderRadius: radius.pill,
                 border: 'none', cursor: 'pointer',
                 textDecoration: 'none',
                 display: 'inline-block',
@@ -1252,6 +1279,12 @@ export default function PreviewClient({
         )}
       </div>
       </div>{/* end preview gate */}
+
+      <AccountModal
+        isOpen={showAccountModal}
+        campaignId={campaign.id}
+        onClose={() => setShowAccountModal(false)}
+      />
     </div>
   )
 }

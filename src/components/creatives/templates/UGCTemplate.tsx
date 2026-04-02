@@ -24,9 +24,9 @@ export default function CardTemplate({
   return (
     <div style={{ display: 'flex', flexDirection: 'column' as const, overflow: 'hidden', width, height, fontFamily: ff(bodyFont) }}>
       {/* Image */}
-      <div style={{ position: 'relative', height: imgH, flexShrink: 0 }}>
+      <div style={{ position: 'relative', width, height: imgH, flexShrink: 0 }}>
         {imageUrl ? (
-          <img crossOrigin="anonymous" src={imageUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: `center ${imagePosition || 'bottom'}` }} />
+          <img crossOrigin="anonymous" src={imageUrl} alt="" width={width} height={imgH} style={{ position: 'absolute', inset: 0, width, height: imgH, objectFit: 'cover', objectPosition: `center ${imagePosition || 'bottom'}` }} />
         ) : (
           <div style={{ position: 'absolute', inset: 0, background: '#e0e0e0' }} />
         )}
@@ -64,14 +64,17 @@ export default function CardTemplate({
         )}
 
         {showCta && (
-          <div style={{
-            marginTop: px(GAP_BODY_CTA, width), display: 'inline-block',
-            background: ctaColor || brandColor, color: ctaFontColor || '#000',
-            fontSize: px(CTA_SIZE, width) * bodySizeMul, fontWeight: 700,
-            padding: `${px(CTA_PAD_V, width)}px ${px(CTA_PAD_H, width)}px`,
-            borderRadius: 6, fontFamily: ff(headlineFont), lineHeight: 1,
-          }}>
-            {ctaText || 'Shop Now'}
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: px(GAP_BODY_CTA, width) }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              minWidth: px(160, width), height: px(52, width),
+              background: ctaColor || brandColor, color: ctaFontColor || '#000',
+              fontSize: px(CTA_SIZE, width) * bodySizeMul, fontWeight: 700,
+              padding: `0 ${px(CTA_PAD_H, width)}px`,
+              borderRadius: 6, fontFamily: ff(headlineFont), whiteSpace: 'nowrap' as const,
+            }}>
+              {ctaText || 'Shop Now'}
+            </div>
           </div>
         )}
       </div>

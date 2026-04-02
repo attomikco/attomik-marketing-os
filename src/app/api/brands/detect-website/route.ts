@@ -69,7 +69,43 @@ export async function POST(req: NextRequest) {
     // Extract all style content
     const styleBlocks = html.match(/<style[^>]*>([\s\S]*?)<\/style>/gi) || []
     const inlineStyles = html.match(/style=["']([^"']+)["']/gi) || []
-    const allCSS = [...styleBlocks, ...inlineStyles].join(' ')
+
+    // Find external CSS links
+    const cssLinks = Array.from(html.matchAll(
+      /<link[^>]+rel=["\']stylesheet["\'][^>]+href=["\']([^"']+)["\'][^>]*>/gi
+    )).map(m => m[1])
+    .filter(href =>
+      !href.includes('fonts.googleapis') &&
+      !href.includes('font-awesome') &&
+      !href.includes('bootstrap')
+    )
+    .slice(0, 2)
+
+    const externalCSS: string[] = []
+    for (const href of cssLinks) {
+      try {
+        const cssUrl = href.startsWith('http')
+          ? href
+          : href.startsWith('//')
+          ? 'https:' + href
+          : new URL(href, url).toString()
+
+        const cssRes = await fetch(cssUrl, {
+          signal: AbortSignal.timeout(3000),
+          headers: { 'User-Agent': 'Mozilla/5.0' }
+        })
+        if (cssRes.ok) {
+          const text = await cssRes.text()
+          externalCSS.push(text.slice(0, 50000))
+        }
+      } catch {}
+    }
+
+    const allCSS = [
+      ...styleBlocks,
+      ...inlineStyles,
+      ...externalCSS,
+    ].join(' ')
 
     // Find hex colors
     const hexMatches = allCSS.match(/#[0-9a-fA-F]{3,8}/g) || []
@@ -85,29 +121,133 @@ export async function POST(req: NextRequest) {
 
       // Skip whites
       if (r > 240 && g > 240 && b > 240) continue
-      // Skip blacks
-      if (r < 35 && g < 35 && b < 35) continue
-      // Skip grays (r≈g≈b within 20)
-      if (Math.abs(r - g) < 20 && Math.abs(g - b) < 20 && Math.abs(r - b) < 20) continue
+      // Skip pure black #000000
+      if (r === 0 && g === 0 && b === 0) continue
+      // Skip grays (all channels within 15 of each other AND not a dark brand color)
+      const isGray =
+        Math.abs(r - g) < 15 &&
+        Math.abs(g - b) < 15 &&
+        Math.abs(r - b) < 15
+      const isDarkBrand = r < 80 && g < 80 && b < 80
+      if (isGray && !isDarkBrand) continue
 
       colorCounts.set(hex, (colorCounts.get(hex) || 0) + 1)
     }
 
-    // Check CSS custom properties
-    const cssVarPatterns = ['--primary', '--color-primary', '--brand-color', '--accent', '--secondary', '--color-accent', '--color-secondary']
-    for (const varName of cssVarPatterns) {
+    // Check CSS custom properties — primary/brand vars get highest boost
+    const cssVarBoosts: [string, number][] = [
+      ['--primary', 200], ['--color-primary', 200], ['--brand-color', 200], ['--brand', 200],
+      ['--secondary', 80], ['--color-secondary', 80],
+      ['--accent', 60], ['--color-accent', 60],
+    ]
+    for (const [varName, boost] of cssVarBoosts) {
       const match = allCSS.match(new RegExp(`${varName.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*:\\s*(#[0-9a-fA-F]{3,8})`, 'i'))
       if (match) {
         let hex = match[1].toLowerCase()
         if (hex.length === 4) hex = '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3]
-        if (hex.length === 7) colorCounts.set(hex, (colorCounts.get(hex) || 0) + 100) // boost CSS var colors
+        if (hex.length === 7) colorCounts.set(hex, (colorCounts.get(hex) || 0) + boost)
       }
     }
 
-    const colors = Array.from(colorCounts.entries())
+    // Shopify theme color variables
+    const shopifyVarBoosts: [string, number][] = [
+      ['--color-base-accent-1', 150], ['--color-base-accent-2', 100],
+      ['--color-button', 120], ['--color-button-text', 40],
+    ]
+    for (const [varName, boost] of shopifyVarBoosts) {
+      const match = allCSS.match(new RegExp(`${varName.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*:\\s*(#[0-9a-fA-F]{3,8})`, 'i'))
+      if (match) {
+        let hex = match[1].toLowerCase()
+        if (hex.length === 4) hex = '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3]
+        if (hex.length === 7) colorCounts.set(hex, (colorCounts.get(hex) || 0) + boost)
+      }
+    }
+
+    // Also check for rgb() values in CSS variables (Shopify stores colors as R G B)
+    const rgbVarPatterns = ['--color-base-accent-1', '--color-base-accent-2', '--color-button']
+    for (const varName of rgbVarPatterns) {
+      const match = allCSS.match(new RegExp(`${varName.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*:\\s*(\\d{1,3})\\s*,?\\s*(\\d{1,3})\\s*,?\\s*(\\d{1,3})`, 'i'))
+      if (match) {
+        const r = parseInt(match[1]), g = parseInt(match[2]), b = parseInt(match[3])
+        if (r <= 255 && g <= 255 && b <= 255) {
+          const hex = '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('')
+          colorCounts.set(hex, (colorCounts.get(hex) || 0) + 150)
+        }
+      }
+    }
+
+    // Boost colors in header/nav (likely brand identity colors)
+    const headerSection = html.match(/<(?:header|nav)[^>]*>[\s\S]{0,5000}?<\/(?:header|nav)>/gi) || []
+    const headerCSS = headerSection.join(' ')
+    const headerColors = headerCSS.match(/#[0-9a-fA-F]{3,8}/g) || []
+    for (const raw of headerColors) {
+      let hex = raw.toLowerCase()
+      if (hex.length === 4) hex = '#' + hex[1]+hex[1]+hex[2]+hex[2]+hex[3]+hex[3]
+      if (hex.length === 7) {
+        const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16)
+        if (r < 240 || g < 240 || b < 240) { // skip whites
+          colorCounts.set(hex, (colorCounts.get(hex) || 0) + 30)
+        }
+      }
+    }
+
+    // Boost colors in background-color of header/nav elements
+    const headerBgMatch = headerCSS.match(/background(?:-color)?:\s*(#[0-9a-fA-F]{3,8})/gi) || []
+    for (const m of headerBgMatch) {
+      const hexMatch = m.match(/#[0-9a-fA-F]{3,8}/)
+      if (hexMatch) {
+        let hex = hexMatch[0].toLowerCase()
+        if (hex.length === 4) hex = '#' + hex[1]+hex[1]+hex[2]+hex[2]+hex[3]+hex[3]
+        if (hex.length === 7) colorCounts.set(hex, (colorCounts.get(hex) || 0) + 80)
+      }
+    }
+
+    // Boost colors used in button/CTA contexts (moderate boost — these are often accent, not primary)
+    const btnPatterns = [
+      /background(?:-color)?:\s*(#[0-9a-fA-F]{3,8})[^;]*(?:;[^}]*)?(?:\.btn|button|\.cta|\.primary)/gi,
+      /(?:\.btn|button|\.cta|\.primary)[^{]*\{[^}]*background(?:-color)?:\s*(#[0-9a-fA-F]{3,8})/gi,
+    ]
+    for (const pattern of btnPatterns) {
+      const matches = Array.from(allCSS.matchAll(pattern))
+      for (const match of matches) {
+        let hex = match[1].toLowerCase()
+        if (hex.length === 4) hex = '#' + hex[1]+hex[1]+hex[2]+hex[2]+hex[3]+hex[3]
+        if (hex.length === 7) {
+          colorCounts.set(hex, (colorCounts.get(hex) || 0) + 30)
+        }
+      }
+    }
+
+    // Pick top 3 visually distinct colors
+    const colorDistance = (hex1: string, hex2: string): number => {
+      const r1 = parseInt(hex1.slice(1,3),16)
+      const g1 = parseInt(hex1.slice(3,5),16)
+      const b1 = parseInt(hex1.slice(5,7),16)
+      const r2 = parseInt(hex2.slice(1,3),16)
+      const g2 = parseInt(hex2.slice(3,5),16)
+      const b2 = parseInt(hex2.slice(5,7),16)
+      return Math.sqrt(
+        Math.pow(r1-r2,2) + Math.pow(g1-g2,2) + Math.pow(b1-b2,2)
+      )
+    }
+
+    const sorted = Array.from(colorCounts.entries())
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
       .map(([hex]) => hex)
+
+    const colors: string[] = []
+    for (const hex of sorted) {
+      if (colors.length >= 3) break
+      const tooSimilar = colors.some(
+        existing => colorDistance(hex, existing) < 60
+      )
+      if (!tooSimilar) colors.push(hex)
+    }
+
+    // Fallback if not enough distinct colors
+    if (colors.length === 0 && sorted.length > 0) {
+      colors.push(...sorted.slice(0, 3))
+    }
 
     // ── Font ────────────────────────────────────────────────────────
     let font: string | null = null
@@ -183,9 +323,10 @@ export async function POST(req: NextRequest) {
     }
 
     // ── OG Image ────────────────────────────────────────────────────
-    const ogImage = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)?.[1]
+    const ogImageRaw = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)?.[1]
       || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)?.[1]
       || null
+    const ogImage = ogImageRaw ? decodeHtml(ogImageRaw) : null
 
     // ── Logo ────────────────────────────────────────────────────────
     let logo: string | null = null
@@ -197,7 +338,7 @@ export async function POST(req: NextRequest) {
       if (logoImg) {
         const srcMatch = logoImg[0].match(/src=["']([^"']+)["']/i)
         if (srcMatch) {
-          logo = srcMatch[1]
+          logo = decodeHtml(srcMatch[1])
           if (logo.startsWith('/')) {
             try { logo = new URL(logo, normalizedUrl).href } catch {}
           }
@@ -208,7 +349,7 @@ export async function POST(req: NextRequest) {
     if (!logo) {
       const navLogoImg = html.match(/<(?:header|nav)[^>]*>[\s\S]{0,2000}?<img[^>]+src=["']([^"']+)["'][^>]*>/i)
       if (navLogoImg?.[1]) {
-        const src = navLogoImg[1]
+        const src = decodeHtml(navLogoImg[1])
         if (!src.includes('icon') && !src.includes('favicon')) {
           try { logo = new URL(src, normalizedUrl).href } catch {}
         }
@@ -334,9 +475,9 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Image scraping ──────────────────────────────────────────
-    type ImageTagType = 'product' | 'lifestyle' | 'background' | 'logo' | 'other'
+    type ImageTagType = 'product' | 'lifestyle' | 'background' | 'logo' | 'press' | 'shopify' | 'other'
     type ScrapedImage = { url: string; tag: ImageTagType; score: number; alt: string | null }
-    type RawImage = { url: string; alt: string | null; context: string; source: string }
+    type RawImage = { url: string; alt: string | null; context: string; source: string; width?: number; height?: number }
     const imagePool: RawImage[] = []
 
     const resolveUrl = (src: string): string => {
@@ -353,7 +494,8 @@ export async function POST(req: NextRequest) {
     }
 
     // OG + meta images
-    const twitterImg = html.match(/<meta[^>]+(?:name|property)=["']twitter:image(?::src)?["'][^>]+content=["']([^"']+)["']/i)?.[1]
+    const twitterImgRaw = html.match(/<meta[^>]+(?:name|property)=["']twitter:image(?::src)?["'][^>]+content=["']([^"']+)["']/i)?.[1]
+    const twitterImg = twitterImgRaw ? decodeHtml(twitterImgRaw) : null
     if (ogImage) imagePool.push({ url: ogImage, alt: null, context: 'meta', source: 'og' })
     if (twitterImg) imagePool.push({ url: resolveUrl(twitterImg), alt: null, context: 'meta', source: 'twitter' })
 
@@ -364,19 +506,24 @@ export async function POST(req: NextRequest) {
     let imgMatch
     while ((imgMatch = imgTagRegex.exec(html)) !== null) {
       const tag = imgMatch[0]
-      const src = tag.match(/src=["']([^"']+)["']/i)?.[1]
-      if (!src || src.startsWith('data:')) continue
+      const srcRaw = tag.match(/src=["']([^"']+)["']/i)?.[1]
+      if (!srcRaw || srcRaw.startsWith('data:')) continue
+      const src = decodeHtml(srcRaw)
       if (noisePatterns.test(src)) continue
       if (/width=["']?1["']?|height=["']?1["']?/.test(tag)) continue
 
       const alt = tag.match(/alt=["']([^"']*)["']/i)?.[1] || null
-      // Grab ~300 chars before the img tag for parent context (class names, section ids)
-      const before = html.slice(Math.max(0, imgMatch.index - 300), imgMatch.index)
+      const imgW = parseInt(tag.match(/width=["']?(\d+)/i)?.[1] || '0')
+      const imgH = parseInt(tag.match(/height=["']?(\d+)/i)?.[1] || '0')
+      // Grab ~500 chars before the img tag for parent context (class names, section ids, elements)
+      const before = html.slice(Math.max(0, imgMatch.index - 500), imgMatch.index)
       const parentClasses = (before.match(/class=["']([^"']+)["']/gi) || []).join(' ').toLowerCase()
       const parentIds = (before.match(/id=["']([^"']+)["']/gi) || []).join(' ').toLowerCase()
-      const context = parentClasses + ' ' + parentIds
+      // Detect if in header/nav/footer
+      const parentElements = (before.match(/<(header|nav|footer)\b/gi) || []).join(' ').toLowerCase()
+      const context = parentClasses + ' ' + parentIds + ' ' + parentElements
 
-      imagePool.push({ url: resolveUrl(src), alt, context, source: 'img-tag' })
+      imagePool.push({ url: resolveUrl(src), alt, context, source: 'img-tag', width: imgW || undefined, height: imgH || undefined })
     }
 
     // Shopify product images (all images, not just first)
@@ -455,8 +602,20 @@ export async function POST(req: NextRequest) {
     const seen = new Set<string>()
     const uniqueImages: ScrapedImage[] = []
 
+    // Build URL frequency map — repeated images are likely decorative/brand assets
+    const urlFrequency = new Map<string, number>()
+    for (const raw of imagePool) {
+      try {
+        const p = new URL(raw.url).pathname
+        urlFrequency.set(p, (urlFrequency.get(p) || 0) + 1)
+      } catch {}
+    }
+
     // Context patterns for smart tagging
-    const logoContextPattern = /logo|partner|brand-?logo|sponsor|trust|retailer|stockist|as-seen|featured-?in|press/i
+    const pressContextPattern = /as-?seen|featured-?in|press|media|in-the-news|publications?|coverage/i
+    const pressAltPattern = /\b(gq|vogue|forbes|bevnet|delish|trendhunter|cosmopolitan|esquire|wired|techcrunch|mashable|huffpost|buzzfeed|refinery29|allure|glamour|elle|nylon|bustle|popsugar|brit\+?co|the\s*quality\s*edit|rdr|women'?s\s*health|men'?s\s*health|self|shape|well\+?good|mindbodygreen|food\s*&?\s*wine|bon\s*app[eé]tit|eater|the\s*verge|fast\s*company|inc\b|entrepreneur)\b/i
+    const pressUrlPattern = /\/press\/|\/media\/|\/as-seen|\/featured-in|\/publications?\//i
+    const logoContextPattern = /logo|partner|brand-?logo|sponsor|trust|retailer|stockist/i
     const heroContextPattern = /hero|banner|jumbotron|slider|carousel|splash|masthead|above-?fold/i
     const testimonialContextPattern = /testimonial|review|ugc|user-generated|customer-?photo/i
     const productContextPattern = /product|shop|catalog|item|merch|collection/i
@@ -478,9 +637,40 @@ export async function POST(req: NextRequest) {
       // ── Determine tag ──
       let tag: ImageTagType = 'other'
 
-      // 1. Known product URL (from products.json, JSON-LD Product, etc.)
-      if (knownProductUrls.has(url) || knownProductUrls.has(pathname) ||
-          raw.source === 'shopify-product' || raw.source === 'jsonld-product') {
+      // Pre-check: is this image likely a brand mark / logo?
+      const freq = urlFrequency.get(pathname) || 0
+      const isBrandMark =
+        // URL contains brand/logo keywords
+        /logo|brand|wordmark|icon|favicon|badge|symbol/i.test(url) ||
+        // Alt text contains brand name but no product keywords
+        (altLower && name && altLower.includes(name.toLowerCase()) && !/product|shop|buy|price/i.test(altLower)) ||
+        // Very small image (under 100x100)
+        (raw.width && raw.height && raw.width < 100 && raw.height < 100) ||
+        // Very wide and short — horizontal wordmark (aspect ratio > 3:1)
+        (raw.width && raw.height && raw.height > 0 && raw.width / raw.height > 3) ||
+        // Image in header, nav, or footer
+        /header|nav|footer/i.test(ctx) ||
+        // Repeated image (appears 3+ times — decorative/brand asset)
+        freq >= 3
+
+      // 0. Press/media logos — check BEFORE product to prevent misclassification
+      if (pressContextPattern.test(ctx) || pressUrlPattern.test(url) ||
+          (altLower && pressAltPattern.test(altLower))) {
+        tag = 'press'
+      }
+      // 0b. Brand marks — catch before product rules
+      else if (isBrandMark && raw.source !== 'shopify-product' && raw.source !== 'jsonld-product') {
+        tag = 'logo'
+      }
+      // 1a. Shopify product images (from products.json API or Shopify CDN in product context)
+      else if (raw.source === 'shopify-product' ||
+          (raw.source === 'jsonld-product' && /cdn\.shopify\.com/i.test(url)) ||
+          (/cdn\.shopify\.com\/s\/files/i.test(url) && (knownProductUrls.has(url) || knownProductUrls.has(pathname)))) {
+        tag = 'shopify'
+      }
+      // 1b. Other known product URLs (JSON-LD Product, etc.)
+      else if (knownProductUrls.has(url) || knownProductUrls.has(pathname) ||
+          raw.source === 'jsonld-product') {
         tag = 'product'
       }
       // 2. Alt text matches a detected product name
@@ -522,12 +712,19 @@ export async function POST(req: NextRequest) {
 
       // ── Score ──
       let score = 0
+      // Source-based bonuses
+      if (raw.source === 'shopify-product' || raw.source === 'jsonld-product') score += 15
+      if (/cdn\.shopify\.com/i.test(url)) score += 10
+      // Tag-based scoring
+      if (tag === 'shopify') score += 8
       if (tag === 'product') score += 5
       if (tag === 'lifestyle') score += 3
+      if (tag === 'logo' || tag === 'press') score -= 10
+      // Format bonuses
       if (/\.(jpg|jpeg|webp)/i.test(url)) score += 3
       if (raw.source === 'og' || raw.source === 'twitter') score += 2
       if (name && url.toLowerCase().includes(name.toLowerCase())) score += 1
-      if (tag === 'logo') score -= 3
+      // Penalties
       if (/thumb|thumbnail|_small|_mini|32x|16x/i.test(url)) score -= 3
       if (/icon|badge|button/i.test(url) && tag !== 'logo') score -= 2
 
@@ -542,16 +739,26 @@ export async function POST(req: NextRequest) {
     const finalOgImage = ogImage ? upgradeImageUrl(ogImage) : null
     const finalLogo = logo ? upgradeImageUrl(logo) : null
 
-    // Sort by score, products first, then lifestyle, then others. Exclude logos from main images.
+    // Sort by score, products first, then lifestyle, then others. Exclude logos and press from main images.
     const contentImages = uniqueImages
-      .filter(i => i.tag !== 'logo')
+      .filter(i => i.tag !== 'logo' && i.tag !== 'press')
       .sort((a, b) => b.score - a.score)
       .slice(0, 25)
     const logoImages = uniqueImages
       .filter(i => i.tag === 'logo')
       .sort((a, b) => b.score - a.score)
       .slice(0, 6)
-    const images = [...contentImages, ...logoImages]
+    const pressImages = uniqueImages
+      .filter(i => i.tag === 'press')
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10)
+    // Deduplicate final images array by URL
+    const seenFinal = new Set<string>()
+    const images = [...contentImages, ...logoImages, ...pressImages].filter(img => {
+      if (seenFinal.has(img.url)) return false
+      seenFinal.add(img.url)
+      return true
+    })
 
     // ── Business type detection ──────────────────────────────────
     type BusinessType = 'shopify' | 'ecommerce' | 'saas' | 'restaurant' | 'service' | 'brand'

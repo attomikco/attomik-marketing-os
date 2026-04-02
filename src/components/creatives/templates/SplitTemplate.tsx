@@ -27,9 +27,9 @@ export default function SplitTemplate({
 
   return (
     <div style={{ display: 'flex', overflow: 'hidden', width, height, fontFamily: ff(bodyFont) }}>
-      <div style={{ position: 'relative', width: imgW, height: '100%', flexShrink: 0 }}>
+      <div style={{ position: 'relative', width: imgW, height, flexShrink: 0 }}>
         {imageUrl ? (
-          <img crossOrigin="anonymous" src={imageUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: `center ${imagePosition || 'center'}` }} />
+          <img crossOrigin="anonymous" src={imageUrl} alt="" width={imgW} height={height} style={{ position: 'absolute', inset: 0, width: imgW, height, objectFit: 'cover', objectPosition: `center ${imagePosition || 'center'}` }} />
         ) : (
           <div style={{ position: 'absolute', inset: 0, background: '#e0e0e0' }} />
         )}
@@ -80,14 +80,17 @@ export default function SplitTemplate({
         )}
 
         {showCta && (
-          <div style={{
-            marginTop: px(GAP_BODY_CTA, width),
-            background: ctaColor || brandColor, color: ctaFontColor || '#000',
-            fontSize: px(CTA_SIZE, width) * bodySizeMul, fontWeight: 700,
-            padding: `${px(CTA_PAD, width)}px ${px(CTA_PAD * 2, width)}px`,
-            borderRadius: 6, fontFamily: ff(headlineFont), lineHeight: 1,
-          }}>
-            {ctaText || 'Shop Now'}
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: px(GAP_BODY_CTA, width) }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              minWidth: px(160, width), height: px(52, width),
+              background: ctaColor || brandColor, color: ctaFontColor || '#000',
+              fontSize: px(CTA_SIZE, width) * bodySizeMul, fontWeight: 700,
+              padding: `0 ${px(CTA_PAD * 2, width)}px`,
+              borderRadius: 6, fontFamily: ff(headlineFont), whiteSpace: 'nowrap' as const,
+            }}>
+              {ctaText || 'Shop Now'}
+            </div>
           </div>
         )}
       </div>
