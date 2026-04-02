@@ -238,8 +238,8 @@ export default function OnboardingWizard() {
       {/* Tiny back link */}
       <button onClick={() => router.push('/')} style={{
         display: 'inline-flex', alignItems: 'center', gap: 8,
-        fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.accent, background: colors.accentAlpha8,
-        border: `1px solid ${colors.accentAlpha20}`, borderRadius: radius.pill,
+        fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.ink, background: colors.accent,
+        border: 'none', borderRadius: radius.pill,
         cursor: 'pointer', marginBottom: 16,
         padding: '8px 16px',
         transition: `background ${transition.normal}`,

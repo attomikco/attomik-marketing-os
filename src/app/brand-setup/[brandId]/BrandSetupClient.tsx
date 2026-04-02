@@ -403,7 +403,7 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
             </div>
             {aiPrefilled && <span style={{ fontSize: 11, color: '#00a86b', fontWeight: 600 }}>✦ AI-generated from your website</span>}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
             {brand.mission && (
               <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 6 }}>What you do</div>
@@ -463,7 +463,7 @@ export default function BrandHubClient({ brand, initialImages }: { brand: Brand;
       {/* Logo */}
       <div style={{ marginTop: 16 }}>
         <label style={labelStyle}>Logo</label>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
           {/* Color logo */}
           <div>
             <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 8, fontWeight: 600 }}>

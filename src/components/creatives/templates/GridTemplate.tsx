@@ -37,7 +37,7 @@ export default function GridTemplate({
           objectFit: 'cover', objectPosition: `center ${imagePosition || 'center'}`,
         }} />
       ) : (
-        <div style={{ position: 'absolute', inset: 0, background: '#e0e0e0' }} />
+        <div style={{ position: 'absolute', inset: 0, background: brandColor || '#1a1a1a' }} />
       )}
     </div>
   )

@@ -513,32 +513,23 @@ export default function PreviewClient({
     letterSpacing: fh?.letterSpacing === 'wide' ? letterSpacing.widest : fh?.letterSpacing === 'tight' ? letterSpacing.snug : 'normal',
   }
 
-  // Image pickers — priority: shopify > product > lifestyle, no mixed pool fallback
-  const bestProductPool = shopifyImageUrls.length > 0 ? shopifyImageUrls : productImageUrls.length > 0 ? productImageUrls : null
-  function getProductImg(offset: number): string | null {
-    const pool = bestProductPool
-    if (!pool || pool.length === 0) return null
-    return pool[(activeImageIndex + offset) % pool.length]
-  }
-  function getLifestyleImg(offset: number): string | null {
-    if (lifestyleImageUrls.length === 0) return null
-    return lifestyleImageUrls[(activeImageIndex + offset) % lifestyleImageUrls.length]
-  }
-  const getImg = (offset: number) =>
-    bestProductPool && bestProductPool.length > 0
-      ? bestProductPool[(activeImageIndex + offset) % bestProductPool.length]
-      : lifestyleImageUrls.length > 0
-        ? lifestyleImageUrls[(activeImageIndex + offset) % lifestyleImageUrls.length]
-        : null
-  const img0 = getProductImg(0)
-  const img1 = getProductImg(1)
-  const img2 = getLifestyleImg(0)
-  const img3 = getProductImg(2)
-  const img4 = getProductImg(3)
-  const img5 = getProductImg(4)
-  const img6 = getLifestyleImg(1)
-  const img7 = getProductImg(5)
-  const img8 = getLifestyleImg(2)
+  // Unified image pool — shopify first, then product, then lifestyle. Cycle for all 9 slots.
+  const imagePool = [
+    ...shopifyImageUrls,
+    ...productImageUrls,
+    ...lifestyleImageUrls,
+  ]
+  const getImg = (offset: number): string | null =>
+    imagePool.length > 0 ? imagePool[(activeImageIndex + offset) % imagePool.length] : null
+  const img0 = getImg(0)
+  const img1 = getImg(1)
+  const img2 = getImg(2)
+  const img3 = getImg(3)
+  const img4 = getImg(4)
+  const img5 = getImg(5)
+  const img6 = getImg(6)
+  const img7 = getImg(7)
+  const img8 = getImg(8)
 
   // Template props for ad creative
   const templateProps = adVariation ? {
@@ -640,7 +631,7 @@ export default function PreviewClient({
       )}
 
       {/* Preview content — hidden until ready */}
-      <div style={{ visibility: previewReady ? 'visible' : 'hidden', opacity: previewReady ? 1 : 0, transition: 'opacity 0.6s ease', background: 'var(--cream, #f8f7f4)' }}>
+      <div style={{ display: previewReady ? 'block' : 'none', background: 'var(--cream, #f8f7f4)' }}>
       <style>{`
         @media (max-width: 768px) {
           .pv-hero { padding: 40px 20px 32px !important; }
@@ -722,7 +713,7 @@ export default function PreviewClient({
             <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['3xl'], color: colors.paper, marginBottom: 6, textTransform: 'uppercase' }}><span style={{ color: colors.accent }}>✦</span> Make your creatives better</div>
             <div style={{ fontSize: fontSize.base, color: colors.whiteAlpha50, lineHeight: 1.6 }}>Add your brand voice, target audience and products to get more accurate copy and creatives.</div>
           </div>
-          <a href={`/brand-setup/${brand.id}`} style={{ background: colors.accent, color: colors.ink, fontFamily: font.heading, fontWeight: fontWeight.extrabold, fontSize: fontSize.md, padding: '14px 28px', borderRadius: radius.pill, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>Complete Brand Hub →</a>
+          <button onClick={() => requireAuth(() => router.push(`/brand-setup/${brand.id}`))} style={{ background: colors.accent, color: colors.ink, fontFamily: font.heading, fontWeight: fontWeight.extrabold, fontSize: fontSize.base, padding: '14px 28px', borderRadius: radius.pill, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>Complete Brand Hub →</button>
         </div>
 
         {/* Brand control bar */}
@@ -785,10 +776,9 @@ export default function PreviewClient({
               <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: 36, textTransform: 'uppercase', color: colors.ink, lineHeight: 1.1, marginBottom: 12 }}>
                 What We Know About {brand.name}
               </div>
-              <div style={{ fontSize: fontSize.md, color: colors.muted, lineHeight: 1.6, maxWidth: 480, margin: '0 auto', marginBottom: 14 }}>
+              <div style={{ fontSize: 18, color: colors.muted, lineHeight: 1.6, maxWidth: 480, margin: '0 auto', marginBottom: 14 }}>
                 Our AI scraped your site and built a brand profile. The more you fill in, the better your funnel gets.
               </div>
-              <a href={`/brand-setup/${brand.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.ink, borderRadius: radius.pill, padding: '6px 16px', fontFamily: font.mono, fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.accent, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', textDecoration: 'none' }}>Edit in Brand Hub →</a>
             </div>
 
             {/* Brand fields — clean column layout */}
@@ -799,7 +789,7 @@ export default function PreviewClient({
                 brandVoice && { label: 'How you sound', text: brandVoice },
               ].filter(Boolean).map((field, i, arr) => (
                 <div key={i}>
-                  <div style={{ fontFamily: font.mono, fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.ink, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', marginBottom: 8 }}>
+                  <div style={{ display: 'inline-flex', fontFamily: font.mono, fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.accent, background: colors.ink, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', marginBottom: 8, padding: '6px 16px', borderRadius: radius.pill }}>
                     {(field as { label: string; text: string }).label}
                   </div>
                   <div style={{ fontSize: 18, color: '#333', lineHeight: 1.75 }}>
@@ -812,7 +802,7 @@ export default function PreviewClient({
               ))}
               {brandTone.length > 0 && (
                 <div style={{ marginTop: 24 }}>
-                  <div style={{ fontFamily: font.mono, fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.ink, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', marginBottom: 10 }}>
+                  <div style={{ display: 'inline-flex', fontFamily: font.mono, fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.accent, background: colors.ink, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', marginBottom: 10, padding: '6px 16px', borderRadius: radius.pill }}>
                     Tone
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
@@ -827,25 +817,16 @@ export default function PreviewClient({
         )}
         {/* ═══ SECTION 1: Ad Creatives ═══ */}
         <div>
-          <div className="pv-section-head" style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#a78bfa', flexShrink: 0 }} />
-              <span style={{ width: 28, height: 28, borderRadius: '50%', background: colors.ink, color: '#a78bfa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: fontSize.caption, fontWeight: fontWeight.extrabold, flexShrink: 0 }}>1</span>
-              <span style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['6xl'], textTransform: 'uppercase', letterSpacing: letterSpacing.slight, color: colors.ink }}>Ad Creatives</span>
+          <div style={{ padding: '48px 0 32px', textAlign: 'center' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.ink, borderRadius: radius.pill, padding: '6px 16px', fontFamily: font.mono, fontSize: fontSize.md, fontWeight: fontWeight.bold, color: colors.accent, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', marginBottom: 14 }}>
+              ✦ 9 multi-format creatives
             </div>
-            {brand.status === 'active' && (
-              <a href={`/creatives?brand=${brand.id}&campaign=${campaign.id}`} style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                background: colors.ink, borderRadius: radius.pill, padding: '6px 16px',
-                fontFamily: font.mono, fontSize: fontSize.body, fontWeight: fontWeight.bold,
-                color: colors.accent, letterSpacing: letterSpacing.wide, textTransform: 'uppercase',
-                textDecoration: 'none',
-              }}>
-                Customize in builder →
-              </a>
-            )}
+            <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: 36, textTransform: 'uppercase', color: colors.ink, lineHeight: 1.1, marginBottom: 16 }}>
+              Ad Creatives
+            </div>
+            <button onClick={() => requireAuth(() => router.push(`/creatives?brand=${brand.id}&campaign=${campaign.id}`))} style={{ background: colors.accent, color: colors.ink, fontFamily: font.heading, fontWeight: fontWeight.extrabold, fontSize: fontSize.base, padding: '14px 28px', borderRadius: radius.pill, border: 'none', cursor: 'pointer' }}>
+              Customize in builder →
+            </button>
           </div>
 
           {adVariation ? (() => {
@@ -965,14 +946,13 @@ export default function PreviewClient({
         </div>
 
         {/* ═══ SECTION 2: Ad Copy ═══ */}
-        <div className="mt-12 pt-12 border-t border-border">
-          <div className="pv-section-head" style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#34d399', flexShrink: 0 }} />
-              <span style={{ width: 28, height: 28, borderRadius: '50%', background: colors.ink, color: '#34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: fontSize.caption, fontWeight: fontWeight.extrabold, flexShrink: 0 }}>2</span>
-              <span style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['6xl'], textTransform: 'uppercase', letterSpacing: letterSpacing.slight, color: colors.ink }}>Ad Copy</span>
+        <div>
+          <div style={{ padding: '48px 0 32px', textAlign: 'center' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.ink, borderRadius: radius.pill, padding: '6px 16px', fontFamily: font.mono, fontSize: fontSize.md, fontWeight: fontWeight.bold, color: colors.accent, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', marginBottom: 14 }}>
+              ✦ 3 copy variations
+            </div>
+            <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: 36, textTransform: 'uppercase', color: colors.ink, lineHeight: 1.1 }}>
+              Ad Copy
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1036,14 +1016,13 @@ export default function PreviewClient({
         </div>
 
         {/* ═══ SECTION 3: Landing Page ═══ */}
-        <div className="mt-12 pt-12 border-t border-border">
-          <div className="pv-section-head" style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#fbbf24', flexShrink: 0 }} />
-              <span style={{ width: 28, height: 28, borderRadius: '50%', background: colors.ink, color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: fontSize.caption, fontWeight: fontWeight.extrabold, flexShrink: 0 }}>3</span>
-              <span style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['6xl'], textTransform: 'uppercase', letterSpacing: letterSpacing.slight, color: colors.ink }}>Landing Page</span>
+        <div>
+          <div style={{ padding: '48px 0 32px', textAlign: 'center' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.ink, borderRadius: radius.pill, padding: '6px 16px', fontFamily: font.mono, fontSize: fontSize.md, fontWeight: fontWeight.bold, color: colors.accent, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', marginBottom: 14 }}>
+              ✦ Conversion-optimized page
+            </div>
+            <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: 36, textTransform: 'uppercase', color: colors.ink, lineHeight: 1.1 }}>
+              Landing Page
             </div>
           </div>
           {landingBrief ? (
@@ -1108,60 +1087,59 @@ export default function PreviewClient({
         </div>
 
         {/* ═══ SECTION 4: EMAIL ═══ */}
-        <div style={{ background: colors.ink, padding: '64px 32px 48px' }}>
-          <div style={{ maxWidth: 960, margin: '0 auto' }}>
-            <div className="pv-section-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: colors.emailBlue, flexShrink: 0 }} />
-                <span style={{ width: 28, height: 28, borderRadius: '50%', background: colors.paper, color: colors.emailBlue, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: fontSize.caption, fontWeight: fontWeight.extrabold, flexShrink: 0 }}>4</span>
-                <span style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['4xl'], textTransform: 'uppercase', letterSpacing: letterSpacing.label, color: colors.paper }}>Email</span>
-                <span style={{ fontSize: fontSize.body, color: colors.whiteAlpha30 }}>Campaign email · Klaviyo ready</span>
+        <div>
+          {/* Section header */}
+          <div style={{ padding: '48px 0 32px', textAlign: 'center' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.ink, borderRadius: radius.pill, padding: '6px 16px', fontFamily: font.mono, fontSize: fontSize.md, fontWeight: fontWeight.bold, color: colors.accent, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', marginBottom: 14 }}>
+              ✦ Campaign email · Klaviyo ready
+            </div>
+            <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: 36, textTransform: 'uppercase', color: colors.ink, lineHeight: 1.1 }}>
+              Email
+            </div>
+          </div>
+
+          {!emailGenerated ? (
+            <div style={{ background: colors.paper, border: `1px solid ${colors.border}`, borderRadius: radius['4xl'], padding: '48px 40px', textAlign: 'center' }}>
+              {generatingEmail ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+                  <div style={{ width: 40, height: 40, border: `3px solid ${colors.gray300}`, borderTopColor: colors.ink, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                  <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['2xl'], color: colors.ink, textTransform: 'uppercase' }}>Writing your email...</div>
+                  <div style={{ fontSize: fontSize.body, color: colors.muted }}>Generating campaign email from your brief</div>
+                  <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
+                </div>
+              ) : (
+                <>
+                  <div style={{ fontSize: fontSize['9xl'], marginBottom: 16 }}>✉</div>
+                  <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['4xl'], color: colors.ink, textTransform: 'uppercase', marginBottom: 8 }}>Generate campaign email</div>
+                  <div style={{ fontSize: fontSize.md, color: colors.muted, marginBottom: 28, maxWidth: 400, margin: '0 auto 28px', lineHeight: 1.6 }}>
+                    AI generates a complete email using your campaign brief and brand template. Export HTML or push directly to Klaviyo.
+                  </div>
+                  <button onClick={generateEmail}
+                    style={{ background: colors.accent, color: colors.ink, fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize.md, padding: '12px 32px', borderRadius: radius.pill, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    ✉ Generate email →
+                  </button>
+                </>
+              )}
+            </div>
+          ) : (
+            <div>
+              {emailSubject && (
+                <div style={{ background: colors.paper, border: `1px solid ${colors.border}`, borderRadius: radius.lg, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.muted, textTransform: 'uppercase', letterSpacing: letterSpacing.wider, flexShrink: 0 }}>Subject:</span>
+                  <span style={{ fontSize: fontSize.md, color: colors.ink, fontWeight: fontWeight.medium }}>{emailSubject}</span>
+                </div>
+              )}
+              <div style={{ border: `1px solid ${colors.border}`, borderRadius: radius.xl, overflow: 'hidden', background: colors.paper }}>
+                <iframe srcDoc={emailHtml || ''} style={{ width: '100%', height: 900, border: 'none', display: 'block' }} title="Email preview" />
+              </div>
+              <div style={{ textAlign: 'center', marginTop: 16 }}>
+                <button onClick={generateEmail} disabled={generatingEmail}
+                  style={{ background: 'none', border: `1px solid ${colors.border}`, color: colors.muted, borderRadius: radius.pill, padding: '7px 16px', fontSize: fontSize.md, fontWeight: fontWeight.semibold, cursor: 'pointer' }}>
+                  {generatingEmail ? 'Regenerating...' : '↺ Regenerate email'}
+                </button>
               </div>
             </div>
-
-            {!emailGenerated ? (
-              <div style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${colors.whiteAlpha8}`, borderRadius: radius['4xl'], padding: '48px 40px', textAlign: 'center' }}>
-                {generatingEmail ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-                    <div style={{ width: 40, height: 40, border: `3px solid ${colors.whiteAlpha10}`, borderTopColor: colors.emailBlue, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                    <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['2xl'], color: colors.paper, textTransform: 'uppercase' }}>Writing your email...</div>
-                    <div style={{ fontSize: fontSize.body, color: colors.whiteAlpha40 }}>Generating campaign email from your brief</div>
-                    <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
-                  </div>
-                ) : (
-                  <>
-                    <div style={{ fontSize: fontSize['9xl'], marginBottom: 16 }}>✉</div>
-                    <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['4xl'], color: colors.paper, textTransform: 'uppercase', marginBottom: 8 }}>Generate campaign email</div>
-                    <div style={{ fontSize: fontSize.md, color: colors.whiteAlpha40, marginBottom: 28, maxWidth: 400, margin: '0 auto 28px', lineHeight: 1.6 }}>
-                      AI generates a complete email using your campaign brief and brand template. Export HTML or push directly to Klaviyo.
-                    </div>
-                    <button onClick={generateEmail}
-                      style={{ background: colors.emailBlue, color: colors.ink, fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize.md, padding: '12px 32px', borderRadius: radius.pill, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                      ✉ Generate email →
-                    </button>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div>
-                {emailSubject && (
-                  <div style={{ background: colors.whiteAlpha5, border: `1px solid ${colors.whiteAlpha8}`, borderRadius: radius.lg, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.whiteAlpha30, textTransform: 'uppercase', letterSpacing: letterSpacing.wider, flexShrink: 0 }}>Subject:</span>
-                    <span style={{ fontSize: fontSize.md, color: colors.paper, fontWeight: fontWeight.medium }}>{emailSubject}</span>
-                  </div>
-                )}
-                <div style={{ border: `1px solid ${colors.whiteAlpha8}`, borderRadius: radius.xl, overflow: 'hidden', background: colors.paper }}>
-                  <iframe srcDoc={emailHtml || ''} style={{ width: '100%', height: 900, border: 'none', display: 'block' }} title="Email preview" />
-                </div>
-                <div style={{ textAlign: 'center', marginTop: 16 }}>
-                  <button onClick={generateEmail} disabled={generatingEmail}
-                    style={{ background: 'none', border: `1px solid ${colors.whiteAlpha15}`, color: colors.whiteAlpha40, borderRadius: radius.pill, padding: '7px 16px', fontSize: fontSize.md, fontWeight: fontWeight.semibold, cursor: 'pointer' }}>
-                    {generatingEmail ? 'Regenerating...' : '↺ Regenerate email'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
         {/* ═══ Context banner ═══ */}
@@ -1229,20 +1207,18 @@ export default function PreviewClient({
               Open the creative builder to customize templates,
               swap images, and download ad-ready assets.
             </div>
-            <a
-              href={`/creatives?brand=${brand.id}&campaign=${campaign.id}`}
+            <button
+              onClick={() => requireAuth(() => router.push(`/creatives?brand=${brand.id}&campaign=${campaign.id}`))}
               style={{
                 background: colors.accent, color: colors.ink,
                 fontFamily: font.heading,
-                fontWeight: fontWeight.heading, fontSize: fontSize.lg,
-                padding: '16px 40px', borderRadius: radius.pill,
+                fontWeight: fontWeight.extrabold, fontSize: fontSize.base,
+                padding: '14px 28px', borderRadius: radius.pill,
                 border: 'none', cursor: 'pointer',
-                textDecoration: 'none',
-                display: 'inline-block',
               }}
             >
               Customize in creative builder →
-            </a>
+            </button>
           </div>
         )}
       </div>

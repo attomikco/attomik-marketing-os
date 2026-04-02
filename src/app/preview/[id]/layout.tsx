@@ -18,9 +18,9 @@ export default function PreviewLayout({ children }: { children: React.ReactNode 
               <span key={label} style={{ color: '#00ff97', fontSize: 13 }}>{label}</span>
             ))}
           </div>
-          <button style={{ background: '#00ff97', color: '#000', fontSize: 15, fontWeight: 800, padding: '13px 28px', borderRadius: 999, letterSpacing: 'normal' }}>
+          <a href="/login" style={{ background: '#00ff97', color: '#000', fontSize: 15, fontWeight: 800, padding: '13px 28px', borderRadius: 999, letterSpacing: 'normal', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
             Get full access →
-          </button>
+          </a>
         </div>
       </header>
 

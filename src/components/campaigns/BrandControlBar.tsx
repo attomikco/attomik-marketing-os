@@ -271,7 +271,7 @@ export default function BrandControlBar({
           {/* Save button */}
           <div style={{ marginLeft: 'auto', flexShrink: 0, alignSelf: 'center' }}>
             <button onClick={onSave} disabled={saving} style={{
-              background: colors.ink, color: colors.accent,
+              background: colors.accent, color: colors.ink,
               fontFamily: font.heading, fontWeight: fontWeight.extrabold, fontSize: fontSize.base,
               padding: '14px 28px', borderRadius: radius.pill, border: 'none',
               cursor: saving ? 'not-allowed' : 'pointer',

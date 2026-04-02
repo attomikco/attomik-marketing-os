@@ -28,7 +28,7 @@ export default function CardTemplate({
         {imageUrl ? (
           <img crossOrigin="anonymous" src={imageUrl} alt="" width={width} height={imgH} style={{ position: 'absolute', inset: 0, width, height: imgH, objectFit: 'cover', objectPosition: `center ${imagePosition || 'bottom'}` }} />
         ) : (
-          <div style={{ position: 'absolute', inset: 0, background: '#e0e0e0' }} />
+          <div style={{ position: 'absolute', inset: 0, background: brandColor || '#1a1a1a' }} />
         )}
       </div>
 
