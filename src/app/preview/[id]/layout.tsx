@@ -18,7 +18,7 @@ export default function PreviewLayout({ children }: { children: React.ReactNode 
               <span key={label} style={{ color: '#00ff97', fontSize: 13 }}>{label}</span>
             ))}
           </div>
-          <button style={{ background: '#00ff97', color: '#000', fontSize: 15, fontWeight: 500, padding: '13px 28px', borderRadius: 999, letterSpacing: 'normal' }}>
+          <button style={{ background: '#00ff97', color: '#000', fontSize: 15, fontWeight: 800, padding: '13px 28px', borderRadius: 999, letterSpacing: 'normal' }}>
             Get full access →
           </button>
         </div>

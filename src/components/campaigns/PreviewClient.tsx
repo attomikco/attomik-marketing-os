@@ -667,23 +667,6 @@ export default function PreviewClient({
         }
       `}</style>
 
-      {/* Preview nav */}
-      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 56, background: colors.ink, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', zIndex: zIndex.topbar, borderBottom: `1px solid ${colors.whiteAlpha8}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <a href="/dashboard" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}><AttomikLogo height={24} color={colors.paper} /></a>
-          <div style={{ width: 1, height: 24, background: colors.whiteAlpha15, flexShrink: 0 }} />
-          <div>
-            <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize.md, color: colors.paper, textTransform: 'uppercase', letterSpacing: letterSpacing.slight, lineHeight: 1.2 }}>{brand.name}</div>
-            <div style={{ fontSize: fontSize.body, color: colors.whiteAlpha40, lineHeight: 1.2 }}>{campaign.name}</div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <button onClick={() => requireAuth(() => router.push(`/creatives?brand=${brand.id}&campaign=${campaign.id}`))} style={{ fontSize: fontSize.base, fontWeight: fontWeight.bold, color: colors.whiteAlpha60, padding: '8px 16px', borderRadius: radius.pill, border: `1px solid ${colors.whiteAlpha12}`, background: colors.whiteAlpha5, whiteSpace: 'nowrap', cursor: 'pointer', transition: `color ${transition.base}` }}>Edit creatives →</button>
-          <button onClick={() => requireAuth(() => router.push(`/copy?campaign=${campaign.id}`))} style={{ fontSize: fontSize.base, fontWeight: fontWeight.bold, color: colors.whiteAlpha60, padding: '8px 16px', borderRadius: radius.pill, border: `1px solid ${colors.whiteAlpha12}`, background: colors.whiteAlpha5, whiteSpace: 'nowrap', cursor: 'pointer', transition: `color ${transition.base}` }}>Edit copy →</button>
-          <button onClick={() => requireAuth(() => router.push('/dashboard'))} style={{ fontSize: fontSize.base, fontWeight: fontWeight.bold, color: colors.ink, padding: '8px 16px', borderRadius: radius.pill, background: colors.accent, border: 'none', whiteSpace: 'nowrap', cursor: 'pointer' }}>← Dashboard</button>
-        </div>
-      </nav>
-      <div style={{ height: 56 }} /> {/* Spacer for fixed nav */}
 
       {brand.status === 'draft' && (
         <div className="max-w-5xl mx-auto px-4 md:px-10 mt-8">
@@ -834,7 +817,7 @@ export default function PreviewClient({
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
                     {brandTone.map((kw: string, i: number) => (
-                      <span key={i} style={{ fontSize: fontSize.body, fontWeight: fontWeight.medium, color: colors.ink, border: `1.5px solid ${colors.ink}`, padding: '6px 16px', borderRadius: radius.pill }}>{kw}</span>
+                      <span key={i} style={{ fontSize: fontSize.body, fontWeight: fontWeight.bold, color: colors.ink, background: colors.accent, padding: '6px 16px', borderRadius: radius.pill }}>{kw}</span>
                     ))}
                   </div>
                 </div>
@@ -1062,15 +1045,6 @@ export default function PreviewClient({
               <span style={{ width: 28, height: 28, borderRadius: '50%', background: colors.ink, color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: fontSize.caption, fontWeight: fontWeight.extrabold, flexShrink: 0 }}>3</span>
               <span style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['6xl'], textTransform: 'uppercase', letterSpacing: letterSpacing.slight, color: colors.ink }}>Landing Page</span>
             </div>
-            {brand.status === 'active' && (
-              <a
-                href={`/api/campaigns/${campaign.id}/landing-html`}
-                download={`${brand.name.toLowerCase().replace(/\s+/g, '-')}-landing-page.html`}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, background: colors.ink, color: colors.accent, fontSize: fontSize.base, fontWeight: fontWeight.bold, padding: '8px 16px', borderRadius: radius.pill, textDecoration: 'none', border: 'none' }}
-              >
-                ↓ Download HTML
-              </a>
-            )}
           </div>
           {landingBrief ? (
             <div className="pv-iframe" style={{
@@ -1143,12 +1117,6 @@ export default function PreviewClient({
                 <span style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: fontSize['4xl'], textTransform: 'uppercase', letterSpacing: letterSpacing.label, color: colors.paper }}>Email</span>
                 <span style={{ fontSize: fontSize.body, color: colors.whiteAlpha30 }}>Campaign email · Klaviyo ready</span>
               </div>
-              {emailGenerated && (
-                <a href={`data:text/html;charset=utf-8,${encodeURIComponent(emailHtml || '')}`} download={`${brand.name.toLowerCase().replace(/\s+/g, '-')}-email.html`}
-                  style={{ fontSize: fontSize.base, fontWeight: fontWeight.bold, color: colors.ink, textDecoration: 'none', padding: '8px 20px', background: colors.accent, borderRadius: radius.pill, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  ↓ Download HTML
-                </a>
-              )}
             </div>
 
             {!emailGenerated ? (

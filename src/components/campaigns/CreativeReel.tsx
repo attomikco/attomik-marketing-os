@@ -41,18 +41,14 @@ export default function CreativeReel({ brand, adVariation, imageUrl, allImageUrl
   ]
 
   const fontFamily = brand.font_heading?.family || brand.font_primary?.split('|')[0] || ''
-  const reelImages = (allImageUrls && allImageUrls.length > 0 ? allImageUrls : []).slice(0, 6)
+  const reelImages = (allImageUrls && allImageUrls.length > 0 ? allImageUrls : []).slice(0, 5)
   const getImg = (i: number): string | null =>
-    reelImages.length > 0 ? reelImages[i % reelImages.length] : null
+    i < reelImages.length ? reelImages[i] : reelImages.length > 0 ? reelImages[0] : null
   const getVariation = (i: number): AdVariation => adVariations?.[i % (adVariations?.length || 1)] || adVariation
 
-  const bgColors = [
-    brand.primary_color || colors.ink,
-    brand.secondary_color || brand.primary_color || colors.ink,
-    brand.primary_color || colors.ink,
-    brand.accent_color || brand.secondary_color || colors.ink,
-    brand.primary_color || colors.ink,
-  ]
+  const pri = brand.primary_color || colors.ink
+  const sec = brand.secondary_color || brand.primary_color || colors.ink
+  const bgColors = [pri, sec, pri, sec, pri]
 
   const makeBase = (i: number) => {
     const v = getVariation(i)

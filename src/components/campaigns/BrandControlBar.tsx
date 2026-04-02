@@ -128,8 +128,8 @@ export default function BrandControlBar({
         <div style={{ fontFamily: font.heading, fontWeight: fontWeight.heading, fontSize: 36, textTransform: 'uppercase', color: colors.ink, lineHeight: 1.1, marginBottom: 12 }}>
           Your Brand Toolkit
         </div>
-        <div style={{ fontSize: fontSize.md, color: colors.muted, lineHeight: 1.6, maxWidth: 480, margin: '0 auto' }}>
-          Here's what we pulled from your site. Update anything before generating — oh, and your SEO could use some work. 👀
+        <div style={{ fontSize: 18, color: colors.muted, lineHeight: 1.6, maxWidth: 480, margin: '0 auto' }}>
+          Here&#39;s what we pulled from your site. Update anything before generating — oh, and <strong>your SEO could use some work</strong>. 👀
         </div>
       </div>
 
